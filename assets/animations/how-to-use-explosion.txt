@@ -1,0 +1,11 @@
+Each picture is 32x32. You need to animate it by drawing each frame according to the position. This will be:
+
+x (0,31)    y(0,31)
+x (32,63)   y(0,31)
+x (64,95)   y(0,31)
+x (96,128)  y(0,31)
+x (0,31)    y(32,63)
+
+.... and so on...
+
+16 frames in total.
