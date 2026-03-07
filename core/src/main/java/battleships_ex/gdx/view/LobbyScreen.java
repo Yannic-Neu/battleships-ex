@@ -12,7 +12,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
-import battleships_ex.gdx.ui.ButtonConfig;
+import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 
@@ -42,7 +42,7 @@ public class LobbyScreen extends ScreenAdapter {
         });
 
         GameButton startMatchButton = new GameButton("COMMENCE MISSION", primaryButton, () -> {
-            game.setScreen(new MenuScreen(game));
+            game.setScreen(new PlacementScreen(game));
         });
 
         Table root = new Table();

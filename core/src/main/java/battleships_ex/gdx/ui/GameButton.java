@@ -4,6 +4,8 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
+import battleships_ex.gdx.config.ButtonConfig;
+
 public class GameButton extends TextButton {
 
     private final float prefWidth;

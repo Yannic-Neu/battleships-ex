@@ -1,7 +1,9 @@
-package battleships_ex.gdx.ui;
+package battleships_ex.gdx.config;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+
+import battleships_ex.gdx.ui.Theme;
 
 public final class ButtonConfig {
     public final float width;
