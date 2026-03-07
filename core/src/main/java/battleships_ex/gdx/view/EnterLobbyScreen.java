@@ -12,6 +12,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
+import battleships_ex.gdx.ui.ButtonConfig;
+import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 
 public class EnterLobbyScreen extends ScreenAdapter {
@@ -32,9 +34,26 @@ public class EnterLobbyScreen extends ScreenAdapter {
 
         Gdx.input.setInputProcessor(stage);
 
-        Table root = new Table();
-        root.setFillParent(true);
-        stage.addActor(root);
+        ButtonConfig primaryButton = ButtonConfig.primary(360f, 80f);
+        ButtonConfig secondaryButton = ButtonConfig.secondary(260f, 80f);
+
+        //// placeholder/dummy
+        GameButton generatedCodeButton = new GameButton("", secondaryButton, () -> {
+            System.out.println("generateCode section clicked");
+        });
+
+        GameButton createLobbyButton = new GameButton("CREATE ROOM", primaryButton, () -> {
+            game.setScreen(new LobbyScreen(game));
+        });
+
+        //// placeholder/dummy
+        GameButton enterCodeButton = new GameButton("ENTER CODE", secondaryButton, () -> {
+            System.out.println("enterCode section clicked");
+        });
+
+        GameButton joinLobbyButton = new GameButton("JOIN MATCH", primaryButton, () -> {
+            game.setScreen(new LobbyScreen(game));
+        });
 
         Label hostOperation = new Label("HOST OPERATION", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
         Label commissionNewFleet = new Label(
@@ -46,6 +65,10 @@ public class EnterLobbyScreen extends ScreenAdapter {
             "Enter the 6-digit tactical encryption code to link with an existing fleet",
             new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
+        Table root = new Table();
+        root.setFillParent(true);
+        stage.addActor(root);
+
         commissionNewFleet.setWrap(true);
         enterCode.setWrap(true);
 
@@ -54,16 +77,18 @@ public class EnterLobbyScreen extends ScreenAdapter {
         Table joinPanel = new Table();
 
         topArea.setBackground(Theme.bluePanel);
-        hostingPanel.setBackground(Theme.darkBluePanel);
-        joinPanel.setBackground(Theme.darkBluePanel);
+        hostingPanel.setBackground(Theme.blackPanel);
+        joinPanel.setBackground(Theme.blackPanel);
 
         hostingPanel.add(hostOperation).center().padTop(20).row();
         hostingPanel.add(commissionNewFleet).width(Value.percentWidth(0.8f, hostingPanel)).center().padTop(10).row();
-        hostingPanel.add().expandY().row();
+        hostingPanel.add(generatedCodeButton).pad(10).center().row();
+        hostingPanel.add(createLobbyButton).pad(10).center().row();
 
         joinPanel.add(joinStrikeForce).center().padTop(20).row();
         joinPanel.add(enterCode).width(Value.percentWidth(0.8f, joinPanel)).center().padTop(10).row();
-        joinPanel.add().expandY().row();
+        joinPanel.add(enterCodeButton).pad(10).center().row();
+        joinPanel.add(joinLobbyButton).pad(10).center().row();
 
         root.defaults().expand().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();

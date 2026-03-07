@@ -12,6 +12,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
+import battleships_ex.gdx.ui.ButtonConfig;
+import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 
 public class MenuScreen extends ScreenAdapter {
@@ -31,7 +33,22 @@ public class MenuScreen extends ScreenAdapter {
 
         Gdx.input.setInputProcessor(stage);
 
-        Label hostOrJoin = new Label("HOST OR JOIN", new Label.LabelStyle(Theme.fontMedium, Theme.GRAY));
+        ButtonConfig primaryButton = ButtonConfig.primary(360f, 80f);
+        ButtonConfig secondaryButton = ButtonConfig.secondary(360f, 80f);
+
+        GameButton enterLobbyButton = new GameButton("MULTIPLAYER", primaryButton, () -> {
+            game.setScreen(new EnterLobbyScreen(game));
+        });
+
+        GameButton singlePlayerButton = new GameButton("SINGLEPLAYER", secondaryButton, () -> {
+            System.out.println("Singleplayer clicked");
+        });
+
+        GameButton tutorialButton = new GameButton("TUTORIAL", secondaryButton, () -> {
+            System.out.println("Tutorial clicked");
+        });
+
+        Label hostOrJoin = new Label("HOST OR JOIN", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
         Table root = new Table();
         root.setFillParent(true);
@@ -41,9 +58,13 @@ public class MenuScreen extends ScreenAdapter {
         Table middlePanel = new Table();
 
         topArea.setBackground(Theme.bluePanel);
+
         middlePanel.setBackground(Theme.blackPanel);
 
-        middlePanel.add(hostOrJoin).pad(20).row();
+        middlePanel.add(enterLobbyButton).pad(10).center().row();
+        middlePanel.add(singlePlayerButton).pad(10).center().row();
+        middlePanel.add(hostOrJoin).center().row();
+        middlePanel.add(tutorialButton).pad(40).center().row();
 
         root.defaults().expandX().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
