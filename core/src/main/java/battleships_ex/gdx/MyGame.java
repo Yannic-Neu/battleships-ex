@@ -1,32 +1,30 @@
 package battleships_ex.gdx;
 
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.ScreenUtils;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
-public class MyGame extends ApplicationAdapter {
-    private SpriteBatch batch;
-    private Texture image;
+import battleships_ex.gdx.ui.Theme;
+import battleships_ex.gdx.view.MenuScreen;
+
+public class MyGame extends Game {
+    public SpriteBatch batch;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
-        image = new Texture("libgdx.png");
+        Theme.init();
+        setScreen(new MenuScreen(this));
     }
 
     @Override
     public void render() {
-        ScreenUtils.clear(0.15f, 0.15f, 0.2f, 1f);
-        batch.begin();
-        batch.draw(image, 140, 210);
-        batch.end();
+        super.render();
     }
 
     @Override
     public void dispose() {
         batch.dispose();
-        image.dispose();
+        Theme.dispose();
+        super.dispose();
     }
 }
