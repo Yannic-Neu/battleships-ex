@@ -12,6 +12,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
+import battleships_ex.gdx.config.ButtonConfig;
+import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 
 public class LobbyScreen extends ScreenAdapter {
@@ -32,6 +34,17 @@ public class LobbyScreen extends ScreenAdapter {
 
         Gdx.input.setInputProcessor(stage);
 
+        ButtonConfig primaryButton = ButtonConfig.primary(360f, 80f);
+        ButtonConfig secondaryButton = ButtonConfig.secondary(260f, 80f);
+
+        GameButton lobbyCodeButton = new GameButton("", secondaryButton, () -> {
+            System.out.println("lobbyCode section clicked");
+        });
+
+        GameButton startMatchButton = new GameButton("COMMENCE MISSION", primaryButton, () -> {
+            game.setScreen(new PlacementScreen(game));
+        });
+
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
@@ -51,8 +64,10 @@ public class LobbyScreen extends ScreenAdapter {
         middlePanel.add().expandY().row();
         middlePanel.add(vs).center().row();
         middlePanel.add().expandY().row();
+        middlePanel.add(lobbyCodeButton).pad(10).center().row();
         middlePanel.add(accessCode).padBottom(20);
 
+        bottomPanel.add(startMatchButton).center().row();
         root.defaults().expand().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
         root.add(middlePanel).height(Value.percentHeight(0.6f, root)).row();
