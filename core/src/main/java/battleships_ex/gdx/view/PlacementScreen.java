@@ -5,7 +5,6 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -17,6 +16,7 @@ import battleships_ex.gdx.data.Assets;
 import battleships_ex.gdx.ui.BoardActor;
 import battleships_ex.gdx.config.BoardConfig;
 import battleships_ex.gdx.config.ButtonConfig;
+import battleships_ex.gdx.ui.CardTray;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.ShipCard;
 import battleships_ex.gdx.config.ShipCardConfig;
@@ -85,31 +85,19 @@ public class PlacementScreen extends ScreenAdapter {
 
         Label dockingTitle = new Label("DOCKING STATION", new Label.LabelStyle(Theme.fontSmall, Theme.WHITE));
 
-        ShipCard carrier = new ShipCard(new ShipCardConfig(95f, 82f, "CARRIER", Assets.ships.ship5h));
-        ShipCard battleship = new ShipCard(new ShipCardConfig(95f, 82f, "BATTLESHIP", Assets.ships.ship4h));
-        ShipCard destroyer = new ShipCard(new ShipCardConfig(95f, 82f, "DESTROYER", Assets.ships.ship3h));
-        ShipCard submarine = new ShipCard(new ShipCardConfig(95f, 82f, "SUBMARINE", Assets.ships.ship3h));
-        ShipCard patrol = new ShipCard(new ShipCardConfig(95f, 82f, "PATROL", Assets.ships.ship2h));
-
-        Table shipRow = new Table();
-        shipRow.defaults().padRight(10);
-
-        shipRow.add(carrier);
-        shipRow.add(battleship);
-        shipRow.add(destroyer);
-        shipRow.add(submarine);
-        shipRow.add(patrol);
-
-        ScrollPane shipScroller = new ScrollPane(shipRow);
-        shipScroller.setFadeScrollBars(false);
-        shipScroller.setScrollingDisabled(false, true);
+        CardTray dockingTray = new CardTray();
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "CARRIER", Assets.ships.ship5h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SUBMARINE", Assets.ships.ship4h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "DESTROYER", Assets.ships.ship3h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SUBMARINE", Assets.ships.ship3h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "PATROL", Assets.ships.ship2h)));
 
         GameButton readyButton = new GameButton(
             "READY TO BATTLE",
             ButtonConfig.primary(300f, 56f),
             () -> {
                 System.out.println("Ready clicked");
-                game.setScreen(new GameScreenOwn(game));
+                game.setScreen(new BattleScreen(game));
             }
         );
 
@@ -121,7 +109,7 @@ public class PlacementScreen extends ScreenAdapter {
         Table dockingSection = new Table();
         dockingSection.setBackground(Theme.darkBluePanel);
         dockingSection.add(dockingTitle).left().pad(12).row();
-        dockingSection.add(shipScroller).growX().height(95f).padLeft(12).padRight(12).padBottom(12).row();
+        dockingSection.add(dockingTray).growX().height(95f).padLeft(12).padRight(12).padBottom(12).row();
         dockingSection.add(readyButton).center().padBottom(16);
 
         root.add(dockingSection).padTop(20).growX().bottom();
