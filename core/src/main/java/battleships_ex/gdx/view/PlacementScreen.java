@@ -107,7 +107,10 @@ public class PlacementScreen extends ScreenAdapter {
         GameButton readyButton = new GameButton(
             "READY TO BATTLE",
             ButtonConfig.primary(300f, 56f),
-            () -> System.out.println("Ready clicked")
+            () -> {
+                System.out.println("Ready clicked");
+                game.setScreen(new GameScreenOwn(game));
+            }
         );
 
         root.defaults().growX();
