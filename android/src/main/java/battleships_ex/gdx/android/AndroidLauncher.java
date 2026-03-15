@@ -7,6 +7,7 @@ import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
 
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.android.data.FirebaseLobbyDataSource;
@@ -15,37 +16,49 @@ import battleships_ex.gdx.android.data.FirebaseLobbyDataSource;
 public class AndroidLauncher extends AndroidApplication {
 
     private static final String TAG = "AndroidLauncher";
+    // Set to true to connect to Firebase Local Emulator Suite for testing
+    private static final boolean USE_EMULATOR = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        if (USE_EMULATOR) {
+            FirebaseDatabase.getInstance().useEmulator("10.0.2.2", 9000);
+            FirebaseAuth.getInstance().useEmulator("10.0.2.2", 9099);
+            Log.d(TAG, "Using Firebase Emulator Suite");
+        }
+
         AndroidApplicationConfiguration configuration = new AndroidApplicationConfiguration();
         configuration.useImmersiveMode = true;
 
-        // Check if already signed in (persisted session)
+        // Resolve player ID: use existing session or generate a temporary one.
+        // Auth runs in the background; once complete, the UID is available for Firebase ops.
+        String initialPlayerId;
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            Log.d(TAG, "Reusing existing auth session: " + currentUser.getUid());
-            startGame(configuration, currentUser.getUid());
+            initialPlayerId = currentUser.getUid();
+            Log.d(TAG, "Reusing existing auth session: " + initialPlayerId);
         } else {
-            // Sign in anonymously so Firebase security rules (auth != null) are satisfied
+            initialPlayerId = "pending-" + System.currentTimeMillis();
+            Log.d(TAG, "Auth pending, using temporary ID");
+        }
+
+        MyGame game = new MyGame(new FirebaseLobbyDataSource(), initialPlayerId);
+
+        // Sign in anonymously in the background; update player ID when ready
+        if (currentUser == null) {
             FirebaseAuth.getInstance().signInAnonymously()
                 .addOnSuccessListener(result -> {
                     String uid = result.getUser().getUid();
                     Log.d(TAG, "Anonymous auth successful: " + uid);
-                    startGame(configuration, uid);
+                    game.setPlayerId(uid);
                 })
-                .addOnFailureListener(e -> {
-                    Log.e(TAG, "Anonymous auth failed, starting with stub", e);
-                    // Fallback: start without Firebase connectivity
-                    startGame(configuration, "offline-" + System.currentTimeMillis());
-                });
+                .addOnFailureListener(e ->
+                    Log.e(TAG, "Anonymous auth failed", e));
         }
-    }
 
-    private void startGame(AndroidApplicationConfiguration config, String playerId) {
-        MyGame game = new MyGame(new FirebaseLobbyDataSource(), playerId);
-        initialize(game, config);
+        // initialize() must be called synchronously in onCreate
+        initialize(game, configuration);
     }
 }

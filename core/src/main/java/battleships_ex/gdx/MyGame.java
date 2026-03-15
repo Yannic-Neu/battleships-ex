@@ -11,7 +11,7 @@ import battleships_ex.gdx.view.MenuScreen;
 public class MyGame extends Game {
     public SpriteBatch batch;
     private final LobbyDataSource lobbyDataSource;
-    private final String playerId;
+    private volatile String playerId;
 
     /**
      * @param lobbyDataSource platform-specific lobby backend (Firebase on Android, stub on Desktop)
@@ -28,6 +28,13 @@ public class MyGame extends Game {
 
     public String getPlayerId() {
         return playerId;
+    }
+
+    /**
+     * Updates the player ID after async auth completes.
+     */
+    public void setPlayerId(String playerId) {
+        this.playerId = playerId;
     }
 
     @Override
