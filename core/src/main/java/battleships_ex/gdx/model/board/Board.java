@@ -29,6 +29,10 @@ public class Board {
         }
     }
 
+    /**
+     * Returns the raw grid for rendering purposes.
+     * Callers must not replace array entries; use placeShip() and receiveAttack() instead.
+     */
     public Cell[][] getGrid() {
         return grid;
     }

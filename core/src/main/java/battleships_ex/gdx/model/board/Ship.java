@@ -11,6 +11,11 @@ public class Ship {
 
     private final List<Cell> position;
 
+    /**
+     * Creates a ship occupying the given cells.
+     * Note: the ship holds references to the Board's Cell instances so that
+     * isSunk() reflects the live hit state. Do not substitute copies.
+     */
     public Ship(List<Cell> cells) {
         this.position = new ArrayList<>(cells);
     }

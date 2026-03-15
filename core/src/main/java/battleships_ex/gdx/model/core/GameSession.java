@@ -4,6 +4,7 @@ import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.board.Coordinate;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -43,9 +44,9 @@ public class GameSession {
     }
 
     /**
-     * Returns the board of the current player's opponent.
+     * Returns the opponent's board (the board the current player attacks).
      */
-    public Board getBoard() {
+    public Board getOpponentBoard() {
         return getOpponent().getBoard();
     }
 
@@ -106,7 +107,7 @@ public class GameSession {
     }
 
     public List<Move> getMoveHistory() {
-        return moveHistory;
+        return Collections.unmodifiableList(moveHistory);
     }
 
     private Player getOpponent() {
