@@ -1,7 +1,6 @@
 package battleships_ex.gdx.view;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -80,6 +79,12 @@ public class EnterLobbyScreen extends ScreenAdapter {
         hostingPanel.setBackground(Theme.blackPanel);
         joinPanel.setBackground(Theme.blackPanel);
 
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(100f, 50f), () -> {
+            game.setScreen(new MenuScreen(game));
+        });
+
+        topArea.add(backButton).left().pad(10);
+
         hostingPanel.add(hostOperation).center().padTop(20).row();
         hostingPanel.add(commissionNewFleet).width(Value.percentWidth(0.8f, hostingPanel)).center().padTop(10).row();
         hostingPanel.add(generatedCodeButton).pad(10).center().row();
@@ -99,14 +104,6 @@ public class EnterLobbyScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0f, 0f, 0f, 1f);
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
-            game.setScreen(new LobbyScreen(game));
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.M)) {
-            game.setScreen(new MenuScreen(game));
-        }
-
         stage.act(delta);
         stage.draw();
     }
