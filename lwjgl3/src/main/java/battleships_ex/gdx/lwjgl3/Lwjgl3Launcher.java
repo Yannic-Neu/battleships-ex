@@ -13,7 +13,8 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new MyGame(new StubLobbyDataSource()), getDefaultConfiguration());
+        String desktopPlayerId = "desktop-" + System.currentTimeMillis();
+        return new Lwjgl3Application(new MyGame(new StubLobbyDataSource(), desktopPlayerId), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

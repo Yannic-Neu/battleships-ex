@@ -120,7 +120,7 @@ public class EnterLobbyScreen extends ScreenAdapter {
 
     private void createRoom() {
         LobbyDataSource ds = game.getLobbyDataSource();
-        String playerId = String.valueOf(System.currentTimeMillis());
+        String playerId = game.getPlayerId();
 
         ds.createLobby(generatedCode, playerId, new DataCallback<Void>() {
             @Override
@@ -150,7 +150,7 @@ public class EnterLobbyScreen extends ScreenAdapter {
                     return;
                 }
 
-                String playerId = String.valueOf(System.currentTimeMillis());
+                String playerId = game.getPlayerId();
                 ds.joinLobby(code, playerId, new DataCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {

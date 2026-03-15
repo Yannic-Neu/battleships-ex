@@ -11,16 +11,23 @@ import battleships_ex.gdx.view.MenuScreen;
 public class MyGame extends Game {
     public SpriteBatch batch;
     private final LobbyDataSource lobbyDataSource;
+    private final String playerId;
 
     /**
      * @param lobbyDataSource platform-specific lobby backend (Firebase on Android, stub on Desktop)
+     * @param playerId unique player identifier (Firebase UID on Android, generated on Desktop)
      */
-    public MyGame(LobbyDataSource lobbyDataSource) {
+    public MyGame(LobbyDataSource lobbyDataSource, String playerId) {
         this.lobbyDataSource = lobbyDataSource;
+        this.playerId = playerId;
     }
 
     public LobbyDataSource getLobbyDataSource() {
         return lobbyDataSource;
+    }
+
+    public String getPlayerId() {
+        return playerId;
     }
 
     @Override
