@@ -61,7 +61,7 @@ public class BattleScreen extends ScreenAdapter {
 
         // --- Header ---
         Table topArea = new Table();
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new LobbyScreen(game)));
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new MenuScreen(game)));
         topArea.add(backButton).left().pad(10);
         topArea.add().expandX();
         topArea.add(new GameButton("SETT", ButtonConfig.secondary(60f, 44f), () -> {})).right().pad(10);

@@ -5,6 +5,7 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -12,6 +13,9 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ButtonConfig;
+import battleships_ex.gdx.data.DataCallback;
+import battleships_ex.gdx.data.LobbyDataSource;
+import battleships_ex.gdx.data.RoomCodeGenerator;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 
@@ -19,9 +23,12 @@ public class EnterLobbyScreen extends ScreenAdapter {
 
     private final MyGame game;
     private Stage stage;
+    private String generatedCode;
+    private Label statusLabel;
 
     public EnterLobbyScreen(MyGame game) {
         this.game = game;
+        this.generatedCode = RoomCodeGenerator.generate();
     }
 
     @Override
@@ -36,22 +43,29 @@ public class EnterLobbyScreen extends ScreenAdapter {
         ButtonConfig primaryButton = ButtonConfig.primary(360f, 80f);
         ButtonConfig secondaryButton = ButtonConfig.secondary(260f, 80f);
 
-        //// placeholder/dummy
-        GameButton generatedCodeButton = new GameButton("", secondaryButton, () -> {
-            System.out.println("generateCode section clicked");
-        });
+        // Generated room code display
+        GameButton generatedCodeButton = new GameButton(generatedCode, secondaryButton, () -> {});
 
         GameButton createLobbyButton = new GameButton("CREATE ROOM", primaryButton, () -> {
-            game.setScreen(new LobbyScreen(game));
+            createRoom();
         });
 
-        //// placeholder/dummy
-        GameButton enterCodeButton = new GameButton("ENTER CODE", secondaryButton, () -> {
-            System.out.println("enterCode section clicked");
-        });
+        // Text field for entering a room code
+        TextField.TextFieldStyle tfStyle = new TextField.TextFieldStyle();
+        tfStyle.font = Theme.fontMedium;
+        tfStyle.fontColor = Theme.WHITE;
+        tfStyle.background = Theme.darkBluePanel;
+
+        TextField codeInput = new TextField("", tfStyle);
+        codeInput.setMaxLength(6);
+        codeInput.setMessageText("ENTER CODE");
+        codeInput.setAlignment(1); // center
 
         GameButton joinLobbyButton = new GameButton("JOIN MATCH", primaryButton, () -> {
-            game.setScreen(new LobbyScreen(game));
+            String code = codeInput.getText().trim().toUpperCase();
+            if (code.length() == 6) {
+                joinRoom(code);
+            }
         });
 
         Label hostOperation = new Label("HOST OPERATION", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
@@ -63,6 +77,8 @@ public class EnterLobbyScreen extends ScreenAdapter {
         Label enterCode = new Label(
             "Enter the 6-digit tactical encryption code to link with an existing fleet",
             new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
+
+        statusLabel = new Label("", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
         Table root = new Table();
         root.setFillParent(true);
@@ -92,13 +108,71 @@ public class EnterLobbyScreen extends ScreenAdapter {
 
         joinPanel.add(joinStrikeForce).center().padTop(20).row();
         joinPanel.add(enterCode).width(Value.percentWidth(0.8f, joinPanel)).center().padTop(10).row();
-        joinPanel.add(enterCodeButton).pad(10).center().row();
+        joinPanel.add(codeInput).width(260f).height(80f).pad(10).center().row();
         joinPanel.add(joinLobbyButton).pad(10).center().row();
+        joinPanel.add(statusLabel).center().padTop(5).row();
 
         root.defaults().expand().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
         root.add(hostingPanel).height(Value.percentHeight(0.4f, root)).row();
         root.add(joinPanel).height(Value.percentHeight(0.5f, root)).row();
+    }
+
+    private void createRoom() {
+        LobbyDataSource ds = game.getLobbyDataSource();
+        String playerId = String.valueOf(System.currentTimeMillis());
+
+        ds.createLobby(generatedCode, playerId, new DataCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                Gdx.app.postRunnable(() ->
+                    game.setScreen(new LobbyScreen(game, generatedCode, playerId, true))
+                );
+            }
+
+            @Override
+            public void onFailure(String error) {
+                Gdx.app.postRunnable(() ->
+                    statusLabel.setText("Error: " + error)
+                );
+            }
+        });
+    }
+
+    private void joinRoom(String code) {
+        LobbyDataSource ds = game.getLobbyDataSource();
+
+        ds.lobbyExists(code, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean exists) {
+                if (!exists) {
+                    Gdx.app.postRunnable(() -> statusLabel.setText("Room not found"));
+                    return;
+                }
+
+                String playerId = String.valueOf(System.currentTimeMillis());
+                ds.joinLobby(code, playerId, new DataCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        Gdx.app.postRunnable(() ->
+                            game.setScreen(new LobbyScreen(game, code, playerId, false))
+                        );
+                    }
+
+                    @Override
+                    public void onFailure(String error) {
+                        Gdx.app.postRunnable(() ->
+                            statusLabel.setText("Error: " + error)
+                        );
+                    }
+                });
+            }
+
+            @Override
+            public void onFailure(String error) {
+                Gdx.app.postRunnable(() -> statusLabel.setText("Error: " + error));
+            }
+        });
     }
 
     @Override
