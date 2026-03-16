@@ -1,4 +1,4 @@
-package battleships_ex.gdx.ui;
+package battleships_ex.gdx.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
