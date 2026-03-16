@@ -6,75 +6,33 @@ package battleships_ex.gdx.data;
  * without affecting controllers or UI (see M3: Swapping Backend Provider).
  */
 public interface LobbyDataSource {
-
-    /**
-     * Creates a new lobby on the backend with the given room code.
-     *
-     * @param roomCode unique room code for the lobby
-     * @param hostPlayerId unique identifier of the hosting player
-     * @param callback notified on success (null) or failure
-     */
-    void createLobby(String roomCode, String hostPlayerId, DataCallback<Void> callback);
-
-    /**
-     * Joins an existing lobby identified by the room code.
-     *
-     * @param roomCode the room code to join
-     * @param playerId unique identifier of the joining player
-     * @param callback notified with success or failure (e.g. room not found, room full)
-     */
-    void joinLobby(String roomCode, String playerId, DataCallback<Void> callback);
-
-    /**
-     * Removes a player from a lobby.
-     *
-     * @param roomCode the room code of the lobby
-     * @param playerId the player to remove
-     * @param callback notified on success or failure
-     */
+    void createLobby(String roomCode, String hostPlayerId, String hostPlayerName, DataCallback<Void> callback);
+    void joinLobby(String roomCode, String playerId, String playerName, DataCallback<Void> callback);
     void leaveLobby(String roomCode, String playerId, DataCallback<Void> callback);
-
-    /**
-     * Checks whether a lobby with the given room code exists and is joinable.
-     *
-     * @param roomCode the room code to check
-     * @param callback notified with true if joinable, false otherwise
-     */
     void lobbyExists(String roomCode, DataCallback<Boolean> callback);
-
-    /**
-     * Registers a listener for real-time lobby state changes (e.g. player joined).
-     * Implementations should push updates whenever the lobby data changes on the backend.
-     *
-     * @param roomCode the room code to listen to
-     * @param callback notified with updated lobby status on each change
-     */
     void addLobbyListener(String roomCode, DataCallback<LobbySnapshot> callback);
-
-    /**
-     * Removes a previously registered lobby listener.
-     *
-     * @param roomCode the room code to stop listening to
-     */
     void removeLobbyListener(String roomCode);
-
-    /**
-     * Lightweight snapshot of lobby state received from the backend.
-     * Keeps the interface independent of model classes.
-     */
     class LobbySnapshot {
         public final String roomCode;
         public final String hostPlayerId;
-        public final String guestPlayerId;
-        public final String status; // "waiting", "ready", "playing"
+        public final String hostPlayerName;
+        public final String guestPlayerId;    // null if guest slot is empty
+        public final String guestPlayerName;  // null if guest slot is empty
+        public final String status;           // "waiting", "ready", "playing"
 
-        public LobbySnapshot(String roomCode, String hostPlayerId, String guestPlayerId, String status) {
-            this.roomCode = roomCode;
-            this.hostPlayerId = hostPlayerId;
-            this.guestPlayerId = guestPlayerId;
-            this.status = status;
+        public LobbySnapshot(String roomCode,
+                             String hostPlayerId,  String hostPlayerName,
+                             String guestPlayerId, String guestPlayerName,
+                             String status) {
+            this.roomCode        = roomCode;
+            this.hostPlayerId    = hostPlayerId;
+            this.hostPlayerName  = hostPlayerName;
+            this.guestPlayerId   = guestPlayerId;
+            this.guestPlayerName = guestPlayerName;
+            this.status          = status;
         }
 
+        /** @return true if the guest slot is filled */
         public boolean isFull() {
             return guestPlayerId != null;
         }

@@ -11,21 +11,21 @@ import java.util.List;
  */
 public class Player {
 
-    private final long id;
+    private final String id;
     private final String name;
     private final Board board;
 
     // TODO #31: Replace Object with ActionCard interface once rules engine is implemented
     private final List<Object> cards;
 
-    public Player(long id, String name) {
+    public Player(String id, String name) {
         this.id = id;
         this.name = name;
         this.board = new Board();
         this.cards = new ArrayList<>();
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
