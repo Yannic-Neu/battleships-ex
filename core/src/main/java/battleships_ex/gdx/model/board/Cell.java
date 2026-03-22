@@ -1,4 +1,4 @@
-package battleships_ex.gdx.model;
+package battleships_ex.gdx.model.board;
 
 public class Cell {
     private final Coordinate coordinate;

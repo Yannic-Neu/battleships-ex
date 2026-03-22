@@ -1,4 +1,4 @@
-package battleships_ex.gdx.model;
+package battleships_ex.gdx.model.board;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -6,8 +6,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import battleships_ex.gdx.config.AttackResult;
-import battleships_ex.gdx.config.Orientation;
+import battleships_ex.gdx.config.board.AttackResult;
+import battleships_ex.gdx.config.board.Orientation;
 
 public class Board {
     private final int width;

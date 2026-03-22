@@ -1,6 +1,4 @@
-package battleships_ex.gdx.config;
-
-import battleships_ex.gdx.data.Assets;
+package battleships_ex.gdx.config.board;
 
 public enum ShipType {
     PATROL("Patrol", 2),

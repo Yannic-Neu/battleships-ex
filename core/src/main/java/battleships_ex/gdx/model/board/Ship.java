@@ -1,11 +1,11 @@
-package battleships_ex.gdx.model;
+package battleships_ex.gdx.model.board;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import battleships_ex.gdx.config.Orientation;
-import battleships_ex.gdx.config.ShipType;
+import battleships_ex.gdx.config.board.Orientation;
+import battleships_ex.gdx.config.board.ShipType;
 
 public class Ship {
     private final ShipType type;
