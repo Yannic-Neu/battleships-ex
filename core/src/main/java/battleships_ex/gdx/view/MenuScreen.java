@@ -35,6 +35,7 @@ public class MenuScreen extends ScreenAdapter {
 
         ButtonConfig primaryButton = ButtonConfig.primary(360f, 80f);
         ButtonConfig secondaryButton = ButtonConfig.secondary(360f, 80f);
+        ButtonConfig navButton = ButtonConfig.secondary(80f, 44f);
 
         GameButton enterLobbyButton = new GameButton("MULTIPLAYER", primaryButton, () -> {
             game.setScreen(new EnterLobbyScreen(game));
@@ -48,6 +49,10 @@ public class MenuScreen extends ScreenAdapter {
             System.out.println("Tutorial clicked");
         });
 
+        GameButton settingsButton = new GameButton("SETT", navButton, () -> {
+            game.setScreen(new SettingsScreen(game, this));
+        });
+
         Label hostOrJoin = new Label("HOST OR JOIN", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
         Table root = new Table();
@@ -58,6 +63,8 @@ public class MenuScreen extends ScreenAdapter {
         Table middlePanel = new Table();
 
         topArea.setBackground(Theme.bluePanel);
+        topArea.add().expandX();
+        topArea.add(settingsButton).right().padRight(25);
 
         middlePanel.setBackground(Theme.blackPanel);
 
