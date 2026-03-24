@@ -10,7 +10,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
 import battleships_ex.gdx.MyGame;
-import battleships_ex.gdx.config.BoardConfig;
+import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ShipCardConfig;

@@ -1,42 +1,96 @@
 package battleships_ex.gdx.model.board;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
-/**
- * Represents a ship placed on the board, occupying one or more cells.
- */
+import battleships_ex.gdx.config.board.Orientation;
+import battleships_ex.gdx.config.board.ShipType;
+
 public class Ship {
+    private final ShipType type;
+    private Orientation orientation;
+    private Set<Coordinate> occupiedCoordinates;
+    private final Set<Coordinate> hitCoordinates;
 
-    private final List<Cell> position;
-
-    /**
-     * Creates a ship occupying the given cells.
-     * Note: the ship holds references to the Board's Cell instances so that
-     * isSunk() reflects the live hit state. Do not substitute copies.
-     */
-    public Ship(List<Cell> cells) {
-        this.position = new ArrayList<>(cells);
-    }
-
-    public List<Cell> getPosition() {
-        return Collections.unmodifiableList(position);
-    }
-
-    /**
-     * A ship is sunk when all of its cells have been hit.
-     */
-    public boolean isSunk() {
-        for (Cell cell : position) {
-            if (!cell.isHit()) {
-                return false;
-            }
+    public Ship(ShipType type, Orientation orientation) {
+        if (type == null) {
+            throw new IllegalArgumentException("Ship type must not be null.");
         }
-        return !position.isEmpty();
+        if (orientation == null) {
+            throw new IllegalArgumentException("Orientation must not be null.");
+        }
+        this.type = type;
+        this.orientation = orientation;
+        this.occupiedCoordinates = new LinkedHashSet<>();
+        this.hitCoordinates = new LinkedHashSet<>();
+    }
+    public ShipType getType() {
+        return type;
     }
 
-    public int getSize() {
-        return position.size();
+    public String getName() {
+        return type.getDisplayName();
+    }
+
+    public int getLength() {
+        return type.getLength();
+    }
+
+    public Orientation getOrientation() {
+        return orientation;
+    }
+
+    public void setOrientation(Orientation orientation) {
+        if (orientation == null) {
+            throw new IllegalArgumentException("Orientation must not be null.");
+        }
+        this.orientation = orientation;
+    }
+
+    public boolean isPlaced() {
+        return !occupiedCoordinates.isEmpty();
+    }
+
+    public void place(Set<Coordinate> coordinates) {
+        if (coordinates == null) {
+            throw new IllegalArgumentException("Coordinates must not be null.");
+        }
+        if (isPlaced()) {
+            throw new IllegalStateException("Ship has already been placed.");
+        }
+        if (coordinates.size() != getLength()) {
+            throw new IllegalArgumentException(
+                "Ship of type " + getName() + " must occupy exactly " + getLength() + " coordinates."
+            );
+        }
+        if (coordinates.contains(null)) {
+            throw new IllegalArgumentException("Coordinates must not contain null.");
+        }
+
+        this.occupiedCoordinates = new LinkedHashSet<>(coordinates);
+    }
+
+    public Set<Coordinate> getOccupiedCoordinates() {
+        return Collections.unmodifiableSet(occupiedCoordinates);
+    }
+
+    public boolean occupies(Coordinate coordinate) {
+        return occupiedCoordinates.contains(coordinate);
+    }
+
+    public void registerHit(Coordinate coordinate) {
+        if (coordinate == null) {
+            throw new IllegalArgumentException("Coordinate must not be null.");
+        }
+        if (!occupies(coordinate)) {
+            throw new IllegalArgumentException("Ship does not occupy coordinate " + coordinate);
+        }
+
+        hitCoordinates.add(coordinate);
+    }
+
+    public boolean isSunk() {
+        return isPlaced() && hitCoordinates.size() == occupiedCoordinates.size();
     }
 }

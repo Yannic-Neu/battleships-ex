@@ -2,42 +2,38 @@ package battleships_ex.gdx.model.board;
 
 import java.util.Objects;
 
-/**
- * Immutable value object representing a position on the game board.
- */
 public class Coordinate {
-
-    private final int x;
-    private final int y;
-
-    public Coordinate(int x, int y) {
-        this.x = x;
-        this.y = y;
+    private final int row;
+    private final int col;
+    public Coordinate(int row, int col) {
+        if (row < 0 || col < 0) {
+            throw new IllegalArgumentException("Row and Column must be non-negative.");
+        }
+        this.row = row;
+        this.col = col;
     }
-
-    public int getX() {
-        return x;
+    public int getRow() {
+        return this.row;
     }
-
-    public int getY() {
-        return y;
+    public int getCol() {
+        return this.col;
     }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Coordinate)) return false;
         Coordinate that = (Coordinate) o;
-        return x == that.x && y == that.y;
+        return row == that.row && col == that.col;
     }
-
     @Override
     public int hashCode() {
-        return Objects.hash(x, y);
+        return Objects.hash(row, col);
     }
-
     @Override
     public String toString() {
-        return "(" + x + ", " + y + ")";
+        return "Coordinate{" +
+            "row = " + row +
+            ", col = " + col +
+            "}";
     }
 }

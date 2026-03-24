@@ -2,121 +2,174 @@ package battleships_ex.gdx.model.board;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
-/**
- * Represents the 10x10 game board containing cells and placed ships.
- */
+import battleships_ex.gdx.config.board.AttackResult;
+import battleships_ex.gdx.config.board.Orientation;
+
 public class Board {
-
-    public static final int DEFAULT_SIZE = 10;
-
+    private final int width;
+    private final int height;
     private final Cell[][] grid;
     private final List<Ship> ships;
 
-    public Board() {
-        this(DEFAULT_SIZE);
+    public Board(int width, int height) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("Board width and height must be positive.");
+        }
+
+        this.width = width;
+        this.height = height;
+        this.grid = new Cell[height][width];
+        this.ships = new ArrayList<>();
+
+        initializeGrid();
     }
 
-    public Board(int size) {
-        grid = new Cell[size][size];
-        ships = new ArrayList<>();
-
-        for (int x = 0; x < size; x++) {
-            for (int y = 0; y < size; y++) {
-                grid[x][y] = new Cell(new Coordinate(x, y));
+    private void initializeGrid() {
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                grid[row][col] = new Cell(new Coordinate(row, col));
             }
         }
     }
 
-    /**
-     * Returns the raw grid for rendering purposes.
-     * Callers must not replace array entries; use placeShip() and receiveAttack() instead.
-     */
-    public Cell[][] getGrid() {
-        return grid;
+    public int getWidth() {
+        return width;
     }
 
-    public int getSize() {
-        return grid.length;
-    }
-
-    public Cell getCell(int x, int y) {
-        return grid[x][y];
+    public int getHeight() {
+        return height;
     }
 
     public Cell getCell(Coordinate coordinate) {
-        return grid[coordinate.getX()][coordinate.getY()];
+        validateCoordinate(coordinate);
+        return grid[coordinate.getRow()][coordinate.getCol()];
+    }
+
+    public boolean isWithinBounds(Coordinate coordinate) {
+        if (coordinate == null) {
+            return false;
+        }
+
+        return coordinate.getRow() >= 0
+            && coordinate.getRow() < height
+            && coordinate.getCol() >= 0
+            && coordinate.getCol() < width;
     }
 
     public List<Ship> getShips() {
         return Collections.unmodifiableList(ships);
     }
 
-    /**
-     * Places a ship on the board starting at the given coordinate.
-     *
-     * @param startX    column of the first cell
-     * @param startY    row of the first cell
-     * @param size      number of cells the ship occupies
-     * @param horizontal true for left-to-right, false for top-to-bottom
-     * @return true if the ship was placed successfully
-     */
-    public boolean placeShip(int startX, int startY, int size, boolean horizontal) {
-        List<Cell> cells = new ArrayList<>();
-
-        for (int i = 0; i < size; i++) {
-            int x = horizontal ? startX + i : startX;
-            int y = horizontal ? startY : startY + i;
-
-            if (!isInBounds(x, y)) return false;
-            if (grid[x][y].hasShip()) return false;
-
-            cells.add(grid[x][y]);
+    public boolean canPlaceShip(Ship ship, Coordinate start, Orientation orientation) {
+        if (ship == null || start == null || orientation == null) {
+            return false;
         }
 
-        for (Cell cell : cells) {
-            cell.setHasShip(true);
+        if (ship.isPlaced()) {
+            return false;
         }
 
-        ships.add(new Ship(cells));
+        List<Coordinate> coordinates = getPlacementCoordinates(ship, start, orientation);
+
+        for (Coordinate coordinate : coordinates) {
+            if (!isWithinBounds(coordinate)) {
+                return false;
+            }
+
+            Cell cell = getCell(coordinate);
+            if (cell.hasShip()) {
+                return false;
+            }
+        }
+
         return true;
     }
 
-    /**
-     * Processes an incoming attack at the given coordinate.
-     *
-     * @param coordinate the target position
-     * @return true if a ship was hit, false if it was a miss
-     * @throws IllegalArgumentException if the coordinate is out of bounds
-     * @throws IllegalStateException    if the cell was already hit
-     */
-    public boolean receiveAttack(Coordinate coordinate) {
-        if (!isInBounds(coordinate.getX(), coordinate.getY())) {
-            throw new IllegalArgumentException("Coordinate out of bounds: " + coordinate);
+    public void placeShip(Ship ship, Coordinate start, Orientation orientation) {
+        if (ship == null) {
+            throw new IllegalArgumentException("Ship must not be null.");
         }
+        if (start == null) {
+            throw new IllegalArgumentException("Start coordinate must not be null.");
+        }
+        if (orientation == null) {
+            throw new IllegalArgumentException("Orientation must not be null.");
+        }
+        if (!canPlaceShip(ship, start, orientation)) {
+            throw new IllegalArgumentException("Ship cannot be placed at " + start + " with orientation " + orientation);
+        }
+
+        List<Coordinate> coordinates = getPlacementCoordinates(ship, start, orientation);
+        Set<Coordinate> occupied = new LinkedHashSet<>(coordinates);
+
+        ship.setOrientation(orientation);
+        ship.place(occupied);
+
+        for (Coordinate coordinate : coordinates) {
+            getCell(coordinate).placeShip(ship);
+        }
+
+        ships.add(ship);
+    }
+
+    public AttackResult attack(Coordinate coordinate) {
+        validateCoordinate(coordinate);
 
         Cell cell = getCell(coordinate);
+
         if (cell.isHit()) {
-            throw new IllegalStateException("Cell already hit: " + coordinate);
+            return AttackResult.ALREADY_HIT;
         }
 
-        cell.setHit(true);
-        return cell.hasShip();
+        cell.markHit();
+
+        if (!cell.hasShip()) {
+            return AttackResult.MISS;
+        }
+
+        Ship ship = cell.getShip();
+        ship.registerHit(coordinate);
+
+        if (ship.isSunk()) {
+            return AttackResult.SUNK;
+        }
+
+        return AttackResult.HIT;
     }
 
-    /**
-     * @return true if all ships on this board have been sunk
-     */
     public boolean allShipsSunk() {
-        if (ships.isEmpty()) return false;
-        for (Ship ship : ships) {
-            if (!ship.isSunk()) return false;
-        }
-        return true;
+        return !ships.isEmpty() && ships.stream().allMatch(Ship::isSunk);
     }
 
-    private boolean isInBounds(int x, int y) {
-        return x >= 0 && x < grid.length && y >= 0 && y < grid.length;
+    private List<Coordinate> getPlacementCoordinates(Ship ship, Coordinate start, Orientation orientation) {
+        List<Coordinate> coordinates = new ArrayList<>();
+
+        for (int i = 0; i < ship.getLength(); i++) {
+            int row = start.getRow();
+            int col = start.getCol();
+
+            if (orientation == Orientation.HORIZONTAL) {
+                col += i;
+            } else {
+                row += i;
+            }
+
+            coordinates.add(new Coordinate(row, col));
+        }
+
+        return coordinates;
+    }
+
+    private void validateCoordinate(Coordinate coordinate) {
+        if (coordinate == null) {
+            throw new IllegalArgumentException("Coordinate must not be null.");
+        }
+        if (!isWithinBounds(coordinate)) {
+            throw new IllegalArgumentException("Coordinate out of bounds: " + coordinate);
+        }
     }
 }
