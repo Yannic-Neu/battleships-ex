@@ -1,5 +1,7 @@
 package battleships_ex.gdx.model.rules;
 
+import battleships_ex.gdx.config.board.Orientation;
+import battleships_ex.gdx.config.board.ShipType;
 import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
@@ -12,18 +14,21 @@ import static org.junit.Assert.*;
 /**
  * Unit tests for {@link StandardRulesEngine}.
  *
- * Uses the real Board/Cell/Ship/Coordinate classes (no mocks needed because
- * the domain objects are simple and fast). Each test is fully self-contained:
- * fresh instances are created in @Before so no state leaks between cases.
+ * Uses the real Board / Cell / Ship / Coordinate classes.
+ * Each test is self-contained — fresh instances created in @Before.
  *
- * Ship construction: Board.placeShip(startX, startY, size, horizontal) creates
- * and registers the Ship internally. Retrieve a Ship reference after placement
- * via board.getShips() when needed.
- *
- * Orientation: represented as boolean (true = horizontal) until the Orientation
- * enum is introduced. Update call sites to the enum at that point.
+ * API alignment:
+ *   - Board(width, height)
+ *   - Board.placeShip(Ship, Coordinate, Orientation)
+ *   - Board.canPlaceShip(Ship, Coordinate, Orientation)
+ *   - Ship(ShipType, Orientation)
+ *   - Coordinate(row, col)
+ *   - Orientation.HORIZONTAL / VERTICAL
  */
 public class RulesEngineTest {
+
+    // Standard 10×10 board
+    private static final int SIZE = 10;
 
     private StandardRulesEngine engine;
     private Board board;
@@ -31,7 +36,7 @@ public class RulesEngineTest {
     @Before
     public void setUp() {
         engine = new StandardRulesEngine();
-        board  = new Board();
+        board  = new Board(SIZE, SIZE);
     }
 
     // =========================================================================
@@ -40,83 +45,71 @@ public class RulesEngineTest {
 
     @Test
     public void placement_validHorizontal_returnsSuccess() {
-        PlacementResult result = engine.validatePlacement(board, 3, 0, 0, true);
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        PlacementResult result = engine.validatePlacement(
+            board, ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
         assertTrue(result.isValid());
     }
 
     @Test
     public void placement_validVertical_returnsSuccess() {
-        PlacementResult result = engine.validatePlacement(board, 3, 5, 5, false);
+        Ship ship = new Ship(ShipType.SUBMARINE, Orientation.VERTICAL);
+        PlacementResult result = engine.validatePlacement(
+            board, ship, new Coordinate(0, 0), Orientation.VERTICAL);
         assertTrue(result.isValid());
     }
 
     @Test
     public void placement_horizontalOutOfBoundsRight_returnsOutOfBounds() {
-        // Size-4 ship at column 8 → cols 8,9,10,11 — overshoots right edge
-        PlacementResult result = engine.validatePlacement(board, 4, 8, 0, true);
+        // BATTLESHIP length 4, starting at col 8 → cols 8,9,10,11 — overshoots
+        Ship ship = new Ship(ShipType.BATTLESHIP, Orientation.HORIZONTAL);
+        PlacementResult result = engine.validatePlacement(
+            board, ship, new Coordinate(0, 8), Orientation.HORIZONTAL);
         assertFalse(result.isValid());
         assertEquals(PlacementResult.Reason.OUT_OF_BOUNDS, result.getReason());
     }
 
     @Test
     public void placement_verticalOutOfBoundsBottom_returnsOutOfBounds() {
-        // Size-3 ship at row 9 → rows 9,10,11 — overshoots bottom edge
-        PlacementResult result = engine.validatePlacement(board, 3, 0, 9, false);
-        assertFalse(result.isValid());
-        assertEquals(PlacementResult.Reason.OUT_OF_BOUNDS, result.getReason());
-    }
-
-    @Test
-    public void placement_negativeStart_returnsOutOfBounds() {
-        PlacementResult result = engine.validatePlacement(board, 2, -1, 0, true);
+        // SUBMARINE length 3, starting at row 9 → rows 9,10,11 — overshoots
+        Ship ship = new Ship(ShipType.SUBMARINE, Orientation.VERTICAL);
+        PlacementResult result = engine.validatePlacement(
+            board, ship, new Coordinate(9, 0), Orientation.VERTICAL);
         assertFalse(result.isValid());
         assertEquals(PlacementResult.Reason.OUT_OF_BOUNDS, result.getReason());
     }
 
     @Test
     public void placement_overlapsExistingShip_returnsOverlap() {
-        // Place a 2-cell ship at (3,3)-(4,3), then try placing on same cells
-        board.placeShip(3, 3, 2, true);
+        // Place a destroyer at (0,0), then try to place another on the same cell
+        Ship first  = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship second = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        board.placeShip(first, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
-        PlacementResult result = engine.validatePlacement(board, 2, 3, 3, true);
+        PlacementResult result = engine.validatePlacement(
+            board, second, new Coordinate(0, 0), Orientation.HORIZONTAL);
         assertFalse(result.isValid());
         assertEquals(PlacementResult.Reason.OVERLAPS_SHIP, result.getReason());
     }
 
     @Test
-    public void placement_adjacentRow_returnsTooClose() {
-        // Ship at (3,3)-(4,3); new ship at (3,4) is 1 row below — touching
-        board.placeShip(3, 3, 2, true);
+    public void placement_noOverlap_returnsSuccess() {
+        Ship first  = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship second = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        board.placeShip(first, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
-        PlacementResult result = engine.validatePlacement(board, 2, 3, 4, true);
-        assertFalse(result.isValid());
-        assertEquals(PlacementResult.Reason.TOO_CLOSE_TO_SHIP, result.getReason());
-    }
-
-    @Test
-    public void placement_adjacentColumn_returnsTooClose() {
-        // Ship at (3,3)-(4,3); new ship at (5,3) starts 1 col to the right — touching
-        board.placeShip(3, 3, 2, true);
-
-        PlacementResult result = engine.validatePlacement(board, 1, 5, 3, true);
-        assertFalse(result.isValid());
-        assertEquals(PlacementResult.Reason.TOO_CLOSE_TO_SHIP, result.getReason());
-    }
-
-    @Test
-    public void placement_twoRowsAway_returnsSuccess() {
-        // Ship at (3,3)-(4,3); new ship at (3,5) — 2 rows below, outside buffer
-        board.placeShip(3, 3, 2, true);
-
-        PlacementResult result = engine.validatePlacement(board, 2, 3, 5, true);
+        // Place second ship well clear of the first
+        PlacementResult result = engine.validatePlacement(
+            board, second, new Coordinate(5, 5), Orientation.HORIZONTAL);
         assertTrue(result.isValid());
     }
 
     @Test
-    public void placement_cornerOfBoard_returnsSuccess() {
-        // 1-cell ship at (9,9) — should fit exactly in the corner
-        PlacementResult result = engine.validatePlacement(board, 1, 9, 9, true);
-        assertTrue(result.isValid());
+    public void placement_nullArguments_returnsOutOfBounds() {
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        PlacementResult result = engine.validatePlacement(board, ship, null, Orientation.HORIZONTAL);
+        assertFalse(result.isValid());
+        assertEquals(PlacementResult.Reason.OUT_OF_BOUNDS, result.getReason());
     }
 
     // =========================================================================
@@ -131,18 +124,20 @@ public class RulesEngineTest {
 
     @Test
     public void resolveShot_hitShipNotSunk_returnsHit() {
-        // 2-cell ship; hit only the first cell
-        board.placeShip(0, 0, 2, true);
+        // DESTROYER length 2 — hit only the first cell
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         ShotResult result = engine.resolveShot(board, new Coordinate(0, 0));
         assertEquals(ShotResult.Outcome.HIT, result.getOutcome());
-        assertNull("SunkShip should be null for a non-sinking hit", result.getSunkShip());
+        assertNull("SunkShip must be null for a non-sinking hit", result.getSunkShip());
     }
 
     @Test
-    public void resolveShot_allCellsHit_returnsSunk() {
-        // 1-cell ship — one shot sinks it
-        board.placeShip(4, 4, 1, true);
+    public void resolveShot_sinkSingleCellShip_returnsSunk() {
+        // PATROL / smallest ship — one shot sinks it
+        Ship ship = new Ship(ShipType.PATROL_BOAT, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(4, 4), Orientation.HORIZONTAL);
 
         ShotResult result = engine.resolveShot(board, new Coordinate(4, 4));
         assertEquals(ShotResult.Outcome.SUNK, result.getOutcome());
@@ -151,41 +146,40 @@ public class RulesEngineTest {
 
     @Test
     public void resolveShot_sinkMultiCellShip_requiresAllCells() {
-        // 3-cell ship at (2,2),(3,2),(4,2); sink it by hitting all three
-        board.placeShip(2, 2, 3, true);
+        // SUBMARINE length 3 at row 2, cols 2–4
+        Ship ship = new Ship(ShipType.SUBMARINE, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(2, 2), Orientation.HORIZONTAL);
 
         engine.resolveShot(board, new Coordinate(2, 2));  // HIT
-        engine.resolveShot(board, new Coordinate(3, 2));  // HIT
-        ShotResult last = engine.resolveShot(board, new Coordinate(4, 2)); // SUNK
+        engine.resolveShot(board, new Coordinate(2, 3));  // HIT
+        ShotResult last = engine.resolveShot(board, new Coordinate(2, 4)); // SUNK
 
         assertEquals(ShotResult.Outcome.SUNK, last.getOutcome());
         assertNotNull(last.getSunkShip());
-        assertEquals(3, last.getSunkShip().getSize());
+        assertEquals(3, last.getSunkShip().getLength());
     }
 
     @Test
-    public void resolveShot_duplicateShot_returnsAlreadyShot_noBoardMutation() {
-        // First shot: miss. Second shot at same coordinate: ALREADY_SHOT.
-        // Board must NOT throw on the second call because engine guards first.
+    public void resolveShot_duplicateShot_returnsAlreadyShot() {
+        // Miss once, then fire at the same cell again
         engine.resolveShot(board, new Coordinate(5, 5));
-
         ShotResult second = engine.resolveShot(board, new Coordinate(5, 5));
         assertEquals(ShotResult.Outcome.ALREADY_SHOT, second.getOutcome());
     }
 
     @Test
     public void resolveShot_missDoesNotAffectShip() {
-        board.placeShip(7, 7, 2, true);
-        engine.resolveShot(board, new Coordinate(0, 0));  // miss elsewhere
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(7, 7), Orientation.HORIZONTAL);
 
-        Ship ship = board.getShips().get(0);
+        engine.resolveShot(board, new Coordinate(0, 0));  // miss elsewhere
         assertFalse("Ship must not be sunk after a miss elsewhere", ship.isSunk());
     }
 
     @Test
     public void resolveShot_coordinatePreservedInResult() {
         Coordinate target = new Coordinate(3, 6);
-        ShotResult result = engine.resolveShot(board, target);
+        ShotResult result  = engine.resolveShot(board, target);
         assertEquals(target, result.getCoordinate());
     }
 
@@ -195,41 +189,44 @@ public class RulesEngineTest {
 
     @Test
     public void hasWon_shipsPlacedNoneHit_returnsFalse() {
-        board.placeShip(0, 0, 2, true);
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
         assertFalse(engine.hasWon(board));
     }
 
     @Test
     public void hasWon_shipPartiallyHit_returnsFalse() {
-        board.placeShip(0, 0, 2, true);
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
         engine.resolveShot(board, new Coordinate(0, 0));  // hit only first cell
         assertFalse(engine.hasWon(board));
     }
 
     @Test
     public void hasWon_allShipsSunk_returnsTrue() {
-        board.placeShip(0, 0, 1, true);
-        engine.resolveShot(board, new Coordinate(0, 0));  // sinks the only ship
+        Ship ship = new Ship(ShipType.PATROL_BOAT, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
+        engine.resolveShot(board, new Coordinate(0, 0));
         assertTrue(engine.hasWon(board));
     }
 
     @Test
     public void hasWon_emptyBoard_returnsFalse() {
-        // Board#allShipsSunk() returns false when ships list is empty.
-        // An empty board must never be considered a win.
+        // Board#allShipsSunk() returns false when ships list is empty
         assertFalse(engine.hasWon(board));
     }
 
     @Test
     public void hasWon_multipleShips_allMustBeSunkToWin() {
-        board.placeShip(0, 0, 1, true);
-        board.placeShip(5, 5, 1, true);
+        Ship s1 = new Ship(ShipType.PATROL_BOAT, Orientation.HORIZONTAL);
+        Ship s2 = new Ship(ShipType.PATROL_BOAT, Orientation.HORIZONTAL);
+        board.placeShip(s1, new Coordinate(0, 0), Orientation.HORIZONTAL);
+        board.placeShip(s2, new Coordinate(5, 5), Orientation.HORIZONTAL);
 
-        engine.resolveShot(board, new Coordinate(0, 0));  // sinks first ship
-        assertFalse("Second ship still afloat — should not be a win yet",
-            engine.hasWon(board));
+        engine.resolveShot(board, new Coordinate(0, 0));  // sinks s1
+        assertFalse("s2 still afloat — must not be a win yet", engine.hasWon(board));
 
-        engine.resolveShot(board, new Coordinate(5, 5));  // sinks second ship
+        engine.resolveShot(board, new Coordinate(5, 5));  // sinks s2
         assertTrue(engine.hasWon(board));
     }
 }

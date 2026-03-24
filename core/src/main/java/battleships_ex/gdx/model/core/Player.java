@@ -15,37 +15,24 @@ public class Player {
     private final String name;
     private final Board board;
 
-    // TODO #31: Replace Object with ActionCard interface once rules engine is implemented
+    // TODO #31: Replace Object with ActionCard interface once implemented
     private final List<Object> cards;
 
     public Player(String id, String name) {
-        this.id = id;
-        this.name = name;
-        this.board = new Board();
+        this.id    = id;
+        this.name  = name;
+        this.board = new Board(10, 10);
         this.cards = new ArrayList<>();
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Board getBoard() {
-        return board;
-    }
+    public String getId()   { return id; }
+    public String getName() { return name; }
+    public Board  getBoard(){ return board; }
 
     public List<Object> getCards() {
         return Collections.unmodifiableList(cards);
     }
 
-    public void addCard(Object card) {
-        cards.add(card);
-    }
-
-    public void removeCard(Object card) {
-        cards.remove(card);
-    }
+    public void addCard(Object card)    { cards.add(card); }
+    public void removeCard(Object card) { cards.remove(card); }
 }

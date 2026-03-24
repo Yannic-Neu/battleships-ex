@@ -1,12 +1,5 @@
 package battleships_ex.gdx.model.rules;
 
-/**
- * Immutable value object returned by {@link RulesEngine#validatePlacement}.
- *
- * Carries a boolean success flag and, on failure, a {@link Reason} enum value
- * that tells the View exactly why placement was rejected — without the View
- * needing to parse strings or re-run any logic itself.
- */
 public final class PlacementResult {
 
     public enum Reason {
@@ -31,8 +24,6 @@ public final class PlacementResult {
         this.reason = reason;
     }
 
-    // ---- Factory methods ----------------------------------------------------
-
     public static PlacementResult success() {
         return new PlacementResult(true, null);
     }
@@ -42,17 +33,10 @@ public final class PlacementResult {
         return new PlacementResult(false, reason);
     }
 
-    // ---- Accessors ----------------------------------------------------------
-
-    /** @return true if the placement is legal and may be applied to the board */
     public boolean isValid() {
         return valid;
     }
 
-    /**
-     * @return why the placement was rejected, or {@code null} when valid.
-     *         Always check {@link #isValid()} before calling this.
-     */
     public Reason getReason() {
         return reason;
     }

@@ -3,22 +3,6 @@ package battleships_ex.gdx.model.rules;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
 
-/**
- * Immutable value object returned by {@link RulesEngine#resolveShot}.
- *
- * Outcome hierarchy:
- *
- *   ALREADY_SHOT  — cell was previously attacked; no state changed.
- *                   GameController should not switch turns or notify Firebase.
- *   MISS          — open water; turn passes to the opponent.
- *   HIT           — ship cell struck; ship is still afloat. Turn stays with
- *                   the attacker (standard hit-again rule).
- *   SUNK          — ship cell struck and the ship is now fully destroyed.
- *                   {@link #getSunkShip()} is non-null only in this case,
- *                   giving GameController the Ship reference it needs to
- *                   broadcast a "sunk" event to the View and Firebase without
- *                   re-scanning the board.
- */
 public final class ShotResult {
 
     public enum Outcome {
@@ -49,7 +33,6 @@ public final class ShotResult {
     }
 
     public static ShotResult hit(Coordinate coordinate, Ship ship) {
-        // ship parameter available for future use (e.g., hit-streak tracking)
         return new ShotResult(Outcome.HIT, coordinate, null);
     }
 
@@ -60,20 +43,12 @@ public final class ShotResult {
 
     // ---- Accessors ----------------------------------------------------------
 
-    public Outcome getOutcome() {
-        return outcome;
-    }
+    public Outcome getOutcome() { return outcome; }
 
-    public Coordinate getCoordinate() {
-        return coordinate;
-    }
+    public Coordinate getCoordinate() { return coordinate; }
 
-    /**
-     * @return the ship that was just sunk, or {@code null} if outcome != SUNK
-     */
-    public Ship getSunkShip() {
-        return sunkShip;
-    }
+    /** @return the sunk ship, or null if outcome != SUNK */
+    public Ship getSunkShip() { return sunkShip; }
 
     // ---- Convenience predicates ---------------------------------------------
 
@@ -81,19 +56,14 @@ public final class ShotResult {
         return outcome == Outcome.HIT || outcome == Outcome.SUNK;
     }
 
-    public boolean isSunk() {
-        return outcome == Outcome.SUNK;
-    }
-
-    public boolean isMiss() {
-        return outcome == Outcome.MISS;
-    }
+    public boolean isSunk()  { return outcome == Outcome.SUNK; }
+    public boolean isMiss()  { return outcome == Outcome.MISS; }
 
     @Override
     public String toString() {
         return "ShotResult{outcome=" + outcome
             + ", coordinate=" + coordinate
-            + (sunkShip != null ? ", sunkShip=@" + sunkShip.getSize() + "-cell" : "")
+            + (sunkShip != null ? ", sunkShip=" + sunkShip.getLength() + "-cell" : "")
             + "}";
     }
 }

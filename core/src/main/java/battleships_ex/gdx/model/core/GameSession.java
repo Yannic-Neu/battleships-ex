@@ -1,5 +1,6 @@
 package battleships_ex.gdx.model.core;
 
+import battleships_ex.gdx.config.board.AttackResult;
 import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.board.Coordinate;
 
@@ -27,9 +28,6 @@ public class GameSession {
         this.started = false;
     }
 
-    /**
-     * Starts the game session. Both players must have placed their ships.
-     */
     public void startGame() {
         this.started = true;
         this.currentPlayer = player1;
@@ -43,20 +41,10 @@ public class GameSession {
         return currentPlayer;
     }
 
-    /**
-     * Returns the opponent's board (the board the current player attacks).
-     */
     public Board getOpponentBoard() {
         return getOpponent().getBoard();
     }
 
-    /**
-     * Processes a move: attacks the opponent's board at the given coordinate.
-     *
-     * @param coordinate the target position
-     * @return the resulting Move
-     * @throws IllegalStateException if the game has not started or is already over
-     */
     public Move processMove(Coordinate coordinate) {
         if (!started) {
             throw new IllegalStateException("Game has not started yet");
@@ -66,7 +54,11 @@ public class GameSession {
         }
 
         Board opponentBoard = getOpponent().getBoard();
-        boolean hit = opponentBoard.receiveAttack(coordinate);
+        AttackResult attackResult = opponentBoard.attack(coordinate);
+
+        // Move records true if the shot connected (HIT or SUNK), false for MISS.
+        // ALREADY_HIT should be guarded by the RulesEngine before reaching here.
+        boolean hit = (attackResult == AttackResult.HIT || attackResult == AttackResult.SUNK);
         Move move = new Move(coordinate, hit);
         moveHistory.add(move);
 
@@ -82,29 +74,18 @@ public class GameSession {
         throw new UnsupportedOperationException("Action cards not yet implemented (see #31)");
     }
 
-    /**
-     * @return true if one player has sunk all opponent ships
-     */
     public boolean gameIsOver() {
         if (!started) return false;
         return player1.getBoard().allShipsSunk() || player2.getBoard().allShipsSunk();
     }
 
-    /**
-     * @return the winning player, or null if the game is not over
-     */
     public Player getWinner() {
         if (!gameIsOver()) return null;
         return player1.getBoard().allShipsSunk() ? player2 : player1;
     }
 
-    public Player getPlayer1() {
-        return player1;
-    }
-
-    public Player getPlayer2() {
-        return player2;
-    }
+    public Player getPlayer1() { return player1; }
+    public Player getPlayer2() { return player2; }
 
     public List<Move> getMoveHistory() {
         return Collections.unmodifiableList(moveHistory);

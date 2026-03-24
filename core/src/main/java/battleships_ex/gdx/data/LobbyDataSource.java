@@ -6,12 +6,27 @@ package battleships_ex.gdx.data;
  * without affecting controllers or UI (see M3: Swapping Backend Provider).
  */
 public interface LobbyDataSource {
+
     void createLobby(String roomCode, String hostPlayerId, String hostPlayerName, DataCallback<Void> callback);
+
+    default void createLobby(String roomCode, String hostPlayerId, DataCallback<Void> callback) {
+        createLobby(roomCode, hostPlayerId, "", callback);
+    }
+
     void joinLobby(String roomCode, String playerId, String playerName, DataCallback<Void> callback);
+
+    default void joinLobby(String roomCode, String playerId, DataCallback<Void> callback) {
+        joinLobby(roomCode, playerId, "", callback);
+    }
+
     void leaveLobby(String roomCode, String playerId, DataCallback<Void> callback);
+
     void lobbyExists(String roomCode, DataCallback<Boolean> callback);
+
     void addLobbyListener(String roomCode, DataCallback<LobbySnapshot> callback);
+
     void removeLobbyListener(String roomCode);
+
     class LobbySnapshot {
         public final String roomCode;
         public final String hostPlayerId;
