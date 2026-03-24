@@ -10,7 +10,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
 import battleships_ex.gdx.MyGame;
-import battleships_ex.gdx.config.BoardConfig;
+import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ShipCardConfig;
@@ -61,7 +61,7 @@ public class BattleScreen extends ScreenAdapter {
 
         // --- Header ---
         Table topArea = new Table();
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new LobbyScreen(game)));
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new MenuScreen(game)));
         topArea.add(backButton).left().pad(10);
         topArea.add().expandX();
         topArea.add(new GameButton("SETT", ButtonConfig.secondary(60f, 44f), () -> {})).right().pad(10);

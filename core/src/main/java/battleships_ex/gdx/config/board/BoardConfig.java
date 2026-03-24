@@ -1,4 +1,4 @@
-package battleships_ex.gdx.config;
+package battleships_ex.gdx.config.board;
 
 import com.badlogic.gdx.graphics.Color;
 

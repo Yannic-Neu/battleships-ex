@@ -14,7 +14,7 @@ import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.data.Assets;
 import battleships_ex.gdx.ui.BoardActor;
-import battleships_ex.gdx.config.BoardConfig;
+import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.ui.CardTray;
 import battleships_ex.gdx.ui.GameButton;
