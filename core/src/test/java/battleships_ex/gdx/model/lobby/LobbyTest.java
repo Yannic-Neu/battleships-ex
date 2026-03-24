@@ -1,6 +1,7 @@
 package battleships_ex.gdx.model.lobby;
 
 import battleships_ex.gdx.model.core.Player;
+
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -17,21 +18,21 @@ class LobbyTest {
     @Test
     void lobbyIsReadyWithTwoPlayers() {
         Lobby lobby = new Lobby(1, "ABC123");
-        lobby.addPlayer(new Player(1, "Alice"));
+        lobby.addPlayer(new Player("1", "Alice"));
         assertFalse(lobby.isReady());
 
-        lobby.addPlayer(new Player(2, "Bob"));
+        lobby.addPlayer(new Player("2", "Bob"));
         assertTrue(lobby.isReady());
     }
 
     @Test
     void addPlayerToFullLobbyThrows() {
         Lobby lobby = new Lobby(1, "ABC123");
-        lobby.addPlayer(new Player(1, "Alice"));
-        lobby.addPlayer(new Player(2, "Bob"));
+        lobby.addPlayer(new Player("1", "Alice"));
+        lobby.addPlayer(new Player("2", "Bob"));
 
         assertThrows(IllegalStateException.class,
-            () -> lobby.addPlayer(new Player(3, "Charlie")));
+            () -> lobby.addPlayer(new Player("3", "Charlie")));
     }
 
     @Test
@@ -40,12 +41,12 @@ class LobbyTest {
         assertNull(lobby.getHost());
         assertNull(lobby.getGuest());
 
-        Player host = new Player(1, "Alice");
+        Player host = new Player("1", "Alice");
         lobby.addPlayer(host);
         assertEquals(host, lobby.getHost());
         assertNull(lobby.getGuest());
 
-        Player guest = new Player(2, "Bob");
+        Player guest = new Player("2", "Bob");
         lobby.addPlayer(guest);
         assertEquals(guest, lobby.getGuest());
     }

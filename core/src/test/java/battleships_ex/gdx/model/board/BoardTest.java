@@ -1,5 +1,9 @@
 package battleships_ex.gdx.model.board;
 
+import battleships_ex.gdx.config.board.AttackResult;
+import battleships_ex.gdx.config.board.Orientation;
+import battleships_ex.gdx.config.board.ShipType;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -11,96 +15,124 @@ class BoardTest {
 
     @BeforeEach
     void setUp() {
-        board = new Board();
+        board = new Board(10, 10);
     }
 
     @Test
-    void boardInitializesWithCorrectSize() {
-        assertEquals(10, board.getSize());
-        assertNotNull(board.getCell(0, 0));
-        assertNotNull(board.getCell(9, 9));
+    void boardInitializesWithCorrectDimensions() {
+        assertEquals(10, board.getWidth());
+        assertEquals(10, board.getHeight());
+        assertNotNull(board.getCell(new Coordinate(0, 0)));
+        assertNotNull(board.getCell(new Coordinate(9, 9)));
     }
 
     @Test
     void placeShipHorizontally() {
-        assertTrue(board.placeShip(0, 0, 3, true));
+        Ship ship = new Ship(ShipType.SUBMARINE, Orientation.HORIZONTAL); // length 3
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
-        assertTrue(board.getCell(0, 0).hasShip());
-        assertTrue(board.getCell(1, 0).hasShip());
-        assertTrue(board.getCell(2, 0).hasShip());
-        assertFalse(board.getCell(3, 0).hasShip());
+        assertTrue(board.getCell(new Coordinate(0, 0)).hasShip());
+        assertTrue(board.getCell(new Coordinate(0, 1)).hasShip());
+        assertTrue(board.getCell(new Coordinate(0, 2)).hasShip());
+        assertFalse(board.getCell(new Coordinate(0, 3)).hasShip());
 
         assertEquals(1, board.getShips().size());
-        assertEquals(3, board.getShips().get(0).getSize());
+        assertEquals(3, board.getShips().get(0).getLength());
     }
 
     @Test
     void placeShipVertically() {
-        assertTrue(board.placeShip(0, 0, 4, false));
+        Ship ship = new Ship(ShipType.CARRIER, Orientation.VERTICAL); // length 4
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.VERTICAL);
 
-        assertTrue(board.getCell(0, 0).hasShip());
-        assertTrue(board.getCell(0, 1).hasShip());
-        assertTrue(board.getCell(0, 2).hasShip());
-        assertTrue(board.getCell(0, 3).hasShip());
+        assertTrue(board.getCell(new Coordinate(0, 0)).hasShip());
+        assertTrue(board.getCell(new Coordinate(1, 0)).hasShip());
+        assertTrue(board.getCell(new Coordinate(2, 0)).hasShip());
+        assertTrue(board.getCell(new Coordinate(3, 0)).hasShip());
     }
 
     @Test
-    void placeShipOutOfBoundsReturnsFalse() {
-        assertFalse(board.placeShip(8, 0, 4, true));
+    void placeShipOutOfBoundsThrows() {
+        // BATTLESHIP length 4 starting at col 8 → cols 8,9,10,11 — overshoots
+        Ship ship = new Ship(ShipType.CARRIER, Orientation.HORIZONTAL);
+        assertFalse(board.canPlaceShip(ship, new Coordinate(0, 8), Orientation.HORIZONTAL));
+        assertThrows(IllegalArgumentException.class, () ->
+            board.placeShip(ship, new Coordinate(0, 8), Orientation.HORIZONTAL));
         assertTrue(board.getShips().isEmpty());
     }
 
     @Test
-    void placeShipOnOccupiedCellReturnsFalse() {
-        assertTrue(board.placeShip(0, 0, 3, true));
-        assertFalse(board.placeShip(1, 0, 2, false));
+    void placeShipOnOccupiedCellThrows() {
+        Ship first  = new Ship(ShipType.SUBMARINE, Orientation.HORIZONTAL);
+        Ship second = new Ship(ShipType.DESTROYER, Orientation.VERTICAL);
+        board.placeShip(first, new Coordinate(0, 0), Orientation.HORIZONTAL);
+
+        assertFalse(board.canPlaceShip(second, new Coordinate(0, 0), Orientation.VERTICAL));
+        assertThrows(IllegalArgumentException.class, () ->
+            board.placeShip(second, new Coordinate(0, 0), Orientation.VERTICAL));
         assertEquals(1, board.getShips().size());
     }
 
     @Test
-    void receiveAttackHit() {
-        board.placeShip(0, 0, 2, true);
+    void attackHitReturnsHit() {
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL); // length 2
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
-        assertTrue(board.receiveAttack(new Coordinate(0, 0)));
-        assertTrue(board.getCell(0, 0).isHit());
+        AttackResult result = board.attack(new Coordinate(0, 0));
+        assertEquals(AttackResult.HIT, result);
+        assertTrue(board.getCell(new Coordinate(0, 0)).isHit());
     }
 
     @Test
-    void receiveAttackMiss() {
-        board.placeShip(0, 0, 2, true);
+    void attackMissReturnsMiss() {
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
-        assertFalse(board.receiveAttack(new Coordinate(5, 5)));
-        assertTrue(board.getCell(5, 5).isHit());
+        AttackResult result = board.attack(new Coordinate(5, 5));
+        assertEquals(AttackResult.MISS, result);
+        assertTrue(board.getCell(new Coordinate(5, 5)).isHit());
     }
 
     @Test
-    void receiveAttackOnAlreadyHitCellThrows() {
-        board.receiveAttack(new Coordinate(0, 0));
-        assertThrows(IllegalStateException.class,
-            () -> board.receiveAttack(new Coordinate(0, 0)));
+    void attackAlreadyHitCellReturnsAlreadyHit() {
+        board.attack(new Coordinate(0, 0));
+        AttackResult result = board.attack(new Coordinate(0, 0));
+        assertEquals(AttackResult.ALREADY_HIT, result);
     }
 
     @Test
-    void receiveAttackOutOfBoundsThrows() {
-        assertThrows(IllegalArgumentException.class,
-            () -> board.receiveAttack(new Coordinate(10, 0)));
+    void attackOutOfBoundsThrows() {
+        assertThrows(IllegalArgumentException.class, () ->
+            board.attack(new Coordinate(10, 0)));
     }
 
     @Test
-    void allShipsSunk() {
-        board.placeShip(0, 0, 2, true);
+    void attackSinksShipReturnsSunk() {
+        // PATROL length 2 — hit both cells, second shot returns SUNK
+        Ship ship = new Ship(ShipType.PATROL, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
+
+        board.attack(new Coordinate(0, 0));                          // HIT
+        AttackResult result = board.attack(new Coordinate(0, 1));    // SUNK
+        assertEquals(AttackResult.SUNK, result);
+        assertTrue(ship.isSunk());
+    }
+
+    @Test
+    void allShipsSunkReturnsTrueWhenAllSunk() {
+        // PATROL length 2 — both cells must be hit
+        Ship ship = new Ship(ShipType.PATROL, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         assertFalse(board.allShipsSunk());
-
-        board.receiveAttack(new Coordinate(0, 0));
-        assertFalse(board.allShipsSunk());
-
-        board.receiveAttack(new Coordinate(1, 0));
+        board.attack(new Coordinate(0, 0));
+        assertFalse(board.allShipsSunk());   // only 1 of 2 cells hit
+        board.attack(new Coordinate(0, 1));
         assertTrue(board.allShipsSunk());
     }
 
     @Test
-    void allShipsSunkWithNoShips() {
+    void allShipsSunkWithNoShipsReturnsFalse() {
         assertFalse(board.allShipsSunk());
     }
 }

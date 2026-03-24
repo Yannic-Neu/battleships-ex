@@ -1,6 +1,10 @@
 package battleships_ex.gdx.model.core;
 
+import battleships_ex.gdx.config.board.Orientation;
+import battleships_ex.gdx.config.board.ShipType;
 import battleships_ex.gdx.model.board.Coordinate;
+import battleships_ex.gdx.model.board.Ship;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -8,14 +12,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class GameSessionTest {
 
-    private Player player1;
-    private Player player2;
+    private Player      player1;
+    private Player      player2;
     private GameSession session;
 
     @BeforeEach
     void setUp() {
-        player1 = new Player(1, "Alice");
-        player2 = new Player(2, "Bob");
+        // Player now uses String ids — matches LobbyDataSource and Firebase
+        player1 = new Player("1", "Alice");
+        player2 = new Player("2", "Bob");
         session = new GameSession(player1, player2);
     }
 
@@ -34,10 +39,10 @@ class GameSessionTest {
     @Test
     void missedShotSwitchesTurn() {
         session.startGame();
-        // No ships on player2's board, so any shot is a miss
-        player2.getBoard().placeShip(5, 5, 2, true);
+        // Place a ship so allShipsSunk() can track state; fire at a cell with no ship
+        placeShip(player2, ShipType.DESTROYER, 5, 5);
 
-        Move move = session.processMove(new Coordinate(0, 0));
+        Move move = session.processMove(new Coordinate(0, 0)); // miss
         assertFalse(move.isHit());
         assertEquals(player2, session.getCurrentPlayer());
     }
@@ -45,22 +50,23 @@ class GameSessionTest {
     @Test
     void hitDoesNotSwitchTurn() {
         session.startGame();
-        player2.getBoard().placeShip(0, 0, 2, true);
+        placeShip(player2, ShipType.DESTROYER, 0, 0); // occupies (0,0) and (0,1)
 
-        Move move = session.processMove(new Coordinate(0, 0));
+        Move move = session.processMove(new Coordinate(0, 0)); // hit
         assertTrue(move.isHit());
-        assertEquals(player1, session.getCurrentPlayer());
+        assertEquals(player1, session.getCurrentPlayer()); // turn stays with attacker
     }
 
     @Test
     void gameOverWhenAllShipsSunk() {
         session.startGame();
-        player2.getBoard().placeShip(0, 0, 1, true);
+        // PATROL length 2 — both cells must be hit
+        placeShip(player2, ShipType.PATROL, 0, 0); // occupies (0,0) and (0,1)
 
         assertFalse(session.gameIsOver());
-
-        session.processMove(new Coordinate(0, 0));
-
+        session.processMove(new Coordinate(0, 0)); // HIT — turn stays
+        assertFalse(session.gameIsOver());
+        session.processMove(new Coordinate(0, 1)); // SUNK — game over
         assertTrue(session.gameIsOver());
         assertEquals(player1, session.getWinner());
     }
@@ -68,8 +74,9 @@ class GameSessionTest {
     @Test
     void moveAfterGameOverThrows() {
         session.startGame();
-        player2.getBoard().placeShip(0, 0, 1, true);
-        session.processMove(new Coordinate(0, 0));
+        placeShip(player2, ShipType.PATROL, 0, 0);
+        session.processMove(new Coordinate(0, 0)); // HIT
+        session.processMove(new Coordinate(0, 1)); // SUNK — game over
 
         assertThrows(IllegalStateException.class,
             () -> session.processMove(new Coordinate(1, 1)));
@@ -78,12 +85,33 @@ class GameSessionTest {
     @Test
     void moveHistoryTracksAllMoves() {
         session.startGame();
-        player2.getBoard().placeShip(5, 5, 2, true);
+        placeShip(player2, ShipType.DESTROYER, 5, 5);
+        placeShip(player1, ShipType.DESTROYER, 5, 5);
 
-        session.processMove(new Coordinate(0, 0)); // miss -> switches to player2
-        player1.getBoard().placeShip(5, 5, 2, true);
-        session.processMove(new Coordinate(0, 0)); // miss -> switches to player1
+        session.processMove(new Coordinate(0, 0)); // miss → switches to player2
+        session.processMove(new Coordinate(0, 0)); // miss → switches back to player1
 
         assertEquals(2, session.getMoveHistory().size());
+    }
+
+    @Test
+    void sunkShotKeepsCurrentTurn() {
+        session.startGame();
+        // Two PATROL ships — sink first fully before the game ends
+        placeShip(player2, ShipType.PATROL, 0, 0); // cells (0,0) and (0,1)
+        placeShip(player2, ShipType.PATROL, 5, 5); // cells (5,5) and (5,6)
+
+        session.processMove(new Coordinate(0, 0)); // HIT — turn stays
+        session.processMove(new Coordinate(0, 1)); // SUNK — turn stays (hit-again rule)
+        assertEquals(player1, session.getCurrentPlayer());
+    }
+
+    // -------------------------------------------------------------------------
+    // Helper
+    // -------------------------------------------------------------------------
+
+    private void placeShip(Player player, ShipType type, int row, int col) {
+        Ship ship = new Ship(type, Orientation.HORIZONTAL);
+        player.getBoard().placeShip(ship, new Coordinate(row, col), Orientation.HORIZONTAL);
     }
 }

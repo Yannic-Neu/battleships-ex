@@ -55,6 +55,23 @@ public class GameController {
         notify_shipPlaced(ship);
     }
 
+    public void playActionCard(battleships_ex.gdx.model.cards.ActionCard card) {
+        if (!isSessionActive())   return;
+        if (!isLocalPlayerTurn()) return;
+
+        battleships_ex.gdx.model.cards.ActionCardResult result = session.playActionCard(card);
+
+        if (listener != null) listener.onActionCardPlayed(result);
+        firebase.pushActionCardEvent(card.getDisplayName(), result.getAffectedCoordinates());
+
+        // Check win condition - some cards (e.g. Airstrike) can sink ships
+        if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK
+            && engine.hasWon(remotePlayer.getBoard())) {
+            notify_gameOver(localPlayer.getName());
+            firebase.pushGameOver(localPlayer.getName());
+        }
+    }
+
     public void fireShot(int row, int col) {
         if (!isSessionActive())   return;
         if (!isLocalPlayerTurn()) return;
@@ -173,15 +190,11 @@ public class GameController {
 
     public interface FirebaseClient {
 
-        /**
-         * @param coordinate the cell that was targeted
-         * @param hit        true if a ship was struck
-         */
         void pushShotEvent(Coordinate coordinate, boolean hit);
 
-        /**
-         * @param winnerName display name of the winning player
-         */
         void pushGameOver(String winnerName);
+
+        void pushActionCardEvent(String cardName,
+                                 java.util.List<battleships_ex.gdx.model.board.Coordinate> affectedCoordinates);
     }
 }
