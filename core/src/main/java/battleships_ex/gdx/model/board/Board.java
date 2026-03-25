@@ -187,23 +187,24 @@ public class Board {
     }
 
     public boolean allShipsSunk() {
-        return !ships.isEmpty() && ships.stream().allMatch(Ship::isSunk);
+        if (ships.isEmpty()) return false;
+        return ships.stream().allMatch(Ship::isSunk);
     }
 
     private List<Coordinate> getPlacementCoordinates(Ship ship, Coordinate start, Orientation orientation) {
         List<Coordinate> coordinates = new ArrayList<>();
 
         for (int i = 0; i < ship.getLength(); i++) {
-            int row = start.getRow();
-            int col = start.getCol();
+            int r = start.getRow();
+            int c = start.getCol();
 
             if (orientation == Orientation.HORIZONTAL) {
-                col += i;
+                c += i;
             } else {
-                row += i;
+                r += i;
             }
 
-            coordinates.add(new Coordinate(row, col));
+            coordinates.add(new Coordinate(r, c));
         }
 
         return coordinates;

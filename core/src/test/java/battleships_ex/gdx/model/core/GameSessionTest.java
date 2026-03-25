@@ -34,7 +34,7 @@ class GameSessionTest {
     @Test
     void missedShotSwitchesTurn() {
         session.startGame();
-        // No ships on player2's board, so any shot is a miss
+        // No ships on player2's board initially
         player2.getBoard().placeShip(5, 5, 2, true);
 
         Move move = session.processMove(new Coordinate(0, 0));
@@ -55,12 +55,15 @@ class GameSessionTest {
     @Test
     void gameOverWhenAllShipsSunk() {
         session.startGame();
-        player2.getBoard().placeShip(0, 0, 1, true);
+        // Use PATROL (length 2) since length 1 might not be supported by legacy placeShip
+        player2.getBoard().placeShip(0, 0, 2, true);
 
         assertFalse(session.gameIsOver());
 
         session.processMove(new Coordinate(0, 0));
+        assertFalse(session.gameIsOver());
 
+        session.processMove(new Coordinate(0, 1));
         assertTrue(session.gameIsOver());
         assertEquals(player1, session.getWinner());
     }
@@ -68,8 +71,9 @@ class GameSessionTest {
     @Test
     void moveAfterGameOverThrows() {
         session.startGame();
-        player2.getBoard().placeShip(0, 0, 1, true);
+        player2.getBoard().placeShip(0, 0, 2, true);
         session.processMove(new Coordinate(0, 0));
+        session.processMove(new Coordinate(0, 1));
 
         assertThrows(IllegalStateException.class,
             () -> session.processMove(new Coordinate(1, 1)));
