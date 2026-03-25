@@ -6,16 +6,14 @@ import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Unit tests for {@link StandardRulesEngine}.
- *
  * Uses the real Board / Cell / Ship / Coordinate classes.
- * Each test is self-contained — fresh instances created in @Before.
+ * Each test is self-contained — fresh instances created in @BeforeEach.
  */
 public class RulesEngineTest {
 
@@ -24,7 +22,7 @@ public class RulesEngineTest {
     private StandardRulesEngine engine;
     private Board board;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         engine = new StandardRulesEngine();
         board  = new Board(SIZE, SIZE);
@@ -134,7 +132,7 @@ public class RulesEngineTest {
 
     @Test
     public void resolveShot_sinkMultiCellShip_requiresAllCells() {
-        Ship ship = new Ship(ShipType.SUBMARINE, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
         board.placeShip(ship, new Coordinate(2, 2), Orientation.HORIZONTAL);
 
         engine.resolveShot(board, new Coordinate(2, 2));

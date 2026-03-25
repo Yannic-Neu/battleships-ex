@@ -28,7 +28,7 @@ class BoardTest {
 
     @Test
     void placeShipHorizontally() {
-        Ship ship = new Ship(ShipType.SUBMARINE, Orientation.HORIZONTAL); // length 3
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL); // length 3
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         assertTrue(board.getCell(new Coordinate(0, 0)).hasShip());
