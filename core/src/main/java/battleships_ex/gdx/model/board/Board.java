@@ -8,12 +8,17 @@ import java.util.Set;
 
 import battleships_ex.gdx.config.board.AttackResult;
 import battleships_ex.gdx.config.board.Orientation;
+import battleships_ex.gdx.config.board.ShipType;
 
 public class Board {
     private final int width;
     private final int height;
     private final Cell[][] grid;
     private final List<Ship> ships;
+
+    public Board() {
+        this(10, 10);
+    }
 
     public Board(int width, int height) {
         if (width <= 0 || height <= 0) {
@@ -44,9 +49,17 @@ public class Board {
         return height;
     }
 
+    public int getSize() {
+        return width;
+    }
+
     public Cell getCell(Coordinate coordinate) {
         validateCoordinate(coordinate);
         return grid[coordinate.getRow()][coordinate.getCol()];
+    }
+
+    public Cell getCell(int row, int col) {
+        return getCell(new Coordinate(row, col));
     }
 
     public boolean isWithinBounds(Coordinate coordinate) {
@@ -116,6 +129,30 @@ public class Board {
         ships.add(ship);
     }
 
+    /**
+     * Legacy helper method for placing ships.
+     * Finds a matching ShipType for the given length and attempts placement.
+     */
+    public boolean placeShip(int row, int col, int length, boolean horizontal) {
+        ShipType type = null;
+        for (ShipType t : ShipType.values()) {
+            if (t.getLength() == length) {
+                type = t;
+                break;
+            }
+        }
+        if (type == null) return false;
+
+        Orientation orientation = horizontal ? Orientation.HORIZONTAL : Orientation.VERTICAL;
+        Coordinate start = new Coordinate(row, col);
+        Ship ship = new Ship(type, orientation);
+        if (canPlaceShip(ship, start, orientation)) {
+            placeShip(ship, start, orientation);
+            return true;
+        }
+        return false;
+    }
+
     public AttackResult attack(Coordinate coordinate) {
         validateCoordinate(coordinate);
 
@@ -139,6 +176,14 @@ public class Board {
         }
 
         return AttackResult.HIT;
+    }
+
+    public boolean receiveAttack(Coordinate coordinate) {
+        AttackResult result = attack(coordinate);
+        if (result == AttackResult.ALREADY_HIT) {
+            throw new IllegalStateException("Cell at " + coordinate + " has already been hit.");
+        }
+        return result == AttackResult.HIT || result == AttackResult.SUNK;
     }
 
     public boolean allShipsSunk() {
