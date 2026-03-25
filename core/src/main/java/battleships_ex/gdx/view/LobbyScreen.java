@@ -26,7 +26,7 @@ public class LobbyScreen extends ScreenAdapter {
     private Stage stage;
     private Label statusLabel;
     private GameButton startMatchButton;
-    private boolean opponentJoined = true;
+    private boolean opponentJoined = false;
 
     public LobbyScreen(MyGame game, String roomCode, String playerId, boolean isHost) {
         this.game = game;
