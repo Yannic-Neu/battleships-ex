@@ -4,11 +4,38 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import battleships_ex.gdx.data.Assets;
+import battleships_ex.gdx.data.LobbyDataSource;
 import battleships_ex.gdx.ui.Theme;
 import battleships_ex.gdx.view.MenuScreen;
 
 public class MyGame extends Game {
     public SpriteBatch batch;
+    private final LobbyDataSource lobbyDataSource;
+    private volatile String playerId;
+
+    /**
+     * @param lobbyDataSource platform-specific lobby backend (Firebase on Android, stub on Desktop)
+     * @param playerId unique player identifier (Firebase UID on Android, generated on Desktop)
+     */
+    public MyGame(LobbyDataSource lobbyDataSource, String playerId) {
+        this.lobbyDataSource = lobbyDataSource;
+        this.playerId = playerId;
+    }
+
+    public LobbyDataSource getLobbyDataSource() {
+        return lobbyDataSource;
+    }
+
+    public String getPlayerId() {
+        return playerId;
+    }
+
+    /**
+     * Updates the player ID after async auth completes.
+     */
+    public void setPlayerId(String playerId) {
+        this.playerId = playerId;
+    }
 
     @Override
     public void create() {
