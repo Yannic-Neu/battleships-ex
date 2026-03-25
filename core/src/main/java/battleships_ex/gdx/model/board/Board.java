@@ -16,6 +16,9 @@ public class Board {
     private final Cell[][] grid;
     private final List<Ship> ships;
 
+    /**
+     * Default board size
+     */
     public Board() {
         this(10, 10);
     }

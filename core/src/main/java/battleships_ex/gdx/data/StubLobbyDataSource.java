@@ -7,31 +7,42 @@ package battleships_ex.gdx.data;
 public class StubLobbyDataSource implements LobbyDataSource {
 
     @Override
-    public void createLobby(String roomCode, String hostPlayerId, DataCallback<Void> callback) {
-        System.out.println("[Stub] createLobby: " + roomCode);
+    public void createLobby(String roomCode,
+                            String hostPlayerId,
+                            String hostPlayerName,
+                            DataCallback<Void> callback) {
+        System.out.println("[Stub] createLobby: " + roomCode
+            + " host=" + hostPlayerId + " (" + hostPlayerName + ")");
         callback.onSuccess(null);
     }
 
     @Override
-    public void joinLobby(String roomCode, String playerId, DataCallback<Void> callback) {
-        System.out.println("[Stub] joinLobby: " + roomCode);
+    public void joinLobby(String roomCode,
+                          String playerId,
+                          String playerName,
+                          DataCallback<Void> callback) {
+        System.out.println("[Stub] joinLobby: " + roomCode
+            + " player=" + playerId + " (" + playerName + ")");
         callback.onSuccess(null);
     }
 
     @Override
-    public void leaveLobby(String roomCode, String playerId, DataCallback<Void> callback) {
-        System.out.println("[Stub] leaveLobby: " + roomCode);
+    public void leaveLobby(String roomCode,
+                           String playerId,
+                           DataCallback<Void> callback) {
+        System.out.println("[Stub] leaveLobby: " + roomCode + " player=" + playerId);
         callback.onSuccess(null);
     }
 
     @Override
     public void lobbyExists(String roomCode, DataCallback<Boolean> callback) {
         System.out.println("[Stub] lobbyExists: " + roomCode);
-        callback.onSuccess(true);
+        callback.onSuccess(false);
     }
 
     @Override
-    public void addLobbyListener(String roomCode, DataCallback<LobbySnapshot> callback) {
+    public void addLobbyListener(String roomCode,
+                                 DataCallback<LobbySnapshot> callback) {
         System.out.println("[Stub] addLobbyListener: " + roomCode);
     }
 
