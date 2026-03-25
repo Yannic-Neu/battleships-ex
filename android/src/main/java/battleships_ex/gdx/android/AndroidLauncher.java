@@ -9,6 +9,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.util.Objects;
+
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.android.data.FirebaseLobbyDataSource;
 
@@ -50,7 +52,7 @@ public class AndroidLauncher extends AndroidApplication {
         if (currentUser == null) {
             FirebaseAuth.getInstance().signInAnonymously()
                 .addOnSuccessListener(result -> {
-                    String uid = result.getUser().getUid();
+                    String uid = Objects.requireNonNull(result.getUser()).getUid();
                     Log.d(TAG, "Anonymous auth successful: " + uid);
                     game.setPlayerId(uid);
                 })
