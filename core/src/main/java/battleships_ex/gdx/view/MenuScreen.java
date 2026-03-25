@@ -1,7 +1,6 @@
 package battleships_ex.gdx.view;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -81,15 +80,6 @@ public class MenuScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0.1f, 0.1f, 0.1f, 1f);
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
-            game.setScreen(new LobbyScreen(game));
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            game.setScreen(new EnterLobbyScreen(game));
-        }
-
         stage.act(delta);
         stage.draw();
     }
