@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
-import battleships_ex.gdx.config.BoardConfig;
+import battleships_ex.gdx.config.board.BoardConfig;
 
 public class BoardActor extends Actor {
 

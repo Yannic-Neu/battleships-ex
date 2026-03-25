@@ -1,7 +1,6 @@
 package battleships_ex.gdx.view;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -35,6 +34,7 @@ public class MenuScreen extends ScreenAdapter {
 
         ButtonConfig primaryButton = ButtonConfig.primary(360f, 80f);
         ButtonConfig secondaryButton = ButtonConfig.secondary(360f, 80f);
+        ButtonConfig navButton = ButtonConfig.secondary(80f, 44f);
 
         GameButton enterLobbyButton = new GameButton("MULTIPLAYER", primaryButton, () -> {
             game.setScreen(new EnterLobbyScreen(game));
@@ -48,6 +48,10 @@ public class MenuScreen extends ScreenAdapter {
             System.out.println("Tutorial clicked");
         });
 
+        GameButton settingsButton = new GameButton("SETT", navButton, () -> {
+            game.setScreen(new SettingsScreen(game, this));
+        });
+
         Label hostOrJoin = new Label("HOST OR JOIN", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
         Table root = new Table();
@@ -58,6 +62,8 @@ public class MenuScreen extends ScreenAdapter {
         Table middlePanel = new Table();
 
         topArea.setBackground(Theme.bluePanel);
+        topArea.add().expandX();
+        topArea.add(settingsButton).right().padRight(25);
 
         middlePanel.setBackground(Theme.blackPanel);
 
@@ -74,15 +80,6 @@ public class MenuScreen extends ScreenAdapter {
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0.1f, 0.1f, 0.1f, 1f);
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
-            game.setScreen(new LobbyScreen(game));
-        }
-
-        if (Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            game.setScreen(new EnterLobbyScreen(game));
-        }
-
         stage.act(delta);
         stage.draw();
     }

@@ -1,10 +1,12 @@
 package battleships_ex.gdx.ui;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
@@ -52,13 +54,19 @@ public class Theme {
         darkBluePanel = base.tint(new Color(DARK_BLUE));
         blackPanel = base.tint(new Color(BLACK));
 
-        fontSmall = new BitmapFont();
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/PressStart2P-Regular/PressStart2P-Regular.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
-        fontMedium = new BitmapFont();
-        fontMedium.getData().setScale(1.2f);
+        parameter.size = 10;
+        fontSmall = generator.generateFont(parameter);
 
-        fontLarge = new BitmapFont();
-        fontLarge.getData().setScale(2.0f);
+        parameter.size = 14;
+        fontMedium = generator.generateFont(parameter);
+
+        parameter.size = 22;
+        fontLarge = generator.generateFont(parameter);
+
+        generator.dispose();
     }
 
     public static TextureRegionDrawable whiteDrawable() {
