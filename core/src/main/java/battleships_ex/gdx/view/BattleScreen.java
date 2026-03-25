@@ -17,6 +17,7 @@ import battleships_ex.gdx.config.ShipCardConfig;
 import battleships_ex.gdx.data.Assets;
 import battleships_ex.gdx.ui.BoardActor;
 import battleships_ex.gdx.ui.CardTray;
+import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.ShipCard;
 import battleships_ex.gdx.ui.Theme;
@@ -61,10 +62,23 @@ public class BattleScreen extends ScreenAdapter {
 
         // --- Header ---
         Table topArea = new Table();
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new MenuScreen(game)));
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> {
+            new ConfirmationDialog(
+                "ABANDON MISSION?",
+                "Retreating during active combat results in an immediate loss. Do you still wish to withdraw?",
+                "RETREAT",
+                "STAY",
+                () -> {
+                    System.out.println("Player abandoned during battle - Result: LOSS");
+                    game.setScreen(new MenuScreen(game));
+                }
+            ).show(stage);
+        });
+        GameButton settingsButton = new GameButton("SETT", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new SettingsScreen(game, this)));
+
         topArea.add(backButton).left().pad(10);
         topArea.add().expandX();
-        topArea.add(new GameButton("SETT", ButtonConfig.secondary(60f, 44f), () -> {})).right().pad(10);
+        topArea.add(settingsButton).right().pad(10);
 
         // --- View Switcher (State Toggle) ---
         Table switchInner = new Table();

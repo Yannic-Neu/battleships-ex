@@ -17,6 +17,7 @@ import battleships_ex.gdx.ui.BoardActor;
 import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.ui.CardTray;
+import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.ShipCard;
 import battleships_ex.gdx.config.ShipCardConfig;
@@ -48,6 +49,25 @@ public class PlacementScreen extends ScreenAdapter {
         Table header = new Table();
         header.setBackground(Theme.darkBluePanel);
 
+        ButtonConfig navButton = ButtonConfig.secondary(80f, 44f);
+
+        GameButton backButton = new GameButton("BACK", navButton, () -> {
+            new ConfirmationDialog(
+                "ABANDON MISSION?",
+                "Leaving now will result in an immediate defeat. Are you sure you want to retreat?",
+                "RETREAT",
+                "STAY",
+                () -> {
+                    System.out.println("Player abandoned during placement - Result: LOSS");
+                    game.setScreen(new MenuScreen(game));
+                }
+            ).show(stage);
+        });
+
+        GameButton settingsButton = new GameButton("SETT", navButton, () -> {
+            game.setScreen(new SettingsScreen(game, this));
+        });
+
         Label title = new Label("PLACEMENT", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
         GameButton randomizeButton = new GameButton(
             "RANDOMIZE",
@@ -55,8 +75,10 @@ public class PlacementScreen extends ScreenAdapter {
             () -> System.out.println("Randomize placement")
         );
 
+        header.add(backButton).left().padLeft(15);
         header.add(title).left().expandX().padLeft(16);
-        header.add(randomizeButton).right().pad(10);
+        //header.add(randomizeButton).center();
+        header.add(settingsButton).right().padRight(10);
 
         BoardConfig boardConfig = new BoardConfig(
             320f,
