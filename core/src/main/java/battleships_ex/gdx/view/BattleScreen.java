@@ -8,9 +8,17 @@ import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.board.BoardConfig;
+import battleships_ex.gdx.ui.ActionCard;
+import battleships_ex.gdx.ui.ActionCardModel;
+import battleships_ex.gdx.ui.DoubleShotCard;
+import battleships_ex.gdx.ui.ShieldCard;
+import battleships_ex.gdx.ui.ParryCard;
+import battleships_ex.gdx.ui.EraseCard;
+import battleships_ex.gdx.ui.ScanCard;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ShipCardConfig;
@@ -21,6 +29,11 @@ import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.ShipCard;
 import battleships_ex.gdx.ui.Theme;
+
+import battleships_ex.gdx.config.GameConfig;
+import battleships_ex.gdx.config.ButtonConfig;
+import battleships_ex.gdx.data.Assets;
+
 
 public class BattleScreen extends ScreenAdapter {
 
@@ -119,9 +132,32 @@ public class BattleScreen extends ScreenAdapter {
 
         actionCardTray = new CardTray();
         // TODO: Replace ShipCard with ActionCard interface implementation once created.
-        actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "RECON", Assets.ships.ship2h)));
-        actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SALVO", Assets.ships.ship3h)));
-        actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "AIRSTRIKE", Assets.ships.ship5h)));
+        //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "RECON", Assets.ships.ship2h)));
+        //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SALVO", Assets.ships.ship3h)));
+        //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "AIRSTRIKE", Assets.ships.ship5h)));
+        TextureRegion iconA = Assets.ships.ship2h;
+        TextureRegion iconB = Assets.ships.ship3h;
+        TextureRegion iconC = Assets.ships.ship4h;
+        TextureRegion iconD = Assets.ships.ship5h;
+        TextureRegion iconE = Assets.ships.ship2v;
+
+        ActionCardModel m1 = new DoubleShotCard(iconA);
+        ActionCardModel m2 = new ShieldCard(iconB);
+        ActionCardModel m3 = new ParryCard(iconC);
+        ActionCardModel m4 = new EraseCard(iconD);
+        ActionCardModel m5 = new ScanCard(iconE);
+
+        GameConfig.ActionCardConfig cfg1 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "DOUBLE SHOT");
+        GameConfig.ActionCardConfig cfg2 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "SHIELD");
+        GameConfig.ActionCardConfig cfg3 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "PARRY");
+        GameConfig.ActionCardConfig cfg4 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "ERASE");
+        GameConfig.ActionCardConfig cfg5 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "SCAN");
+
+        ActionCard c1 = new ActionCard(cfg1); c1.bind(m1); actionCardTray.addCard(c1);
+        ActionCard c2 = new ActionCard(cfg2); c2.bind(m2); actionCardTray.addCard(c2);
+        ActionCard c3 = new ActionCard(cfg3); c3.bind(m3); actionCardTray.addCard(c3);
+        ActionCard c4 = new ActionCard(cfg4); c4.bind(m4); actionCardTray.addCard(c4);
+        ActionCard c5 = new ActionCard(cfg5); c5.bind(m5); actionCardTray.addCard(c5);
 
         GameButton fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 72f), () -> {
             System.out.println("Executing Action Strategy...");
