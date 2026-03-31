@@ -1,5 +1,6 @@
 package battleships_ex.gdx.state;
 
+import battleships_ex.gdx.config.board.Orientation;
 import battleships_ex.gdx.controller.GameController;
 import battleships_ex.gdx.controller.GameListener;
 import battleships_ex.gdx.controller.LobbyController;
@@ -9,11 +10,30 @@ import battleships_ex.gdx.model.board.Ship;
 import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.model.rules.PlacementResult;
 
+/**
+ * GameStateManager
+ *
+ * Singleton that owns the active {@link GameState} and drives all phase
+ * transitions. Single entry point for all View actions.
+ *
+ * Architectural contracts (agents.md §2):
+ *   - Singleton: one consistent game state shared across all application layers.
+ *   - State Pattern: the active state decides whether each action is valid.
+ *   - One-way: View → GameStateManager → active state → controller.
+ *     Results flow back via {@link GameStateListener}.
+ *
+ * Threading: all public methods must be called on the libGDX GL thread.
+ * Firebase callbacks must be marshalled via Gdx.app.postRunnable() first.
+ */
 public class GameStateManager {
+
+    // -------------------------------------------------------------------------
+    // Singleton
+    // -------------------------------------------------------------------------
 
     private static GameStateManager instance;
 
-    /// Returns the singleton instance
+    /** @throws IllegalStateException if {@link #init} has not been called */
     public static GameStateManager getInstance() {
         if (instance == null) {
             throw new IllegalStateException(
@@ -32,14 +52,25 @@ public class GameStateManager {
         instance = null;
     }
 
+    // -------------------------------------------------------------------------
+    // Dependencies
+    // -------------------------------------------------------------------------
+
     private final GameController  gameController;
     private final LobbyController lobbyController;
     private final Player          localPlayer;
 
-    ///  Mutable
+    // -------------------------------------------------------------------------
+    // Mutable state
+    // -------------------------------------------------------------------------
+
     private GameState         currentState;
     private Player            remotePlayer;
     private GameStateListener stateListener;
+
+    // -------------------------------------------------------------------------
+    // Construction (private — use init())
+    // -------------------------------------------------------------------------
 
     private GameStateManager(GameController  gameController,
                              LobbyController lobbyController,
@@ -48,7 +79,6 @@ public class GameStateManager {
         this.lobbyController = lobbyController;
         this.localPlayer     = localPlayer;
 
-        // Have internal listeners st. state transitions fire automatically
         gameController.setListener(buildGameListener());
         lobbyController.setListener(buildLobbyListener());
 
@@ -56,39 +86,70 @@ public class GameStateManager {
         currentState.onEnter(this);
     }
 
+    // -------------------------------------------------------------------------
+    // View registration
+    // -------------------------------------------------------------------------
+
     public void setStateListener(GameStateListener listener) {
         this.stateListener = listener;
     }
 
-    /// Request to create a new lobby. valid only in LobbyState
+    // -------------------------------------------------------------------------
+    // View-facing action API
+    // -------------------------------------------------------------------------
+
+    /** Request to create a new lobby. Valid only in LobbyState. */
     public void createLobby() {
         currentState.onCreateLobby(this);
     }
 
+    /** Request to join a lobby by room code. Valid only in LobbyState. */
     public void joinLobby(String roomCode) {
         currentState.onJoinLobby(this, roomCode);
     }
 
-    /// Place a ship during setup. Valid only in PlacementState.
-    public void placeShip(int size, int startX, int startY, boolean horizontal) {
-        currentState.onPlaceShip(this, size, startX, startY, horizontal);
+    /**
+     * Place a ship during setup. Valid only in PlacementState.
+     *
+     * @param ship        the ship to place (ShipType + Orientation already set)
+     * @param start       anchor coordinate (top / left cell)
+     * @param orientation HORIZONTAL or VERTICAL
+     */
+    public void placeShip(Ship ship, Coordinate start, Orientation orientation) {
+        currentState.onPlaceShip(this, ship, start, orientation);
     }
 
+    /** Signal that all ships are placed. Valid only in PlacementState. */
     public void confirmPlacementComplete() {
         currentState.onPlacementComplete(this);
     }
 
-    public void fireShot(int x, int y) {
-        currentState.onFireShot(this, x, y);
+    /**
+     * Fire a shot. Valid only in MyTurnState.
+     *
+     * @param row target row on the opponent's board
+     * @param col target column on the opponent's board
+     */
+    public void fireShot(int row, int col) {
+        currentState.onFireShot(this, row, col);
     }
 
-    void onRemoteShotReceived(int x, int y) {
-        currentState.onRemoteShotReceived(this, x, y);
+    /**
+     * Remote shot received from Firebase. Valid only in OpponentTurnState.
+     * Must be called on the GL thread via Gdx.app.postRunnable().
+     */
+    public void onRemoteShotReceived(int row, int col) {
+        currentState.onRemoteShotReceived(this, row, col);
     }
 
+    /** Opponent disconnected — transitions to GameOverState regardless of phase. */
     public void onOpponentDisconnected() {
         currentState.onGameOver(this, "Opponent disconnected");
     }
+
+    // -------------------------------------------------------------------------
+    // State transition (package-private — only states call this)
+    // -------------------------------------------------------------------------
 
     void transitionTo(GameState next) {
         if (next == null) return;
@@ -97,72 +158,65 @@ public class GameStateManager {
         currentState.onEnter(this);
     }
 
-    /// Notifies the View that the active phase has changed
+    // -------------------------------------------------------------------------
+    // Notification helpers (package-private — states call these)
+    // -------------------------------------------------------------------------
+
     void notifyStateChanged(String stateName) {
         if (stateListener != null) stateListener.onStateChanged(stateName);
     }
+
     void notifyGameOver(String winnerName) {
         if (stateListener != null) stateListener.onGameOver(winnerName);
     }
 
-    GameController getGameController() {
-        return gameController;
-    }
-    LobbyController getLobbyController() {
-        return lobbyController;
-    }
+    // -------------------------------------------------------------------------
+    // Accessors (package-private — states use these)
+    // -------------------------------------------------------------------------
 
-    Player getLocalPlayer() {
-        return localPlayer;
-    }
-    Player getRemotePlayer() {
-        return remotePlayer;
-    }
+    GameController  getGameController()  { return gameController; }
+    LobbyController getLobbyController() { return lobbyController; }
+    Player          getLocalPlayer()     { return localPlayer; }
+    Player          getRemotePlayer()    { return remotePlayer; }
 
-    public String getCurrentStateName() {
-        return currentState.getName();
-    }
+    // -------------------------------------------------------------------------
+    // Public accessors for the View
+    // -------------------------------------------------------------------------
 
-    public boolean isMyTurn() {
-        return currentState instanceof MyTurnState;
-    }
+    public String  getCurrentStateName() { return currentState.getName(); }
+    public boolean isMyTurn()            { return currentState instanceof MyTurnState; }
+    public boolean isGameOver()          { return currentState instanceof GameOverState; }
 
-    public boolean isGameOver() {
-        return currentState instanceof GameOverState;
-    }
+    // -------------------------------------------------------------------------
+    // Internal listener wiring
+    // -------------------------------------------------------------------------
 
     private GameListener buildGameListener() {
         return new GameListener() {
 
             @Override
             public void onMiss(Coordinate coordinate) {
-                // Determine which direction the miss came from and drive the
-                // turn-switch transition.
                 if (currentState instanceof MyTurnState) {
                     ((MyTurnState) currentState).onShotMissed(GameStateManager.this);
                 } else if (currentState instanceof OpponentTurnState) {
                     ((OpponentTurnState) currentState).onRemoteMissed(GameStateManager.this);
                 }
-                // Forward to View listener
                 if (stateListener != null) stateListener.onMiss(coordinate);
             }
 
             @Override
             public void onHit(Coordinate coordinate, Ship ship) {
-                // Hit-again: no transition, stay in current turn state.
                 if (stateListener != null) stateListener.onHit(coordinate, ship);
             }
 
             @Override
             public void onSunk(Coordinate coordinate, Ship ship) {
-                // Sunk but game not over: stay in current turn state.
                 if (stateListener != null) stateListener.onSunk(coordinate, ship);
             }
 
             @Override
             public void onGameOver(String winnerName) {
                 currentState.onGameOver(GameStateManager.this, winnerName);
-                // GameOverState.onEnter calls notifyGameOver
             }
 
             @Override
@@ -178,6 +232,11 @@ public class GameStateManager {
             @Override
             public void onPlacementRejected(PlacementResult.Reason reason) {
                 if (stateListener != null) stateListener.onPlacementRejected(reason);
+            }
+
+            @Override
+            public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
+                if (stateListener != null) stateListener.onActionCardPlayed(result);
             }
         };
     }
@@ -202,7 +261,6 @@ public class GameStateManager {
 
             @Override
             public void onLobbyReady() {
-                // Resolve remote player from the active lobby stored in LobbyController
                 battleships_ex.gdx.model.lobby.Lobby lobby = lobbyController.getActiveLobby();
                 if (lobby != null) {
                     Player host  = lobby.getHost();
