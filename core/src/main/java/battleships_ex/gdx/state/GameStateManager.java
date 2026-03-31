@@ -238,6 +238,7 @@ public class GameStateManager {
             public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
                 if (stateListener != null) stateListener.onActionCardPlayed(result);
             }
+
         };
     }
 

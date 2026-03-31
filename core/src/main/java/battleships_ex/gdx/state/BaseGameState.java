@@ -5,15 +5,13 @@ import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
 
 /**
- * BaseGameState
+ * Default no-op implementations of every GameState method.
+ * Concrete states override only the actions valid in their phase.
+ * Unhandled calls are silently dropped — stale Firebase events or
+ * UI mis-fires cannot corrupt state.
  *
- * Default no-op implementations of every {@link GameState} method.
- * Concrete states extend this and override only the actions valid in their phase.
- * Unhandled calls are silently dropped — stale Firebase events or UI mis-fires
- * cannot corrupt state.
- *
- * onGameOver defaults to transitioning to GameOverState so every phase
- * handles disconnects and game-end signals without repeating the logic.
+ * onGameOver defaults to transitioning to GameOverState so every
+ * phase handles disconnects without repeating the logic.
  */
 public abstract class BaseGameState implements GameState {
 

@@ -16,10 +16,9 @@ public interface GameState {
     void onJoinLobby(GameStateManager manager, String roomCode);
     void onLobbyReady(GameStateManager manager);
 
-    // Placement — uses the real GameController API (Ship, Coordinate, Orientation)
-    void onPlaceShip(GameStateManager manager, Ship ship, Coordinate start, Orientation orientation);
-
-    void onPlaceShip(GameStateManager manager, int size, int startX, int startY, boolean horizontal);
+    // Placement — Ship, Coordinate, Orientation matches GameController.placeShip exactly
+    void onPlaceShip(GameStateManager manager,
+                     Ship ship, Coordinate start, Orientation orientation);
 
     void onPlacementComplete(GameStateManager manager);
 
