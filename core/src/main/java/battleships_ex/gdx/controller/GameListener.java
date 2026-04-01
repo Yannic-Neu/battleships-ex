@@ -90,4 +90,33 @@ public interface GameListener {
      * @param result the outcome and affected coordinates
      */
     void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result);
+
+    // ── Real-time session events (Issue #27) ────────────────────────
+
+    /**
+     * An opponent move was received from the backend.
+     * View should update the local board to reflect the incoming shot.
+     *
+     * @param row the row of the opponent's shot
+     * @param col the column of the opponent's shot
+     */
+    default void onOpponentMoveReceived(int row, int col) {}
+
+    /**
+     * The opponent has disconnected (heartbeat stale).
+     * View should display a "waiting for opponent" overlay.
+     */
+    default void onOpponentDisconnected() {}
+
+    /**
+     * The opponent has reconnected after a disconnect.
+     * View should dismiss the disconnect overlay.
+     */
+    default void onOpponentReconnected() {}
+
+    /**
+     * The session has timed out due to inactivity.
+     * View should navigate back to the menu.
+     */
+    default void onSessionTimeout() {}
 }
