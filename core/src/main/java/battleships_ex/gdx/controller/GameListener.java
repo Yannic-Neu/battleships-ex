@@ -119,4 +119,14 @@ public interface GameListener {
      * View should navigate back to the menu.
      */
     default void onSessionTimeout() {}
+
+    // ── Target preview events (Issue #28) ───────────────────────────
+
+    /**
+     * The opponent is aiming at a cell on our board (preview).
+     * View should render a semi-transparent marker on the "Your Fleet" board.
+     *
+     * @param coordinate the cell the opponent is targeting, or null if cleared
+     */
+    default void onPreviewReceived(battleships_ex.gdx.model.board.Coordinate coordinate) {}
 }
