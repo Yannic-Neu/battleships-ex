@@ -4,7 +4,25 @@
       "$roomCode": {
         ".read": "auth != null",
         ".write": "auth != null && (!data.exists() || data.child('hostPlayerId').val() === auth.uid || data.child('guestPlayerId').val() === auth.uid)",
-        ".validate": "newData.hasChildren(['hostPlayerId', 'status', 'createdAt'])"
+        ".validate": "newData.hasChildren(['hostPlayerId', 'status', 'createdAt'])",
+
+        "game": {
+          ".read": "auth != null",
+          ".write": "auth != null && (root.child('rooms').child($roomCode).child('hostPlayerId').val() === auth.uid || root.child('rooms').child($roomCode).child('guestPlayerId').val() === auth.uid)",
+
+          "moves": {
+            "$moveId": {
+              ".validate": "newData.hasChildren(['playerId', 'row', 'col', 'hit'])"
+            }
+          },
+
+          "heartbeat": {
+            "$playerId": {
+              ".write": "auth.uid === $playerId",
+              ".validate": "newData.hasChild('lastSeen')"
+            }
+          }
+        }
       }
     }
   }

@@ -3,6 +3,7 @@ package battleships_ex.gdx.lwjgl3;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import battleships_ex.gdx.MyGame;
+import battleships_ex.gdx.data.StubGameDataSource;
 import battleships_ex.gdx.data.StubLobbyDataSource;
 
 /** Launches the desktop (LWJGL3) application. */
@@ -14,7 +15,9 @@ public class Lwjgl3Launcher {
 
     private static Lwjgl3Application createApplication() {
         String desktopPlayerId = "desktop-" + System.currentTimeMillis();
-        return new Lwjgl3Application(new MyGame(new StubLobbyDataSource(), desktopPlayerId), getDefaultConfiguration());
+        return new Lwjgl3Application(
+            new MyGame(new StubLobbyDataSource(), new StubGameDataSource(), desktopPlayerId),
+            getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
