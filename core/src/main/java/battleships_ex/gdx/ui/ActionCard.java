@@ -6,12 +6,13 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import battleships_ex.gdx.config.GameConfig;
+import battleships_ex.gdx.ui.cards.ActionCardPresentation;
 
 public class ActionCard extends Table {
 
     private final GameConfig.ActionCardConfig config;
 
-    private ActionCardModel model;
+    private ActionCardPresentation model;
     private final Table front = new Table();
     private final Table back  = new Table();
     private boolean showingFront = true;
@@ -36,7 +37,7 @@ public class ActionCard extends Table {
         });
     }
 
-    public void bind(ActionCardModel model) {
+    public void bind(ActionCardPresentation model) {
         this.model = model;
         refreshBackText();
     }

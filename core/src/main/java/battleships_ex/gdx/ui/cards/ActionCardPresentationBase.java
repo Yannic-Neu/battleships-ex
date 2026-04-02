@@ -1,15 +1,15 @@
-package battleships_ex.gdx.ui;
+package battleships_ex.gdx.ui.cards;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-public abstract class ActionCardBase implements ActionCardModel {
+public abstract class ActionCardPresentationBase implements ActionCardPresentation {
 
     protected final String name;
     protected final String shortText;
     protected final String longText;
     protected final TextureRegion icon;
 
-    public ActionCardBase(String name, String shortText, String longText, TextureRegion icon) {
+    public ActionCardPresentationBase(String name, String shortText, String longText, TextureRegion icon) {
         this.name = name;
         this.shortText = shortText;
         this.longText = longText;

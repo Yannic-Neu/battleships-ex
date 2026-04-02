@@ -2,10 +2,8 @@ package battleships_ex.gdx.ui.cards;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-import battleships_ex.gdx.ui.ActionCardBase;
-
-public class ParryCard extends ActionCardBase {
-    public ParryCard(TextureRegion icon) {
+public class ParryCardPresentation extends ActionCardPresentationBase {
+    public ParryCardPresentation(TextureRegion icon) {
         super(
             "PARRY",
             "Counter an attack.",

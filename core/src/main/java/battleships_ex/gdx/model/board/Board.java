@@ -221,4 +221,38 @@ public class Board {
             throw new IllegalArgumentException("Coordinate out of bounds: " + coordinate);
         }
     }
+
+    /**
+     * Checks if there are any cells on the board that have not been attacked yet.
+     *
+     * @return true if there is at least one cell that has not been hit, false otherwise.
+     */
+    public boolean hasValidTargets() {
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                if (!grid[row][col].isHit()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Retrieves a list of all coordinates on the board that have not yet been attacked.
+     *
+     * @return a {@code List} of {@link Coordinate} objects representing the cells that are not hit.
+     */
+    public List<Coordinate> getValidTargets() {
+        List<Coordinate> validTargets = new ArrayList<>();
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                Cell cell = grid[row][col];
+                if (!cell.isHit()) {
+                    validTargets.add(cell.getCoordinate());
+                }
+            }
+        }
+        return validTargets;
+    }
 }

@@ -2,10 +2,8 @@ package battleships_ex.gdx.ui.cards;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-import battleships_ex.gdx.ui.ActionCardBase;
-
-public class EraseCard extends ActionCardBase {
-    public EraseCard(TextureRegion icon) {
+public class EraseCardPresentation extends ActionCardPresentationBase {
+    public EraseCardPresentation(TextureRegion icon) {
         super(
             "ERASE",
             "Remove a mark.",

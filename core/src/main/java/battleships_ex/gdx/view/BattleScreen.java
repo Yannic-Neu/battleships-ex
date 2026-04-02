@@ -13,12 +13,12 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.ui.ActionCard;
-import battleships_ex.gdx.ui.ActionCardModel;
-import battleships_ex.gdx.ui.cards.DoubleShotCard;
-import battleships_ex.gdx.ui.cards.ShieldCard;
-import battleships_ex.gdx.ui.cards.ParryCard;
-import battleships_ex.gdx.ui.cards.EraseCard;
-import battleships_ex.gdx.ui.cards.ScanCard;
+import battleships_ex.gdx.ui.cards.ActionCardPresentation;
+import battleships_ex.gdx.ui.cards.DoubleShotCardPresentation;
+import battleships_ex.gdx.ui.cards.EraseCardPresentation;
+import battleships_ex.gdx.ui.cards.ScanCardPresentation;
+import battleships_ex.gdx.ui.cards.ShieldCardPresentation;
+import battleships_ex.gdx.ui.cards.ParryCardPresentation;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.data.Assets;
@@ -135,11 +135,11 @@ public class BattleScreen extends ScreenAdapter {
         TextureRegion iconD = Assets.ships.ship5h;
         TextureRegion iconE = Assets.ships.ship2v;
 
-        ActionCardModel m1 = new DoubleShotCard(iconA);
-        ActionCardModel m2 = new ShieldCard(iconB);
-        ActionCardModel m3 = new ParryCard(iconC);
-        ActionCardModel m4 = new EraseCard(iconD);
-        ActionCardModel m5 = new ScanCard(iconE);
+        ActionCardPresentation m1 = new DoubleShotCardPresentation(iconA);
+        ActionCardPresentation m2 = new ShieldCardPresentation(iconB);
+        ActionCardPresentation m3 = new ParryCardPresentation(iconC);
+        ActionCardPresentation m4 = new EraseCardPresentation(iconD);
+        ActionCardPresentation m5 = new ScanCardPresentation(iconE);
 
         GameConfig.ActionCardConfig cfg1 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "DOUBLE SHOT");
         GameConfig.ActionCardConfig cfg2 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SHIELD");

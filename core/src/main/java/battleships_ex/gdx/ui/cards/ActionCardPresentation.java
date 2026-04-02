@@ -1,8 +1,8 @@
-package battleships_ex.gdx.ui;
+package battleships_ex.gdx.ui.cards;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-public interface ActionCardModel {
+public interface ActionCardPresentation {
     String getName();
     String getShortText();
     String getLongText();

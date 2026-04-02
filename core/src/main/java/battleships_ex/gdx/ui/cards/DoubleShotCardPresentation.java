@@ -2,10 +2,8 @@ package battleships_ex.gdx.ui.cards;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-import battleships_ex.gdx.ui.ActionCardBase;
-
-public class DoubleShotCard extends ActionCardBase {
-    public DoubleShotCard(TextureRegion icon) {
+public class DoubleShotCardPresentation extends ActionCardPresentationBase {
+    public DoubleShotCardPresentation(TextureRegion icon) {
         super(
             "DOUBLE SHOT",
             "Fire twice this turn.",
