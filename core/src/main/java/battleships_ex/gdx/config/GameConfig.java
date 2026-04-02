@@ -13,12 +13,14 @@ public final class GameConfig {
         public final float width;
         public final float height;
 
+        public final boolean playable;
         public final Color color;
         public final String text;
 
-        public ActionCardConfig(float width, float height, Color color, String text) {
+        public ActionCardConfig(float width, float height, boolean playable, Color color, String text) {
             this.width = width;
             this.height = height;
+            this.playable = playable;
             this.color = color;
             this.text = text;
         }

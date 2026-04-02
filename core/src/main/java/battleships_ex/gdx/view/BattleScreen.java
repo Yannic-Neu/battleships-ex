@@ -14,25 +14,19 @@ import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.ui.ActionCard;
 import battleships_ex.gdx.ui.ActionCardModel;
-import battleships_ex.gdx.ui.DoubleShotCard;
-import battleships_ex.gdx.ui.ShieldCard;
-import battleships_ex.gdx.ui.ParryCard;
-import battleships_ex.gdx.ui.EraseCard;
-import battleships_ex.gdx.ui.ScanCard;
+import battleships_ex.gdx.ui.cards.DoubleShotCard;
+import battleships_ex.gdx.ui.cards.ShieldCard;
+import battleships_ex.gdx.ui.cards.ParryCard;
+import battleships_ex.gdx.ui.cards.EraseCard;
+import battleships_ex.gdx.ui.cards.ScanCard;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.config.GameConfig;
-import battleships_ex.gdx.config.ShipCardConfig;
 import battleships_ex.gdx.data.Assets;
 import battleships_ex.gdx.ui.BoardActor;
 import battleships_ex.gdx.ui.CardTray;
 import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
-import battleships_ex.gdx.ui.ShipCard;
 import battleships_ex.gdx.ui.Theme;
-
-import battleships_ex.gdx.config.GameConfig;
-import battleships_ex.gdx.config.ButtonConfig;
-import battleships_ex.gdx.data.Assets;
 
 
 public class BattleScreen extends ScreenAdapter {
@@ -147,11 +141,11 @@ public class BattleScreen extends ScreenAdapter {
         ActionCardModel m4 = new EraseCard(iconD);
         ActionCardModel m5 = new ScanCard(iconE);
 
-        GameConfig.ActionCardConfig cfg1 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "DOUBLE SHOT");
-        GameConfig.ActionCardConfig cfg2 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "SHIELD");
-        GameConfig.ActionCardConfig cfg3 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "PARRY");
-        GameConfig.ActionCardConfig cfg4 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "ERASE");
-        GameConfig.ActionCardConfig cfg5 = new GameConfig.ActionCardConfig(95f, 82f, Theme.BLUE, "SCAN");
+        GameConfig.ActionCardConfig cfg1 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "DOUBLE SHOT");
+        GameConfig.ActionCardConfig cfg2 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SHIELD");
+        GameConfig.ActionCardConfig cfg3 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "PARRY");
+        GameConfig.ActionCardConfig cfg4 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "ERASE");
+        GameConfig.ActionCardConfig cfg5 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SCAN");
 
         ActionCard c1 = new ActionCard(cfg1); c1.bind(m1); actionCardTray.addCard(c1);
         ActionCard c2 = new ActionCard(cfg2); c2.bind(m2); actionCardTray.addCard(c2);
