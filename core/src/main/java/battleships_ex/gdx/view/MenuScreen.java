@@ -48,9 +48,12 @@ public class MenuScreen extends ScreenAdapter {
             System.out.println("Tutorial clicked");
         });
 
-        GameButton settingsButton = new GameButton("SETT", navButton, () -> {
+        GameButton settingsButton = new GameButton("SETTINGS", navButton, () -> {
             game.setScreen(new SettingsScreen(game, this));
         });
+
+        GameButton profileButton = new GameButton("PROFILE", ButtonConfig.secondary(200, 50),
+            () -> game.setScreen(new ProfileScreen(game)));
 
         Label hostOrJoin = new Label("HOST OR JOIN", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
@@ -63,6 +66,7 @@ public class MenuScreen extends ScreenAdapter {
 
         topArea.setBackground(Theme.bluePanel);
         topArea.add().expandX();
+        topArea.add(profileButton).left().padLeft(25);
         topArea.add(settingsButton).right().padRight(25);
 
         middlePanel.setBackground(Theme.blackPanel);
