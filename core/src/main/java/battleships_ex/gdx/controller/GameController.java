@@ -62,7 +62,7 @@ public class GameController {
         battleships_ex.gdx.model.cards.ActionCardResult result = session.playActionCard(card);
 
         if (listener != null) listener.onActionCardPlayed(result);
-        firebase.pushActionCardEvent(card.getDisplayName(), result.getAffectedCoordinates());
+        firebase.pushActionCardEvent(card.getClass().getSimpleName(), result.getAffectedCoordinates());
 
         // Check win condition - some cards (e.g. Airstrike) can sink ships
         if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK
