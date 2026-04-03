@@ -152,6 +152,11 @@ class SessionManagerTest {
             heartbeatListenerRemoved = true;
         }
 
+        @Override public void sendPreview(String roomCode, String playerId, Coordinate target) {}
+        @Override public void clearPreview(String roomCode, String playerId) {}
+        @Override public void addPreviewListener(String roomCode, String opponentId, DataCallback<Coordinate> callback) {}
+        @Override public void removePreviewListener(String roomCode) {}
+
         @Override
         public void removeAllListeners(String roomCode) {
             removeHeartbeatListener(roomCode);
