@@ -259,6 +259,60 @@ public class FirebaseGameDataSource implements GameDataSource {
         }
     }
 
+    // ── Session re-join & cleanup (Issue #29) ─────────────────────
+
+    @Override
+    public void roomIsActive(String roomCode, DataCallback<Boolean> callback) {
+        gameRef(roomCode).child(FIELD_STATUS).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    callback.onSuccess(false);
+                    return;
+                }
+                String status = snapshot.getValue(String.class);
+                // Room is active if status is "placing" or "playing"
+                boolean active = "placing".equals(status) || "playing".equals(status);
+                callback.onSuccess(active);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onFailure(error.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void loadGameState(String roomCode, DataCallback<GameSnapshot> callback) {
+        gameRef(roomCode).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    callback.onFailure("Game state not found");
+                    return;
+                }
+
+                String currentTurn = snapshot.child(FIELD_CURRENT_TURN).getValue(String.class);
+                String status      = snapshot.child(FIELD_STATUS).getValue(String.class);
+
+                callback.onSuccess(new GameSnapshot(currentTurn, status != null ? status : "finished"));
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onFailure(error.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void cleanupSession(String roomCode, DataCallback<Void> callback) {
+        gameRef(roomCode).child(FIELD_STATUS).setValue("abandoned")
+            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
     // ── Cleanup ─────────────────────────────────────────────────────
 
     @Override
