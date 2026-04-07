@@ -12,6 +12,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.Objects;
 
 import battleships_ex.gdx.MyGame;
+import battleships_ex.gdx.android.data.FirebaseGameDataSource;
 import battleships_ex.gdx.android.data.FirebaseLobbyDataSource;
 
 /** Launches the Android application. */
@@ -46,7 +47,7 @@ public class AndroidLauncher extends AndroidApplication {
             Log.d(TAG, "Auth pending, using temporary ID");
         }
 
-        MyGame game = new MyGame(new FirebaseLobbyDataSource(), initialPlayerId);
+        MyGame game = new MyGame(new FirebaseLobbyDataSource(), new FirebaseGameDataSource(), initialPlayerId);
 
         // Sign in anonymously in the background; update player ID when ready
         if (currentUser == null) {

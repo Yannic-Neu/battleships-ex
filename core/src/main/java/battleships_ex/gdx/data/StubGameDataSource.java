@@ -1,0 +1,78 @@
+package battleships_ex.gdx.data;
+
+import battleships_ex.gdx.model.board.Coordinate;
+
+/**
+ * No-op stub for desktop testing where Firebase is unavailable.
+ * Logs calls to stdout for development purposes.
+ * Follows the same pattern as {@link StubLobbyDataSource}.
+ */
+public class StubGameDataSource implements GameDataSource {
+
+    @Override
+    public void submitMove(String roomCode, String playerId, Coordinate target, boolean hit, DataCallback<Void> callback) {
+        System.out.println("[Stub] submitMove: room=" + roomCode
+            + " player=" + playerId
+            + " target=(" + target.getRow() + "," + target.getCol() + ")"
+            + " hit=" + hit);
+        callback.onSuccess(null);
+    }
+
+    @Override
+    public void addMoveListener(String roomCode, DataCallback<MoveSnapshot> callback) {
+        System.out.println("[Stub] addMoveListener: " + roomCode);
+    }
+
+    @Override
+    public void removeMoveListener(String roomCode) {
+        System.out.println("[Stub] removeMoveListener: " + roomCode);
+    }
+
+    @Override
+    public void syncTurn(String roomCode, String currentPlayerId, DataCallback<Void> callback) {
+        System.out.println("[Stub] syncTurn: room=" + roomCode + " turn=" + currentPlayerId);
+        callback.onSuccess(null);
+    }
+
+    @Override
+    public void addTurnListener(String roomCode, DataCallback<String> callback) {
+        System.out.println("[Stub] addTurnListener: " + roomCode);
+    }
+
+    @Override
+    public void removeTurnListener(String roomCode) {
+        System.out.println("[Stub] removeTurnListener: " + roomCode);
+    }
+
+    @Override
+    public void updateGameStatus(String roomCode, String status, DataCallback<Void> callback) {
+        System.out.println("[Stub] updateGameStatus: room=" + roomCode + " status=" + status);
+        callback.onSuccess(null);
+    }
+
+    @Override
+    public void pushGameOver(String roomCode, String winnerName, DataCallback<Void> callback) {
+        System.out.println("[Stub] pushGameOver: room=" + roomCode + " winner=" + winnerName);
+        callback.onSuccess(null);
+    }
+
+    @Override
+    public void sendHeartbeat(String roomCode, String playerId) {
+        System.out.println("[Stub] sendHeartbeat: room=" + roomCode + " player=" + playerId);
+    }
+
+    @Override
+    public void addHeartbeatListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
+        System.out.println("[Stub] addHeartbeatListener: room=" + roomCode + " opponent=" + opponentId);
+    }
+
+    @Override
+    public void removeHeartbeatListener(String roomCode) {
+        System.out.println("[Stub] removeHeartbeatListener: " + roomCode);
+    }
+
+    @Override
+    public void removeAllListeners(String roomCode) {
+        System.out.println("[Stub] removeAllListeners: " + roomCode);
+    }
+}
