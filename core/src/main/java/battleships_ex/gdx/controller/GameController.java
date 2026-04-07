@@ -152,6 +152,7 @@ public class GameController {
         battleships_ex.gdx.model.cards.ActionCardResult result = session.playActionCard(card);
 
         if (listener != null) listener.onActionCardPlayed(result);
+        firebase.pushActionCardEvent(card.getClass().getSimpleName(), result.getAffectedCoordinates());
 
         // Reset inactivity timer on action
         sessionManager.resetInactivityTimer();
