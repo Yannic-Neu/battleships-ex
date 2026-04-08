@@ -28,7 +28,7 @@ class BoardTest {
 
     @Test
     void placeShipHorizontally() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL); // length 4
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL); // length 4
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         assertTrue(board.getCell(new Coordinate(0, 0)).hasShip());
@@ -65,7 +65,7 @@ class BoardTest {
     @Test
     void placeShipOnOccupiedCellThrows() {
         Ship first  = new Ship(ShipType.SUBMARINE, Orientation.HORIZONTAL);
-        Ship second = new Ship(ShipType.DESTROYER, Orientation.VERTICAL);
+        Ship second = new Ship(ShipType.CRUISER, Orientation.VERTICAL);
         board.placeShip(first, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         assertFalse(board.canPlaceShip(second, new Coordinate(0, 0), Orientation.VERTICAL));
@@ -76,7 +76,7 @@ class BoardTest {
 
     @Test
     void attackHitReturnsHit() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL); // length 2
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL); // length 2
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         AttackResult result = board.attack(new Coordinate(0, 0));
@@ -86,7 +86,7 @@ class BoardTest {
 
     @Test
     void attackMissReturnsMiss() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         AttackResult result = board.attack(new Coordinate(5, 5));

@@ -14,13 +14,13 @@ class ShipTest {
 
     @Test
     void shipIsNotSunkWhenNoHits() {
-        Ship ship = placedShip(ShipType.DESTROYER, 0, 0); // length 2
+        Ship ship = placedShip(ShipType.CRUISER, 0, 0); // length 2
         assertFalse(ship.isSunk());
     }
 
     @Test
     void shipIsNotSunkWithPartialHits() {
-        Ship ship = placedShip(ShipType.DESTROYER, 0, 0); // length 2, cells (0,0) and (0,1)
+        Ship ship = placedShip(ShipType.CRUISER, 0, 0); // length 2, cells (0,0) and (0,1)
         ship.registerHit(new Coordinate(0, 0));
         assertFalse(ship.isSunk());
     }
@@ -38,7 +38,7 @@ class ShipTest {
     @Test
     void shipIsSunkAfterAllCellsHitMultiCell() {
         // DESTROYER length 4 — cells (0,0), (0,1), (0,2), (0,3)
-        Ship ship = placedShip(ShipType.DESTROYER, 0, 0);
+        Ship ship = placedShip(ShipType.CRUISER, 0, 0);
         ship.registerHit(new Coordinate(0, 0));
         ship.registerHit(new Coordinate(0, 1));
         assertFalse(ship.isSunk());           // 2 of 4 hit
@@ -70,13 +70,13 @@ class ShipTest {
 
     @Test
     void isNotPlacedBeforePlacement() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         assertFalse(ship.isPlaced());
     }
 
     @Test
     void isPlacedAfterPlacement() {
-        Ship ship = placedShip(ShipType.DESTROYER, 0, 0);
+        Ship ship = placedShip(ShipType.CRUISER, 0, 0);
         assertTrue(ship.isPlaced());
     }
 

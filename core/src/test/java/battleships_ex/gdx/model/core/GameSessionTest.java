@@ -40,7 +40,7 @@ class GameSessionTest {
     void missedShotSwitchesTurn() {
         session.startGame();
         // Place a ship so allShipsSunk() can track state; fire at a cell with no ship
-        placeShip(player2, ShipType.DESTROYER, 5, 5);
+        placeShip(player2, ShipType.CRUISER, 5, 5);
 
         Move move = session.processMove(new Coordinate(0, 0)); // miss
         assertFalse(move.isHit());
@@ -50,7 +50,7 @@ class GameSessionTest {
     @Test
     void hitDoesNotSwitchTurn() {
         session.startGame();
-        placeShip(player2, ShipType.DESTROYER, 0, 0); // occupies (0,0) and (0,1)
+        placeShip(player2, ShipType.CRUISER, 0, 0); // occupies (0,0) and (0,1)
 
         Move move = session.processMove(new Coordinate(0, 0)); // hit
         assertTrue(move.isHit());
@@ -85,8 +85,8 @@ class GameSessionTest {
     @Test
     void moveHistoryTracksAllMoves() {
         session.startGame();
-        placeShip(player2, ShipType.DESTROYER, 5, 5);
-        placeShip(player1, ShipType.DESTROYER, 5, 5);
+        placeShip(player2, ShipType.CRUISER, 5, 5);
+        placeShip(player1, ShipType.CRUISER, 5, 5);
 
         session.processMove(new Coordinate(0, 0)); // miss → switches to player2
         session.processMove(new Coordinate(0, 0)); // miss → switches back to player1

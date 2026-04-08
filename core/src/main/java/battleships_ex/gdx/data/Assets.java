@@ -9,19 +9,23 @@ public final class Assets {
     public static class Ships {
         public Texture texPatrol2h;
         public Texture texPatrol2v;
-        public Texture texCruiser3h;
-        public Texture texCruiser3v;
-        public Texture tex4h;
-        public Texture tex4v;
+        public Texture texDestroyer3h;
+        public Texture texDestroyer3v;
+        public Texture texSubmarine3h;
+        public Texture texSubmarine3v;
+        public Texture texCruiser4h;
+        public Texture texCruiser4v;
         public Texture texCarrier5h;
         public Texture texCarrier5v;
 
         public TextureRegion shipPatrol2h;
         public TextureRegion shipPatrol2v;
-        public TextureRegion shipCruiser3h;
-        public TextureRegion shipCruiser3v;
-        public TextureRegion ship4h;
-        public TextureRegion ship4v;
+        public TextureRegion shipDestroyer3h;
+        public TextureRegion shipDestroyer3v;
+        public TextureRegion shipSubmarine3h;
+        public TextureRegion shipSubmarine3v;
+        public TextureRegion shipCruiser4h;
+        public TextureRegion shipCruiser4v;
         public TextureRegion shipCarrier5h;
         public TextureRegion shipCarrier5v;
     }
@@ -44,19 +48,23 @@ public final class Assets {
     public static void load() {
         ships.texPatrol2h = new Texture(Gdx.files.internal("ship-sprites/patrol_2_h.png"));
         ships.texPatrol2v = new Texture(Gdx.files.internal("ship-sprites/patrol_2_v.png"));
-        ships.texCruiser3h = new Texture(Gdx.files.internal("ship-sprites/cruiser_3_h.png"));
-        ships.texCruiser3v = new Texture(Gdx.files.internal("ship-sprites/cruiser_3_v.png"));
-        ships.tex4h = new Texture(Gdx.files.internal("ship-sprites/4_h.png"));
-        ships.tex4v = new Texture(Gdx.files.internal("ship-sprites/4_v.png"));
+        ships.texDestroyer3h = new Texture(Gdx.files.internal("ship-sprites/destroyer_3_h.png"));
+        ships.texDestroyer3v = new Texture(Gdx.files.internal("ship-sprites/destroyer_3_v.png"));
+        ships.texSubmarine3h = new Texture(Gdx.files.internal("ship-sprites/submarine_3_h.png"));
+        ships.texSubmarine3v = new Texture(Gdx.files.internal("ship-sprites/submarine_3_v.png"));
+        ships.texCruiser4h = new Texture(Gdx.files.internal("ship-sprites/cruiser_4_h.png"));
+        ships.texCruiser4v = new Texture(Gdx.files.internal("ship-sprites/cruiser_4_v.png"));
         ships.texCarrier5h = new Texture(Gdx.files.internal("ship-sprites/carrier_5_h.png"));
         ships.texCarrier5v = new Texture(Gdx.files.internal("ship-sprites/carrier_5_v.png"));
 
         ships.shipPatrol2h = new TextureRegion(ships.texPatrol2h);
         ships.shipPatrol2v = new TextureRegion(ships.texPatrol2v);
-        ships.shipCruiser3h = new TextureRegion(ships.texCruiser3h);
-        ships.shipCruiser3v = new TextureRegion(ships.texCruiser3v);
-        ships.ship4h = new TextureRegion(ships.tex4h);
-        ships.ship4v = new TextureRegion(ships.tex4v);
+        ships.shipDestroyer3h = new TextureRegion(ships.texDestroyer3h);
+        ships.shipDestroyer3v = new TextureRegion(ships.texDestroyer3v);
+        ships.shipSubmarine3h = new TextureRegion(ships.texSubmarine3h);
+        ships.shipSubmarine3v = new TextureRegion(ships.texSubmarine3v);
+        ships.shipCruiser4h = new TextureRegion(ships.texCruiser4h);
+        ships.shipCruiser4v = new TextureRegion(ships.texCruiser4v);
         ships.shipCarrier5h = new TextureRegion(ships.texCarrier5h);
         ships.shipCarrier5v = new TextureRegion(ships.texCarrier5v);
 
@@ -84,10 +92,12 @@ public final class Assets {
     public static void dispose() {
         ships.texPatrol2h.dispose();
         ships.texPatrol2v.dispose();
-        ships.texCruiser3h.dispose();
-        ships.texCruiser3v.dispose();
-        ships.tex4h.dispose();
-        ships.tex4v.dispose();
+        ships.texDestroyer3h.dispose();
+        ships.texDestroyer3v.dispose();
+        ships.texSubmarine3h.dispose();
+        ships.texSubmarine3v.dispose();
+        ships.texCruiser4h.dispose();
+        ships.texCruiser4v.dispose();
         ships.texCarrier5h.dispose();
         ships.texCarrier5v.dispose();
 
