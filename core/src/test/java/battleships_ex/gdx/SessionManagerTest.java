@@ -158,6 +158,21 @@ class SessionManagerTest {
         @Override public void removePreviewListener(String roomCode) {}
 
         @Override
+        public void roomIsActive(String roomCode, DataCallback<Boolean> callback) {
+            callback.onSuccess(false);
+        }
+
+        @Override
+        public void loadGameState(String roomCode, DataCallback<GameSnapshot> callback) {
+            callback.onSuccess(new GameSnapshot(null, "finished"));
+        }
+
+        @Override
+        public void cleanupSession(String roomCode, DataCallback<Void> callback) {
+            callback.onSuccess(null);
+        }
+
+        @Override
         public void removeAllListeners(String roomCode) {
             removeHeartbeatListener(roomCode);
         }

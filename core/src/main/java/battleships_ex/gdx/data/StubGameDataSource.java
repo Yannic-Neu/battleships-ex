@@ -94,6 +94,24 @@ public class StubGameDataSource implements GameDataSource {
     }
 
     @Override
+    public void roomIsActive(String roomCode, DataCallback<Boolean> callback) {
+        System.out.println("[Stub] roomIsActive: " + roomCode);
+        callback.onSuccess(false);
+    }
+
+    @Override
+    public void loadGameState(String roomCode, DataCallback<GameSnapshot> callback) {
+        System.out.println("[Stub] loadGameState: " + roomCode);
+        callback.onSuccess(new GameSnapshot(null, "finished"));
+    }
+
+    @Override
+    public void cleanupSession(String roomCode, DataCallback<Void> callback) {
+        System.out.println("[Stub] cleanupSession: " + roomCode);
+        callback.onSuccess(null);
+    }
+
+    @Override
     public void removeAllListeners(String roomCode) {
         System.out.println("[Stub] removeAllListeners: " + roomCode);
     }

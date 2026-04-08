@@ -155,6 +155,32 @@ public interface GameDataSource {
      */
     void removePreviewListener(String roomCode);
 
+    // ── Session re-join & cleanup (Issue #29) ─────────────────────
+
+    /**
+     * Checks whether a room still exists and is active.
+     *
+     * @param roomCode the room code to check
+     * @param callback delivers true if the room exists and game is not finished
+     */
+    void roomIsActive(String roomCode, DataCallback<Boolean> callback);
+
+    /**
+     * Loads the full game snapshot for session recovery.
+     *
+     * @param roomCode the room code to rejoin
+     * @param callback delivers a {@link GameSnapshot} with the current state
+     */
+    void loadGameState(String roomCode, DataCallback<GameSnapshot> callback);
+
+    /**
+     * Cleans up an abandoned room (sets status to "abandoned" or deletes).
+     *
+     * @param roomCode the room code to clean up
+     * @param callback success: null / failure: error message
+     */
+    void cleanupSession(String roomCode, DataCallback<Void> callback);
+
     // ── Cleanup ─────────────────────────────────────────────────────
 
     /**

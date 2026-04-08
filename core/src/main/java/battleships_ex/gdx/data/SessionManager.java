@@ -25,6 +25,7 @@ public class SessionManager {
     private static final float INACTIVITY_TIMEOUT_SEC = 10f * 60f;
 
     private final GameDataSource dataSource;
+    private SessionStore sessionStore;
     private SessionListener listener;
 
     private String roomCode;
@@ -37,6 +38,14 @@ public class SessionManager {
 
     public SessionManager(GameDataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    /**
+     * Sets the session store for persisting session data across restarts.
+     * Must be called before {@link #startSession} for rejoin to work.
+     */
+    public void setSessionStore(SessionStore sessionStore) {
+        this.sessionStore = sessionStore;
     }
 
     public void setListener(SessionListener listener) {
@@ -55,6 +64,12 @@ public class SessionManager {
         this.localPlayerId    = localPlayerId;
         this.opponentPlayerId = opponentPlayerId;
         this.active           = true;
+
+        // Persist session for potential rejoin (Issue #29)
+        if (sessionStore != null) {
+            sessionStore.saveSession(new SessionStore.SessionInfo(
+                roomCode, localPlayerId, opponentPlayerId, System.currentTimeMillis()));
+        }
 
         if (isGdxAvailable()) {
             startHeartbeat();
@@ -80,6 +95,84 @@ public class SessionManager {
         }
         if (roomCode != null) {
             dataSource.removeHeartbeatListener(roomCode);
+        }
+
+        // Clear persisted session (Issue #29)
+        if (sessionStore != null) {
+            sessionStore.clearSession();
+        }
+    }
+
+    // ── Session re-join (Issue #29) ─────────────────────────────────
+
+    /**
+     * Checks whether a persisted session exists that can be rejoined.
+     *
+     * @return true if there is a valid (non-expired) persisted session
+     */
+    public boolean hasActiveSession() {
+        if (sessionStore == null) return false;
+        return sessionStore.getActiveSession() != null;
+    }
+
+    /**
+     * Returns the persisted session info, or null if none exists.
+     */
+    public SessionStore.SessionInfo getPersistedSession() {
+        if (sessionStore == null) return null;
+        return sessionStore.getActiveSession();
+    }
+
+    /**
+     * Attempts to rejoin a persisted session by verifying the room
+     * is still active on the backend.
+     *
+     * @param callback delivers true if rejoin is possible, false otherwise
+     */
+    public void tryRejoin(DataCallback<Boolean> callback) {
+        SessionStore.SessionInfo info = getPersistedSession();
+        if (info == null) {
+            callback.onSuccess(false);
+            return;
+        }
+
+        dataSource.roomIsActive(info.roomCode, new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean isActive) {
+                if (isActive) {
+                    callback.onSuccess(true);
+                } else {
+                    // Room is gone — clean up stale session
+                    sessionStore.clearSession();
+                    callback.onSuccess(false);
+                }
+            }
+
+            @Override
+            public void onFailure(String error) {
+                System.out.println("[SessionManager] rejoin check failed: " + error);
+                callback.onSuccess(false);
+            }
+        });
+    }
+
+    /**
+     * Cleans up an abandoned session on the backend.
+     *
+     * @param roomCode the room to clean up
+     */
+    public void cleanupAbandonedSession(String roomCode) {
+        dataSource.cleanupSession(roomCode, new DataCallback<Void>() {
+            @Override public void onSuccess(Void result) {
+                System.out.println("[SessionManager] Cleaned up abandoned room: " + roomCode);
+            }
+
+            @Override public void onFailure(String error) {
+                System.out.println("[SessionManager] Cleanup failed: " + error);
+            }
+        });
+        if (sessionStore != null) {
+            sessionStore.clearSession();
         }
     }
 

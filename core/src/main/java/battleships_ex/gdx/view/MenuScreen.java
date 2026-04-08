@@ -12,6 +12,9 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ButtonConfig;
+import battleships_ex.gdx.data.DataCallback;
+import battleships_ex.gdx.data.SessionManager;
+import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 
@@ -79,6 +82,45 @@ public class MenuScreen extends ScreenAdapter {
         root.defaults().expandX().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
         root.add(middlePanel).expandY().fillY().row();
+
+        // Check for rejoinable session (Issue #29)
+        checkForRejoinableSession();
+    }
+
+    /**
+     * Checks if there is a persisted session that can be rejoined.
+     * If so, shows a confirmation dialog to the player.
+     */
+    private void checkForRejoinableSession() {
+        SessionManager sm = game.getSessionManager();
+        if (!sm.hasActiveSession()) return;
+
+        sm.tryRejoin(new DataCallback<Boolean>() {
+            @Override
+            public void onSuccess(Boolean canRejoin) {
+                if (!canRejoin) return;
+
+                // Show dialog on the UI thread
+                com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                    new ConfirmationDialog(
+                        "REJOIN GAME?",
+                        "You have an active game session. Would you like to rejoin?",
+                        "REJOIN",
+                        "NEW GAME",
+                        () -> {
+                            // Rejoin: navigate to BattleScreen
+                            // (BattleScreen will restore state via SessionManager)
+                            game.setScreen(new BattleScreen(game));
+                        }
+                    ).show(stage);
+                });
+            }
+
+            @Override
+            public void onFailure(String error) {
+                System.out.println("[MenuScreen] Rejoin check failed: " + error);
+            }
+        });
     }
 
     @Override
