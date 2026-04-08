@@ -1,0 +1,23 @@
+.gitignore
+  86390a28c285aadb 152-153
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "de9561fd2c059df211a233290c3ec2fec890574e",
+  "prompts": {
+    "86390a28c285aadb": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "09587e5d-c9bc-4d75-b45b-39a60467d439",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Niklas Wichter",
+      "messages": [],
+      "total_additions": 5,
+      "total_deletions": 2,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
