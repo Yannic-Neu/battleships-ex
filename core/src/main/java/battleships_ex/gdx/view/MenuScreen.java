@@ -41,7 +41,7 @@ public class MenuScreen extends ScreenAdapter {
         });
 
         GameButton singlePlayerButton = new GameButton("SINGLEPLAYER", secondaryButton, () -> {
-            System.out.println("Singleplayer clicked");
+            game.setScreen(new PlacementScreen(game));
         });
 
         GameButton tutorialButton = new GameButton("TUTORIAL", secondaryButton, () -> {

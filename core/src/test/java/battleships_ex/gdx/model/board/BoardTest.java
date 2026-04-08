@@ -28,16 +28,17 @@ class BoardTest {
 
     @Test
     void placeShipHorizontally() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL); // length 3
+        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL); // length 4
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         assertTrue(board.getCell(new Coordinate(0, 0)).hasShip());
         assertTrue(board.getCell(new Coordinate(0, 1)).hasShip());
         assertTrue(board.getCell(new Coordinate(0, 2)).hasShip());
-        assertFalse(board.getCell(new Coordinate(0, 3)).hasShip());
+        assertTrue(board.getCell(new Coordinate(0, 3)).hasShip());
+        assertFalse(board.getCell(new Coordinate(0,4)).hasShip());
 
         assertEquals(1, board.getShips().size());
-        assertEquals(3, board.getShips().get(0).getLength());
+        assertEquals(4, board.getShips().get(0).getLength());
     }
 
     @Test

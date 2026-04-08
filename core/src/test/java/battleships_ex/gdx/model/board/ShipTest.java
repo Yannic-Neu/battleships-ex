@@ -37,12 +37,14 @@ class ShipTest {
 
     @Test
     void shipIsSunkAfterAllCellsHitMultiCell() {
-        // DESTROYER length 3 — cells (0,0), (0,1), (0,2)
+        // DESTROYER length 4 — cells (0,0), (0,1), (0,2), (0,3)
         Ship ship = placedShip(ShipType.DESTROYER, 0, 0);
         ship.registerHit(new Coordinate(0, 0));
         ship.registerHit(new Coordinate(0, 1));
-        assertFalse(ship.isSunk());           // 2 of 3 hit
+        assertFalse(ship.isSunk());           // 2 of 4 hit
         ship.registerHit(new Coordinate(0, 2));
+        assertFalse(ship.isSunk());
+        ship.registerHit(new Coordinate(0,3));
         assertTrue(ship.isSunk());
     }
 

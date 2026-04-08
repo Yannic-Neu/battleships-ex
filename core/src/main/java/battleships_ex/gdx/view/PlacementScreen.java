@@ -109,9 +109,9 @@ public class PlacementScreen extends ScreenAdapter {
 
         CardTray dockingTray = new CardTray();
         dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "CARRIER", Assets.ships.ship5h)));
-        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SUBMARINE", Assets.ships.ship4h)));
-        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "DESTROYER", Assets.ships.ship3h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "DESTROYER", Assets.ships.ship4h)));
         dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SUBMARINE", Assets.ships.ship3h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "CRUISER", Assets.ships.ship3h)));
         dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "PATROL", Assets.ships.ship2h)));
 
         GameButton readyButton = new GameButton(

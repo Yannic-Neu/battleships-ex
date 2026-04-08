@@ -2,8 +2,9 @@ package battleships_ex.gdx.config.board;
 
 public enum ShipType {
     PATROL("Patrol", 2),
-    DESTROYER("Destroyer", 3),
-    SUBMARINE("Submarine", 4),
+    SUBMARINE("Submarine", 3),
+    CRUISER("Cruiser", 3),
+    DESTROYER("Destroyer", 4),
     CARRIER("Carrier", 5);
 
     private final String displayName;

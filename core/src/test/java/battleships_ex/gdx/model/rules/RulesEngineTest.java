@@ -137,11 +137,12 @@ public class RulesEngineTest {
 
         engine.resolveShot(board, new Coordinate(2, 2));
         engine.resolveShot(board, new Coordinate(2, 3));
-        ShotResult last = engine.resolveShot(board, new Coordinate(2, 4));
+        engine.resolveShot(board, new Coordinate(2, 4));
+        ShotResult last = engine.resolveShot(board, new Coordinate(2, 5));
 
         assertEquals(ShotResult.Outcome.SUNK, last.getOutcome());
         assertNotNull(last.getSunkShip());
-        assertEquals(3, last.getSunkShip().getLength());
+        assertEquals(4, last.getSunkShip().getLength());
     }
 
     @Test
@@ -154,7 +155,7 @@ public class RulesEngineTest {
     @Test
     public void resolveShot_missDoesNotAffectShip() {
         Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
-        board.placeShip(ship, new Coordinate(7, 7), Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(7, 6), Orientation.HORIZONTAL);
 
         engine.resolveShot(board, new Coordinate(0, 0));
         assertFalse(ship.isSunk());
