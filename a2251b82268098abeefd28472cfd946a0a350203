@@ -1,0 +1,35 @@
+android/src/main/java/battleships_ex/gdx/android/data/FirebaseGameDataSource.java
+  58fca4de42580e6e 55-56,60,265-324,332
+core/src/test/java/battleships_ex/gdx/SessionManagerTest.java
+  58fca4de42580e6e 155-159
+core/src/main/java/battleships_ex/gdx/data/StubGameDataSource.java
+  58fca4de42580e6e 75-95
+core/src/main/java/battleships_ex/gdx/controller/GameController.java
+  58fca4de42580e6e 28-30,37-40,137-151,153-169,171-183,235-237
+core/src/main/java/battleships_ex/gdx/ui/BoardActor.java
+  58fca4de42580e6e 7-8,10,14-16,20-21,23-25,31-50,64,68-82,85
+core/src/main/java/battleships_ex/gdx/data/GameDataSource.java
+  58fca4de42580e6e 124-157,163
+core/src/main/java/battleships_ex/gdx/controller/GameListener.java
+  58fca4de42580e6e 122-131
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "a2251b82268098abeefd28472cfd946a0a350203",
+  "prompts": {
+    "58fca4de42580e6e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d05b20f-ea89-450b-8be7-4872ce13ac39",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Niklas Wichter",
+      "messages": [],
+      "total_additions": 577,
+      "total_deletions": 0,
+      "accepted_lines": 577,
+      "overriden_lines": 0
+    }
+  }
+}
