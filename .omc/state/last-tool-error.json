@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"git fetch origin main 2>&1 && git checkout feature/29-session-rejoin-cleanup && git merge origin/main --no-commit --no-ff 2>&1\",\"description\":\"Check conflicts on branch 29 with updated mai...",
+  "error": "Exit code 1\nFrom https://github.com/Yannic-Neu/battleships-ex\n * branch            main       -> FETCH_HEAD\n   8c5af18..9393f29  main       -> origin/main\nSwitched to branch 'feature/29-session-rejoin-cleanup'\nAuto-merging android/src/main/java/battleships_ex/gdx/android/data/FirebaseGameDataSource.java\nCONFLICT (content): Merge conflict in android/src/main/java/battleships_ex/gdx/android/data/FirebaseGameDataSource.java\nAuto-merging core/src/main/java/battleships_ex/gdx/data/GameDataSource.java...",
+  "timestamp": "2026-04-08T11:57:36.046Z",
+  "retry_count": 2
+}

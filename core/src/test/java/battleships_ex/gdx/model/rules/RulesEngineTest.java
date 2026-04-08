@@ -34,7 +34,7 @@ public class RulesEngineTest {
 
     @Test
     public void placement_validHorizontal_returnsSuccess() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         PlacementResult result = engine.validatePlacement(
             board, ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
         assertTrue(result.isValid());
@@ -68,8 +68,8 @@ public class RulesEngineTest {
 
     @Test
     public void placement_overlapsExistingShip_returnsOverlap() {
-        Ship first  = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
-        Ship second = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship first  = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
+        Ship second = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         board.placeShip(first, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         PlacementResult result = engine.validatePlacement(
@@ -80,8 +80,8 @@ public class RulesEngineTest {
 
     @Test
     public void placement_noOverlap_returnsSuccess() {
-        Ship first  = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
-        Ship second = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship first  = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
+        Ship second = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         board.placeShip(first, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         PlacementResult result = engine.validatePlacement(
@@ -91,7 +91,7 @@ public class RulesEngineTest {
 
     @Test
     public void placement_nullCoordinate_returnsOutOfBounds() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         PlacementResult result = engine.validatePlacement(
             board, ship, null, Orientation.HORIZONTAL);
         assertFalse(result.isValid());
@@ -110,7 +110,7 @@ public class RulesEngineTest {
 
     @Test
     public void resolveShot_hitShipNotSunk_returnsHit() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         ShotResult result = engine.resolveShot(board, new Coordinate(0, 0));
@@ -132,16 +132,17 @@ public class RulesEngineTest {
 
     @Test
     public void resolveShot_sinkMultiCellShip_requiresAllCells() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         board.placeShip(ship, new Coordinate(2, 2), Orientation.HORIZONTAL);
 
         engine.resolveShot(board, new Coordinate(2, 2));
         engine.resolveShot(board, new Coordinate(2, 3));
-        ShotResult last = engine.resolveShot(board, new Coordinate(2, 4));
+        engine.resolveShot(board, new Coordinate(2, 4));
+        ShotResult last = engine.resolveShot(board, new Coordinate(2, 5));
 
         assertEquals(ShotResult.Outcome.SUNK, last.getOutcome());
         assertNotNull(last.getSunkShip());
-        assertEquals(3, last.getSunkShip().getLength());
+        assertEquals(4, last.getSunkShip().getLength());
     }
 
     @Test
@@ -153,8 +154,8 @@ public class RulesEngineTest {
 
     @Test
     public void resolveShot_missDoesNotAffectShip() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
-        board.placeShip(ship, new Coordinate(7, 7), Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
+        board.placeShip(ship, new Coordinate(7, 6), Orientation.HORIZONTAL);
 
         engine.resolveShot(board, new Coordinate(0, 0));
         assertFalse(ship.isSunk());
@@ -172,14 +173,14 @@ public class RulesEngineTest {
 
     @Test
     public void hasWon_shipsPlacedNoneHit_returnsFalse() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
         assertFalse(engine.hasWon(board));
     }
 
     @Test
     public void hasWon_shipPartiallyHit_returnsFalse() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
         engine.resolveShot(board, new Coordinate(0, 0));
         assertFalse(engine.hasWon(board));

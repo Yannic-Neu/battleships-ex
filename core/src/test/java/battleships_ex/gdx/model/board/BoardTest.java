@@ -28,16 +28,17 @@ class BoardTest {
 
     @Test
     void placeShipHorizontally() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL); // length 3
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL); // length 4
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         assertTrue(board.getCell(new Coordinate(0, 0)).hasShip());
         assertTrue(board.getCell(new Coordinate(0, 1)).hasShip());
         assertTrue(board.getCell(new Coordinate(0, 2)).hasShip());
-        assertFalse(board.getCell(new Coordinate(0, 3)).hasShip());
+        assertTrue(board.getCell(new Coordinate(0, 3)).hasShip());
+        assertFalse(board.getCell(new Coordinate(0,4)).hasShip());
 
         assertEquals(1, board.getShips().size());
-        assertEquals(3, board.getShips().get(0).getLength());
+        assertEquals(4, board.getShips().get(0).getLength());
     }
 
     @Test
@@ -64,7 +65,7 @@ class BoardTest {
     @Test
     void placeShipOnOccupiedCellThrows() {
         Ship first  = new Ship(ShipType.SUBMARINE, Orientation.HORIZONTAL);
-        Ship second = new Ship(ShipType.DESTROYER, Orientation.VERTICAL);
+        Ship second = new Ship(ShipType.CRUISER, Orientation.VERTICAL);
         board.placeShip(first, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         assertFalse(board.canPlaceShip(second, new Coordinate(0, 0), Orientation.VERTICAL));
@@ -75,7 +76,7 @@ class BoardTest {
 
     @Test
     void attackHitReturnsHit() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL); // length 2
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL); // length 2
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         AttackResult result = board.attack(new Coordinate(0, 0));
@@ -85,7 +86,7 @@ class BoardTest {
 
     @Test
     void attackMissReturnsMiss() {
-        Ship ship = new Ship(ShipType.DESTROYER, Orientation.HORIZONTAL);
+        Ship ship = new Ship(ShipType.CRUISER, Orientation.HORIZONTAL);
         board.placeShip(ship, new Coordinate(0, 0), Orientation.HORIZONTAL);
 
         AttackResult result = board.attack(new Coordinate(5, 5));

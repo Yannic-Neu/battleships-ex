@@ -1,0 +1,432 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775011391660,
+  "projectRoot": "C:\\Users\\nikla\\Desktop\\Sonstiges\\Projekte\\battleships-ex",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Java/Kotlin",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "build.gradle"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "gradle",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "assets",
+      "docs"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "android": {
+      "path": "android",
+      "purpose": null,
+      "fileCount": 6,
+      "lastAccessed": 1775011391630,
+      "keyFiles": [
+        "AndroidManifest.xml",
+        "build.gradle",
+        "google-services.json",
+        "ic_launcher-web.png",
+        "proguard-rules.pro"
+      ]
+    },
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 2,
+      "lastAccessed": 1775011391630,
+      "keyFiles": [
+        "assets.txt",
+        "libgdx.png"
+      ]
+    },
+    "build": {
+      "path": "build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1775011391631,
+      "keyFiles": []
+    },
+    "core": {
+      "path": "core",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775011391631,
+      "keyFiles": [
+        "build.gradle"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 3,
+      "lastAccessed": 1775011391632,
+      "keyFiles": [
+        "Feedback report.docx",
+        "Software_Architecture Architecture.pdf",
+        "Software_Architecture Requirements.pdf"
+      ]
+    },
+    "gradle": {
+      "path": "gradle",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775011391632,
+      "keyFiles": [
+        "gradle-daemon-jvm.properties"
+      ]
+    },
+    "lwjgl3": {
+      "path": "lwjgl3",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1775011391633,
+      "keyFiles": [
+        "build.gradle",
+        "nativeimage.gradle"
+      ]
+    },
+    "android\\build": {
+      "path": "android\\build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1775011391633,
+      "keyFiles": []
+    },
+    "android\\src": {
+      "path": "android\\src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1775011391633,
+      "keyFiles": []
+    },
+    "core\\build": {
+      "path": "core\\build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1775011391634,
+      "keyFiles": []
+    },
+    "core\\src": {
+      "path": "core\\src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1775011391635,
+      "keyFiles": []
+    },
+    "lwjgl3\\build": {
+      "path": "lwjgl3\\build",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1775011391635,
+      "keyFiles": []
+    },
+    "lwjgl3\\src": {
+      "path": "lwjgl3\\src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1775011391636,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "",
+      "accessCount": 23,
+      "lastAccessed": 1775011650603,
+      "type": "directory"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\controller\\GameController.java",
+      "accessCount": 12,
+      "lastAccessed": 1775649392133,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\data\\GameDataSource.java",
+      "accessCount": 7,
+      "lastAccessed": 1775649481596,
+      "type": "file"
+    },
+    {
+      "path": "android\\src\\main\\java\\battleships_ex\\gdx\\android\\data\\FirebaseGameDataSource.java",
+      "accessCount": 7,
+      "lastAccessed": 1775649517336,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\controller\\GameListener.java",
+      "accessCount": 6,
+      "lastAccessed": 1775043548287,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\data\\SessionManager.java",
+      "accessCount": 6,
+      "lastAccessed": 1775043885430,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\MyGame.java",
+      "accessCount": 6,
+      "lastAccessed": 1775043908608,
+      "type": "file"
+    },
+    {
+      "path": "android\\src\\main\\java\\battleships_ex\\gdx\\android\\AndroidLauncher.java",
+      "accessCount": 6,
+      "lastAccessed": 1775043962286,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\data\\StubGameDataSource.java",
+      "accessCount": 6,
+      "lastAccessed": 1775649493798,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\test\\java\\battleships_ex\\gdx\\SessionManagerTest.java",
+      "accessCount": 5,
+      "lastAccessed": 1775044010754,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\view\\BattleScreen.java",
+      "accessCount": 4,
+      "lastAccessed": 1775042673266,
+      "type": "file"
+    },
+    {
+      "path": "android\\src\\main\\java\\battleships_ex\\gdx\\android\\data\\FirebaseLobbyDataSource.java",
+      "accessCount": 4,
+      "lastAccessed": 1775042675075,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\view\\MenuScreen.java",
+      "accessCount": 4,
+      "lastAccessed": 1775043935803,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\core\\GameSession.java",
+      "accessCount": 3,
+      "lastAccessed": 1775042629052,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\data\\LobbyDataSource.java",
+      "accessCount": 3,
+      "lastAccessed": 1775042663251,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\data\\StubLobbyDataSource.java",
+      "accessCount": 3,
+      "lastAccessed": 1775042664938,
+      "type": "file"
+    },
+    {
+      "path": "database.rules.json",
+      "accessCount": 3,
+      "lastAccessed": 1775042853541,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\ui\\BoardActor.java",
+      "accessCount": 3,
+      "lastAccessed": 1775043563722,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java",
+      "accessCount": 2,
+      "lastAccessed": 1775011527230,
+      "type": "directory"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\controller\\LobbyController.java",
+      "accessCount": 2,
+      "lastAccessed": 1775011633850,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\cards\\ActionCard.java",
+      "accessCount": 2,
+      "lastAccessed": 1775011637792,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\rules\\StandardRulesEngine.java",
+      "accessCount": 2,
+      "lastAccessed": 1775011639002,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\board\\Board.java",
+      "accessCount": 2,
+      "lastAccessed": 1775011659834,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\core\\Player.java",
+      "accessCount": 2,
+      "lastAccessed": 1775011659898,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\board\\Ship.java",
+      "accessCount": 2,
+      "lastAccessed": 1775011660318,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\data\\DataCallback.java",
+      "accessCount": 2,
+      "lastAccessed": 1775042664997,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\core\\Move.java",
+      "accessCount": 2,
+      "lastAccessed": 1775042673922,
+      "type": "file"
+    },
+    {
+      "path": "lwjgl3\\src\\main\\java\\battleships_ex\\gdx\\lwjgl3\\Lwjgl3Launcher.java",
+      "accessCount": 2,
+      "lastAccessed": 1775042871394,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\lobby\\Lobby.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011520561,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\config\\board\\ShipType.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011521292,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model",
+      "accessCount": 1,
+      "lastAccessed": 1775011526861,
+      "type": "directory"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1775011534471,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\controller\\LobbyListener.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011633786,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\view\\PlacementScreen.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011633868,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\rules\\RulesEngine.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011638897,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\model\\cards\\ActionCardResult.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011638952,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\view\\SettingsScreen.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011644460,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\view\\LobbyScreen.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011644830,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\ui\\CardTray.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011645835,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\ui\\ShipCard.java",
+      "accessCount": 1,
+      "lastAccessed": 1775011659728,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\test\\java\\battleships_ex\\gdx\\GameDataSourceTest.java",
+      "accessCount": 1,
+      "lastAccessed": 1775042926260,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\data\\SessionStore.java",
+      "accessCount": 1,
+      "lastAccessed": 1775043782016,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\main\\java\\battleships_ex\\gdx\\data\\FileSessionStore.java",
+      "accessCount": 1,
+      "lastAccessed": 1775043789171,
+      "type": "file"
+    },
+    {
+      "path": "android\\src\\main\\java\\battleships_ex\\gdx\\android\\data\\AndroidSessionStore.java",
+      "accessCount": 1,
+      "lastAccessed": 1775043794494,
+      "type": "file"
+    },
+    {
+      "path": "core\\src\\test\\java\\battleships_ex\\gdx\\SessionRejoinTest.java",
+      "accessCount": 1,
+      "lastAccessed": 1775043986233,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

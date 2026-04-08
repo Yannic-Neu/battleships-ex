@@ -108,11 +108,11 @@ public class PlacementScreen extends ScreenAdapter {
         Label dockingTitle = new Label("DOCKING STATION", new Label.LabelStyle(Theme.fontSmall, Theme.WHITE));
 
         CardTray dockingTray = new CardTray();
-        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "CARRIER", Assets.ships.ship5h)));
-        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SUBMARINE", Assets.ships.ship4h)));
-        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "DESTROYER", Assets.ships.ship3h)));
-        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SUBMARINE", Assets.ships.ship3h)));
-        dockingTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "PATROL", Assets.ships.ship2h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(120f, 82f, "CARRIER", Assets.ships.shipCarrier5h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(110f, 82f, "CRUISER", Assets.ships.shipCruiser4h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(90f, 82f, "SUBMARINE", Assets.ships.shipSubmarine3h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(90f, 82f, "DESTROYER", Assets.ships.shipDestroyer3h)));
+        dockingTray.addCard(new ShipCard(new ShipCardConfig(80f, 82f, "PATROL", Assets.ships.shipPatrol2h)));
 
         GameButton readyButton = new GameButton(
             "READY TO BATTLE",
