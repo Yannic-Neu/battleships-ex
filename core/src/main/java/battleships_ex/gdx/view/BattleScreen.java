@@ -129,11 +129,11 @@ public class BattleScreen extends ScreenAdapter {
         //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "RECON", Assets.ships.ship2h)));
         //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SALVO", Assets.ships.ship3h)));
         //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "AIRSTRIKE", Assets.ships.ship5h)));
-        TextureRegion iconA = Assets.ships.ship2h;
-        TextureRegion iconB = Assets.ships.ship3h;
+        TextureRegion iconA = Assets.ships.shipPatrol2h;
+        TextureRegion iconB = Assets.ships.shipCruiser3h;
         TextureRegion iconC = Assets.ships.ship4h;
-        TextureRegion iconD = Assets.ships.ship5h;
-        TextureRegion iconE = Assets.ships.ship2v;
+        TextureRegion iconD = Assets.ships.shipCarrier5h;
+        TextureRegion iconE = Assets.ships.shipPatrol2v;
 
         ActionCardPresentation m1 = new DoubleShotCardPresentation(iconA);
         ActionCardPresentation m2 = new ShieldCardPresentation(iconB);
