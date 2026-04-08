@@ -1,6 +1,9 @@
 package battleships_ex.gdx.controller;
 
 import battleships_ex.gdx.config.board.Orientation;
+import battleships_ex.gdx.data.DataCallback;
+import battleships_ex.gdx.data.GameDataSource;
+import battleships_ex.gdx.data.SessionManager;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
 import battleships_ex.gdx.model.core.GameSession;
@@ -9,34 +12,121 @@ import battleships_ex.gdx.model.rules.PlacementResult;
 import battleships_ex.gdx.model.rules.ShotResult;
 import battleships_ex.gdx.model.rules.StandardRulesEngine;
 
+/**
+ * Orchestrates game flow: ship placement, shot resolution, action cards,
+ * and real-time synchronization via {@link GameDataSource}.
+ *
+ * <p>Replaces the former inner {@code FirebaseClient} interface with the
+ * platform-agnostic {@link GameDataSource} abstraction (Issue #27).</p>
+ */
 public class GameController {
 
     private final StandardRulesEngine engine;
-    private final FirebaseClient       firebase;
+    private final GameDataSource      gameDataSource;
+    private final SessionManager      sessionManager;
 
     private GameSession  session;
     private Player       localPlayer;
     private Player       remotePlayer;
     private GameListener listener;
+    private String       roomCode;
 
-    public GameController(StandardRulesEngine engine, FirebaseClient firebase) {
-        this.engine   = engine;
-        this.firebase = firebase;
+    public GameController(StandardRulesEngine engine,
+                          GameDataSource gameDataSource,
+                          SessionManager sessionManager) {
+        this.engine         = engine;
+        this.gameDataSource = gameDataSource;
+        this.sessionManager = sessionManager;
     }
 
     public void setListener(GameListener listener) {
         this.listener = listener;
     }
 
-    public void initSession(Player local, Player remote) {
+    /**
+     * Initialises the game session and wires up real-time listeners.
+     *
+     * @param local    the local player
+     * @param remote   the remote player
+     * @param roomCode the active room code for Firebase sync
+     */
+    public void initSession(Player local, Player remote, String roomCode) {
         this.localPlayer  = local;
         this.remotePlayer = remote;
+        this.roomCode     = roomCode;
         this.session      = new GameSession(local, remote);
     }
 
+    /**
+     * Backward-compatible overload for local/stub usage without room code.
+     */
+    public void initSession(Player local, Player remote) {
+        initSession(local, remote, null);
+    }
+
+    /**
+     * Starts the game and activates real-time synchronization.
+     */
     public void startGame() {
         requireSession();
         session.startGame();
+
+        if (roomCode != null) {
+            // Update game status to "playing"
+            gameDataSource.updateGameStatus(roomCode, "playing", new DataCallback<Void>() {
+                @Override public void onSuccess(Void result) {}
+                @Override public void onFailure(String error) {
+                    System.out.println("[GameController] Failed to update game status: " + error);
+                }
+            });
+
+            // Sync initial turn
+            gameDataSource.syncTurn(roomCode, session.getCurrentPlayer().getId(), new DataCallback<Void>() {
+                @Override public void onSuccess(Void result) {}
+                @Override public void onFailure(String error) {
+                    System.out.println("[GameController] Failed to sync initial turn: " + error);
+                }
+            });
+
+            // Register move listener for opponent moves
+            gameDataSource.addMoveListener(roomCode, new DataCallback<GameDataSource.MoveSnapshot>() {
+                @Override
+                public void onSuccess(GameDataSource.MoveSnapshot move) {
+                    // Only process moves from the opponent
+                    if (!move.playerId.equals(localPlayer.getId())) {
+                        onRemoteShotReceived(move.row, move.col);
+                        if (listener != null) {
+                            listener.onOpponentMoveReceived(move.row, move.col);
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    System.out.println("[GameController] Move listener error: " + error);
+                }
+            });
+
+            // Start session manager (heartbeat + disconnect detection)
+            sessionManager.setListener(new SessionManager.SessionListener() {
+                @Override
+                public void onOpponentDisconnected() {
+                    if (listener != null) listener.onOpponentDisconnected();
+                }
+
+                @Override
+                public void onOpponentReconnected() {
+                    if (listener != null) listener.onOpponentReconnected();
+                }
+
+                @Override
+                public void onSessionTimeout() {
+                    if (listener != null) listener.onSessionTimeout();
+                }
+            });
+
+            sessionManager.startSession(roomCode, localPlayer.getId(), remotePlayer.getId());
+        }
     }
 
     public void placeShip(Ship ship, Coordinate start, Orientation orientation) {
@@ -64,11 +154,21 @@ public class GameController {
         if (listener != null) listener.onActionCardPlayed(result);
         firebase.pushActionCardEvent(card.getClass().getSimpleName(), result.getAffectedCoordinates());
 
+        // Reset inactivity timer on action
+        sessionManager.resetInactivityTimer();
+
         // Check win condition - some cards (e.g. Airstrike) can sink ships
         if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK
             && engine.hasWon(remotePlayer.getBoard())) {
             notify_gameOver(localPlayer.getName());
-            firebase.pushGameOver(localPlayer.getName());
+            if (roomCode != null) {
+                gameDataSource.pushGameOver(roomCode, localPlayer.getName(), new DataCallback<Void>() {
+                    @Override public void onSuccess(Void r) {}
+                    @Override public void onFailure(String error) {
+                        System.out.println("[GameController] Failed to push game over: " + error);
+                    }
+                });
+            }
         }
     }
 
@@ -79,6 +179,9 @@ public class GameController {
         Coordinate target = new Coordinate(row, col);
         ShotResult result  = engine.resolveShot(remotePlayer.getBoard(), target);
 
+        // Reset inactivity timer on action
+        sessionManager.resetInactivityTimer();
+
         switch (result.getOutcome()) {
 
             case ALREADY_SHOT:
@@ -88,23 +191,31 @@ public class GameController {
             case MISS:
                 session.processMove(target);    // records move + switches turn
                 notify_miss(target);
-                firebase.pushShotEvent(target, false);
+                syncMoveToBackend(target, false);
+                syncTurnToBackend();
                 break;
 
             case HIT:
                 session.processMove(target);    // records move; turn stays (hit-again)
                 notify_hit(target, result.getSunkShip());
-                firebase.pushShotEvent(target, true);
+                syncMoveToBackend(target, true);
                 break;
 
             case SUNK:
                 session.processMove(target);
                 notify_sunk(target, result.getSunkShip());
-                firebase.pushShotEvent(target, true);
+                syncMoveToBackend(target, true);
 
                 if (engine.hasWon(remotePlayer.getBoard())) {
                     notify_gameOver(localPlayer.getName());
-                    firebase.pushGameOver(localPlayer.getName());
+                    if (roomCode != null) {
+                        gameDataSource.pushGameOver(roomCode, localPlayer.getName(), new DataCallback<Void>() {
+                            @Override public void onSuccess(Void r) {}
+                            @Override public void onFailure(String error) {
+                                System.out.println("[GameController] Failed to push game over: " + error);
+                            }
+                        });
+                    }
                 }
                 break;
         }
@@ -136,6 +247,17 @@ public class GameController {
         }
     }
 
+    /**
+     * Cleans up all real-time listeners and session state.
+     * Call when leaving the battle screen.
+     */
+    public void cleanup() {
+        sessionManager.endSession();
+        if (roomCode != null) {
+            gameDataSource.removeAllListeners(roomCode);
+        }
+    }
+
     public boolean isLocalPlayerTurn() {
         return session != null
             && session.isStarted()
@@ -152,6 +274,37 @@ public class GameController {
     public GameSession getSession() {
         return session;
     }
+
+    /** @return the current room code */
+    public String getRoomCode() {
+        return roomCode;
+    }
+
+    // ── Backend sync helpers ────────────────────────────────────────
+
+    private void syncMoveToBackend(Coordinate target, boolean hit) {
+        if (roomCode == null) return;
+
+        gameDataSource.submitMove(roomCode, localPlayer.getId(), target, hit, new DataCallback<Void>() {
+            @Override public void onSuccess(Void result) {}
+            @Override public void onFailure(String error) {
+                System.out.println("[GameController] Failed to sync move: " + error);
+            }
+        });
+    }
+
+    private void syncTurnToBackend() {
+        if (roomCode == null) return;
+
+        gameDataSource.syncTurn(roomCode, session.getCurrentPlayer().getId(), new DataCallback<Void>() {
+            @Override public void onSuccess(Void result) {}
+            @Override public void onFailure(String error) {
+                System.out.println("[GameController] Failed to sync turn: " + error);
+            }
+        });
+    }
+
+    // ── Notification helpers ────────────────────────────────────────
 
     private void notify_miss(Coordinate c) {
         if (listener != null) listener.onMiss(c);
@@ -186,15 +339,5 @@ public class GameController {
             throw new IllegalStateException(
                 "GameController: initSession() must be called before this operation.");
         }
-    }
-
-    public interface FirebaseClient {
-
-        void pushShotEvent(Coordinate coordinate, boolean hit);
-
-        void pushGameOver(String winnerName);
-
-        void pushActionCardEvent(String cardName,
-                                 java.util.List<battleships_ex.gdx.model.board.Coordinate> affectedCoordinates);
     }
 }
