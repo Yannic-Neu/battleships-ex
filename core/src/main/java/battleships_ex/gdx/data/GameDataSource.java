@@ -121,11 +121,46 @@ public interface GameDataSource {
      */
     void removeHeartbeatListener(String roomCode);
 
+    // ── Target preview (Issue #28) ────────────────────────────────
+
+    /**
+     * Sends the currently aimed cell to the backend so the opponent
+     * can see a real-time preview before the shot is confirmed.
+     *
+     * @param roomCode the active room code
+     * @param playerId the player who is aiming
+     * @param target   the coordinate being aimed at
+     */
+    void sendPreview(String roomCode, String playerId, Coordinate target);
+
+    /**
+     * Clears the preview marker after a shot is confirmed or cancelled.
+     *
+     * @param roomCode the active room code
+     * @param playerId the player whose preview to clear
+     */
+    void clearPreview(String roomCode, String playerId);
+
+    /**
+     * Registers a listener for the opponent's target preview updates.
+     *
+     * @param roomCode   the active room code
+     * @param opponentId the opponent's player id to watch
+     * @param callback   delivers the preview {@link Coordinate}, or null when cleared
+     */
+    void addPreviewListener(String roomCode, String opponentId, DataCallback<Coordinate> callback);
+
+    /**
+     * Removes the preview listener for the given room.
+     */
+    void removePreviewListener(String roomCode);
+
     // ── Cleanup ─────────────────────────────────────────────────────
 
     /**
      * Removes all game-related listeners for the given room.
      * Should be called when leaving a game session.
+     * Implementations must also remove the preview listener.
      */
     void removeAllListeners(String roomCode);
 

@@ -72,6 +72,28 @@ public class StubGameDataSource implements GameDataSource {
     }
 
     @Override
+    public void sendPreview(String roomCode, String playerId, Coordinate target) {
+        System.out.println("[Stub] sendPreview: room=" + roomCode
+            + " player=" + playerId
+            + " target=(" + target.getRow() + "," + target.getCol() + ")");
+    }
+
+    @Override
+    public void clearPreview(String roomCode, String playerId) {
+        System.out.println("[Stub] clearPreview: room=" + roomCode + " player=" + playerId);
+    }
+
+    @Override
+    public void addPreviewListener(String roomCode, String opponentId, DataCallback<Coordinate> callback) {
+        System.out.println("[Stub] addPreviewListener: room=" + roomCode + " opponent=" + opponentId);
+    }
+
+    @Override
+    public void removePreviewListener(String roomCode) {
+        System.out.println("[Stub] removePreviewListener: " + roomCode);
+    }
+
+    @Override
     public void removeAllListeners(String roomCode) {
         System.out.println("[Stub] removeAllListeners: " + roomCode);
     }
