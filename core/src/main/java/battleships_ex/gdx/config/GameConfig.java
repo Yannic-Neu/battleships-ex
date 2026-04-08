@@ -17,13 +17,7 @@ public final class GameConfig {
         public final Color color;
         public final String text;
 
-        public ActionCardConfig(
-            float width,
-            float height,
-            boolean playable,
-            Color color,
-            String text
-        ) {
+        public ActionCardConfig(float width, float height, boolean playable, Color color, String text) {
             this.width = width;
             this.height = height;
             this.playable = playable;

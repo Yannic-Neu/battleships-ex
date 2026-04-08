@@ -39,6 +39,7 @@ public final class Assets {
 
     private Assets() {
     }
+    public static TextureRegion[] profileIcons;
 
     public static void load() {
         ships.tex2h = new Texture(Gdx.files.internal("ship-sprites/2_h.png"));
@@ -58,6 +59,20 @@ public final class Assets {
         ships.ship4v = new TextureRegion(ships.tex4v);
         ships.ship5h = new TextureRegion(ships.tex5h);
         ships.ship5v = new TextureRegion(ships.tex5v);
+
+
+        profileIcons = new TextureRegion[] {
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_1.png"))),
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_2.png"))),
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_3.png"))),
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_4.png"))),
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_5.png"))),
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_6.png"))),
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_7.png"))),
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_8.png"))),
+            new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_9.png")))
+        };
+
 
         /// icons.randomizeTexture = new Texture(Gdx.files.internal("navigation-icons/randomize.png"));
         /// icons.rotateTexture = new Texture(Gdx.files.internal("navigation-icons/rotate.png"));
