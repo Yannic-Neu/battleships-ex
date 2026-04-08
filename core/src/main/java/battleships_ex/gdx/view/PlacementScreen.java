@@ -64,10 +64,6 @@ public class PlacementScreen extends ScreenAdapter {
             ).show(stage);
         });
 
-        GameButton settingsButton = new GameButton("SETT", navButton, () -> {
-            game.setScreen(new SettingsScreen(game, this));
-        });
-
         Label title = new Label("PLACEMENT", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
         GameButton randomizeButton = new GameButton(
             "RANDOMIZE",
@@ -78,7 +74,6 @@ public class PlacementScreen extends ScreenAdapter {
         header.add(backButton).left().padLeft(15);
         header.add(title).left().expandX().padLeft(16);
         //header.add(randomizeButton).center();
-        header.add(settingsButton).right().padRight(10);
 
         BoardConfig boardConfig = new BoardConfig(
             320f,

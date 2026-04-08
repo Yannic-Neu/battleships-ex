@@ -81,11 +81,9 @@ public class BattleScreen extends ScreenAdapter {
                 }
             ).show(stage);
         });
-        GameButton settingsButton = new GameButton("SETT", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new SettingsScreen(game, this)));
 
         topArea.add(backButton).left().pad(10);
         topArea.add().expandX();
-        topArea.add(settingsButton).right().pad(10);
 
         // --- View Switcher (State Toggle) ---
         Table switchInner = new Table();
