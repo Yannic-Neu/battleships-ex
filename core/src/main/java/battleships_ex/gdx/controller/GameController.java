@@ -25,11 +25,19 @@ public class GameController {
     private final GameDataSource      gameDataSource;
     private final SessionManager      sessionManager;
 
+    /** Minimum interval between preview updates (debounce). */
+    private static final long PREVIEW_DEBOUNCE_MS = 200L;
+
     private GameSession  session;
     private Player       localPlayer;
     private Player       remotePlayer;
     private GameListener listener;
     private String       roomCode;
+
+    /** Timestamp of the last preview update sent. */
+    private long lastPreviewSentMs;
+    /** The last preview coordinate sent (to avoid duplicate sends). */
+    private Coordinate lastPreviewCoord;
 
     public GameController(StandardRulesEngine engine,
                           GameDataSource gameDataSource,
@@ -126,7 +134,53 @@ public class GameController {
             });
 
             sessionManager.startSession(roomCode, localPlayer.getId(), remotePlayer.getId());
+
+            // Register preview listener to see opponent's aim (Issue #28)
+            gameDataSource.addPreviewListener(roomCode, remotePlayer.getId(), new DataCallback<Coordinate>() {
+                @Override
+                public void onSuccess(Coordinate previewCoord) {
+                    if (listener != null) {
+                        listener.onPreviewReceived(previewCoord);
+                    }
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    System.out.println("[GameController] Preview listener error: " + error);
+                }
+            });
         }
+    }
+
+    /**
+     * Sends a target preview to the opponent (Issue #28).
+     * The preview is debounced to avoid flooding Firebase with updates.
+     *
+     * @param target the coordinate being aimed at
+     */
+    public void updatePreview(Coordinate target) {
+        if (!isSessionActive() || !isLocalPlayerTurn()) return;
+        if (roomCode == null) return;
+
+        long now = System.currentTimeMillis();
+
+        // Skip if same coordinate or within debounce window
+        if (target.equals(lastPreviewCoord) && (now - lastPreviewSentMs) < PREVIEW_DEBOUNCE_MS) {
+            return;
+        }
+
+        lastPreviewCoord = target;
+        lastPreviewSentMs = now;
+        gameDataSource.sendPreview(roomCode, localPlayer.getId(), target);
+    }
+
+    /**
+     * Clears the target preview after a shot is confirmed.
+     */
+    private void clearPreview() {
+        if (roomCode == null) return;
+        lastPreviewCoord = null;
+        gameDataSource.clearPreview(roomCode, localPlayer.getId());
     }
 
     public void placeShip(Ship ship, Coordinate start, Orientation orientation) {
@@ -152,6 +206,7 @@ public class GameController {
         battleships_ex.gdx.model.cards.ActionCardResult result = session.playActionCard(card);
 
         if (listener != null) listener.onActionCardPlayed(result);
+        firebase.pushActionCardEvent(card.getClass().getSimpleName(), result.getAffectedCoordinates());
 
         // Reset inactivity timer on action
         sessionManager.resetInactivityTimer();
@@ -177,6 +232,9 @@ public class GameController {
 
         Coordinate target = new Coordinate(row, col);
         ShotResult result  = engine.resolveShot(remotePlayer.getBoard(), target);
+
+        // Clear preview now that shot is confirmed (Issue #28)
+        clearPreview();
 
         // Reset inactivity timer on action
         sessionManager.resetInactivityTimer();

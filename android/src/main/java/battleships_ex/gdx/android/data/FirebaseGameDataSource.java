@@ -52,9 +52,12 @@ public class FirebaseGameDataSource implements GameDataSource {
     private static final long HEARTBEAT_STALE_MS = 15_000L;
 
     private final DatabaseReference roomsRef;
+    private static final String NODE_PREVIEW    = "preview";
+
     private final Map<String, ValueEventListener> moveListeners      = new HashMap<>();
     private final Map<String, ValueEventListener> turnListeners      = new HashMap<>();
     private final Map<String, ValueEventListener> heartbeatListeners = new HashMap<>();
+    private final Map<String, ValueEventListener> previewListeners   = new HashMap<>();
 
     public FirebaseGameDataSource() {
         this.roomsRef = FirebaseDatabase.getInstance().getReference("rooms");
@@ -259,6 +262,66 @@ public class FirebaseGameDataSource implements GameDataSource {
         }
     }
 
+    // ── Target preview (Issue #28) ────────────────────────────────
+
+    @Override
+    public void sendPreview(String roomCode, String playerId, Coordinate target) {
+        Map<String, Object> previewData = new HashMap<>();
+        previewData.put(FIELD_ROW, target.getRow());
+        previewData.put(FIELD_COL, target.getCol());
+        previewData.put(FIELD_TIMESTAMP, ServerValue.TIMESTAMP);
+
+        gameRef(roomCode).child(NODE_PREVIEW).child(playerId)
+            .updateChildren(previewData);
+    }
+
+    @Override
+    public void clearPreview(String roomCode, String playerId) {
+        gameRef(roomCode).child(NODE_PREVIEW).child(playerId).removeValue();
+    }
+
+    @Override
+    public void addPreviewListener(String roomCode, String opponentId,
+                                   DataCallback<Coordinate> callback) {
+        removePreviewListener(roomCode);
+
+        ValueEventListener listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    callback.onSuccess(null); // preview cleared
+                    return;
+                }
+
+                Long row = snapshot.child(FIELD_ROW).getValue(Long.class);
+                Long col = snapshot.child(FIELD_COL).getValue(Long.class);
+
+                if (row != null && col != null) {
+                    callback.onSuccess(new Coordinate(row.intValue(), col.intValue()));
+                } else {
+                    callback.onSuccess(null);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onFailure(error.getMessage());
+            }
+        };
+
+        previewListeners.put(roomCode, listener);
+        gameRef(roomCode).child(NODE_PREVIEW).child(opponentId)
+            .addValueEventListener(listener);
+    }
+
+    @Override
+    public void removePreviewListener(String roomCode) {
+        ValueEventListener listener = previewListeners.remove(roomCode);
+        if (listener != null) {
+            gameRef(roomCode).child(NODE_PREVIEW).removeEventListener(listener);
+        }
+    }
+
     // ── Session re-join & cleanup (Issue #29) ─────────────────────
 
     @Override
@@ -271,7 +334,6 @@ public class FirebaseGameDataSource implements GameDataSource {
                     return;
                 }
                 String status = snapshot.getValue(String.class);
-                // Room is active if status is "placing" or "playing"
                 boolean active = "placing".equals(status) || "playing".equals(status);
                 callback.onSuccess(active);
             }
@@ -320,5 +382,6 @@ public class FirebaseGameDataSource implements GameDataSource {
         removeMoveListener(roomCode);
         removeTurnListener(roomCode);
         removeHeartbeatListener(roomCode);
+        removePreviewListener(roomCode);
     }
 }

@@ -108,12 +108,12 @@ public class GameSession {
 
         if (!user.hasCard(card)) {
             throw new IllegalArgumentException(
-                "Player " + user.getName() + " does not hold card: " + card.getDisplayName());
+                "Player " + user.getName() + " does not hold card: " + card.getClass().getSimpleName());
         }
 
         if (!card.canUse(user, opponent)) {
             throw new IllegalStateException(
-                "Card cannot be used right now: " + card.getDisplayName());
+                "Card cannot be used right now: " + card.getClass().getSimpleName());
         }
 
         ActionCardResult result = card.execute(user, opponent);

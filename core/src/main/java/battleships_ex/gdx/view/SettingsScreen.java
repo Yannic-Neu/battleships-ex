@@ -20,6 +20,14 @@ public class SettingsScreen extends ScreenAdapter {
     private final Screen previousScreen;
     private Stage stage;
 
+    // ---- NEW SETTINGS STATE ----
+    private boolean vibration = true;
+    private boolean hints = true;
+    private boolean darkMode = false;
+
+    private String[] shipStyles = {"SPRITES", "RECTANGLES", "RETRO"};
+    private int currentShipStyle = 0;
+
     public SettingsScreen(MyGame game, Screen previousScreen) {
         this.game = game;
         this.previousScreen = previousScreen;
@@ -35,16 +43,78 @@ public class SettingsScreen extends ScreenAdapter {
         root.setBackground(Theme.blackPanel);
         stage.addActor(root);
 
-        Label title = new Label("SETTINGS", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
-        Label placeholder = new Label("Settings implementation coming soon...", new Label.LabelStyle(Theme.fontMedium, Theme.GRAY));
+        // ---- HEADER ----
+        Table header = new Table();
+        header.setBackground(Theme.darkBluePanel);
+        header.pad(10);
 
-        GameButton backButton = new GameButton("BACK", ButtonConfig.primary(200f, 60f), () -> {
-            game.setScreen(previousScreen);
-        });
+        header.add(new GameButton("BACK", ButtonConfig.secondary(120, 50),
+            () -> game.setScreen(previousScreen))).left();
 
-        root.add(title).padBottom(40).row();
-        root.add(placeholder).padBottom(40).row();
-        root.add(backButton).size(200f, 60f);
+        header.add(new Label("SETTINGS",
+                new Label.LabelStyle(Theme.fontLarge, Theme.WHITE)))
+            .expandX().center();
+
+        // ---- SETTINGS LIST ----
+        Table list = new Table();
+        list.pad(20);
+
+        list.add(settingRow("VIBRATION", () -> vibration = !vibration)).growX().padBottom(10).row();
+        list.add(settingRow("HINTS", () -> hints = !hints)).growX().padBottom(10).row();
+        list.add(settingRow("DARK MODE", () -> darkMode = !darkMode)).growX().padBottom(10).row();
+        list.add(shipStyleSelector()).growX().padTop(20).row();
+
+        // ---- FOOTER ----
+        GameButton saveBtn = new GameButton("SAVE", ButtonConfig.primary(260, 56),
+            () -> game.setScreen(previousScreen));
+
+        root.add(header).growX().height(70).row();
+        root.add(list).expand().top().growX().row();
+        root.add(saveBtn).pad(20).center();
+    }
+
+    // ---- HELPER METHODS ----
+    private Table settingRow(String label, Runnable toggle) {
+        Table row = new Table();
+        row.setBackground(Theme.darkBluePanel);
+        row.pad(12);
+
+        row.add(new Label(label,
+                new Label.LabelStyle(Theme.fontMedium, Theme.WHITE)))
+            .expandX().left();
+
+        row.add(new GameButton("TOGGLE",
+            ButtonConfig.secondary(120, 44),
+            toggle)).right();
+
+        return row;
+    }
+
+    private Table shipStyleSelector() {
+        Table row = new Table();
+        row.setBackground(Theme.bluePanel);
+        row.pad(12);
+
+        Label styleLabel = new Label(shipStyles[currentShipStyle],
+            new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
+
+        GameButton left = new GameButton("<", ButtonConfig.secondary(40, 40),
+            () -> {
+                currentShipStyle = (currentShipStyle + shipStyles.length - 1) % shipStyles.length;
+                styleLabel.setText(shipStyles[currentShipStyle]); // IMPORTANT
+            });
+
+        GameButton right = new GameButton(">", ButtonConfig.secondary(40, 40),
+            () -> {
+                currentShipStyle = (currentShipStyle + 1) % shipStyles.length;
+                styleLabel.setText(shipStyles[currentShipStyle]); // IMPORTANT
+            });
+
+        row.add(left).padRight(8);
+        row.add(styleLabel).expandX().center();
+        row.add(right).padLeft(8);
+
+        return row;
     }
 
     @Override
