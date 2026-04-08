@@ -48,9 +48,6 @@ public class EnterLobbyScreen extends ScreenAdapter {
             game.setScreen(new MenuScreen(game));
         });
 
-        GameButton settingsButton = new GameButton("SETT", navButton, () -> {
-            game.setScreen(new SettingsScreen(game, this));
-        });
 
         // Generated room code display
         GameButton generatedCodeButton = new GameButton(generatedCode, secondaryButton, () -> {});
@@ -103,7 +100,6 @@ public class EnterLobbyScreen extends ScreenAdapter {
         topArea.setBackground(Theme.bluePanel);
         topArea.add(backButton).left().padLeft(25);
         topArea.add().expandX();
-        topArea.add(settingsButton).right().padRight(25);
 
         hostingPanel.setBackground(Theme.blackPanel);
         joinPanel.setBackground(Theme.blackPanel);
