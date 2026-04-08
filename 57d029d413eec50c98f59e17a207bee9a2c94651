@@ -1,0 +1,45 @@
+core/src/main/java/battleships_ex/gdx/MyGame.java
+  58fca4de42580e6e 7,15,20,23,25,33-34
+core/src/main/java/battleships_ex/gdx/data/GameDataSource.java
+  58fca4de42580e6e 1-165
+core/src/test/java/battleships_ex/gdx/SessionManagerTest.java
+  58fca4de42580e6e 1-181
+core/src/main/java/battleships_ex/gdx/data/StubGameDataSource.java
+  58fca4de42580e6e 1-78
+android/src/main/java/battleships_ex/gdx/android/AndroidLauncher.java
+  58fca4de42580e6e 15,50
+lwjgl3/src/main/java/battleships_ex/gdx/lwjgl3/Lwjgl3Launcher.java
+  58fca4de42580e6e 6,18-20
+core/src/test/java/battleships_ex/gdx/GameDataSourceTest.java
+  58fca4de42580e6e 1-142
+core/src/main/java/battleships_ex/gdx/data/SessionManager.java
+  58fca4de42580e6e 1-188
+core/src/main/java/battleships_ex/gdx/controller/GameController.java
+  58fca4de42580e6e 4-6,15-21,25-26,32,34-39,46-53,56,60-64,67-69,73-129,155-157,163-170,181-183,193-194,200,206,210-217,249-256,277-303,305-306
+android/src/main/java/battleships_ex/gdx/android/data/FirebaseGameDataSource.java
+  58fca4de42580e6e 1-270
+core/src/main/java/battleships_ex/gdx/controller/GameListener.java
+  58fca4de42580e6e 93-121
+database.rules.json
+  58fca4de42580e6e 7-25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "57d029d413eec50c98f59e17a207bee9a2c94651",
+  "prompts": {
+    "58fca4de42580e6e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d05b20f-ea89-450b-8be7-4872ce13ac39",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Niklas Wichter",
+      "messages": [],
+      "total_additions": 577,
+      "total_deletions": 0,
+      "accepted_lines": 577,
+      "overriden_lines": 0
+    }
+  }
+}
