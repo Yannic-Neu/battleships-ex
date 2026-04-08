@@ -1,0 +1,21 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.2.5",
+  "base_commit_sha": "077c77ff71423447e788a500fc61d7f3b825da4c",
+  "prompts": {
+    "58fca4de42580e6e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2d05b20f-ea89-450b-8be7-4872ce13ac39",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "Niklas Wichter",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 156,
+      "overriden_lines": 0
+    }
+  }
+}
