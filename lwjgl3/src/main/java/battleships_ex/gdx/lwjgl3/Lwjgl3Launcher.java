@@ -5,19 +5,55 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.data.StubGameDataSource;
 import battleships_ex.gdx.data.StubLobbyDataSource;
+import battleships_ex.gdx.lwjgl3.data.DesktopFirebaseAuth;
+import battleships_ex.gdx.lwjgl3.data.DesktopRestLobbyDataSource;
 
 /** Launches the desktop (LWJGL3) application. */
 public class Lwjgl3Launcher {
+
+    // Toggle this to switch between local stubs and live Firebase REST API
+    private static final boolean USE_FIREBASE = true;
+
     public static void main(String[] args) {
-        if (StartupHelper.startNewJvmIfRequired()) return; // This handles macOS support and helps on Windows.
-        createApplication();
+        if (StartupHelper.startNewJvmIfRequired()) return;
+
+        if (USE_FIREBASE) {
+            System.out.println("Connecting to Firebase REST Auth...");
+            // Do Auth off the main thread before launching the LibGDX app
+            new Thread(() -> {
+                try {
+                    DesktopFirebaseAuth.AuthResult auth = DesktopFirebaseAuth.signInAnonymously();
+                    System.out.println("Desktop Authenticated UID: " + auth.uid);
+                    createApplication(auth.uid, auth.idToken);
+                } catch (Exception e) {
+                    System.err.println("Firebase Auth Failed! " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }).start();
+        } else {
+            // Local stub mode
+            String localId = "desktop-" + System.currentTimeMillis();
+            createApplication(localId, null);
+        }
     }
 
-    private static Lwjgl3Application createApplication() {
-        String desktopPlayerId = "desktop-" + System.currentTimeMillis();
-        return new Lwjgl3Application(
-            new MyGame(new StubLobbyDataSource(), new StubGameDataSource(), desktopPlayerId),
-            getDefaultConfiguration());
+    private static void createApplication(String uid, String idToken) {
+        battleships_ex.gdx.data.LobbyDataSource lobbyDataSource;
+        battleships_ex.gdx.data.GameDataSource gameDataSource;
+
+        if (USE_FIREBASE && idToken != null) {
+            lobbyDataSource = new DesktopRestLobbyDataSource(idToken);
+            // TODO: Implement DesktopRestGameDataSource later. Using stub for now.
+            gameDataSource = new StubGameDataSource();
+        } else {
+            lobbyDataSource = new StubLobbyDataSource();
+            gameDataSource = new StubGameDataSource();
+        }
+
+        new Lwjgl3Application(
+            new MyGame(lobbyDataSource, gameDataSource, uid),
+            getDefaultConfiguration()
+        );
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
