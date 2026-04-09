@@ -10,6 +10,8 @@ import battleships_ex.gdx.data.SessionManager;
 import battleships_ex.gdx.data.SessionStore;
 import battleships_ex.gdx.ui.Theme;
 import battleships_ex.gdx.view.MenuScreen;
+import battleships_ex.gdx.controller.GameController;
+import battleships_ex.gdx.model.rules.StandardRulesEngine;
 
 public class MyGame extends Game {
     public SpriteBatch batch;
@@ -18,6 +20,7 @@ public class MyGame extends Game {
     private SessionStore sessionStore;
     private SessionManager sessionManager;
     private volatile String playerId;
+    private GameController gameController;
 
     /**
      * @param lobbyDataSource platform-specific lobby backend (Firebase on Android, stub on Desktop)
@@ -59,6 +62,17 @@ public class MyGame extends Game {
             }
         }
         return sessionManager;
+    }
+
+    /**
+     * Lazily initializes and returns the GameController.
+     */
+    public GameController getGameController() {
+        if (gameController == null) {
+            StandardRulesEngine rulesEngine = new StandardRulesEngine();
+            gameController = new GameController(rulesEngine, this.gameDataSource, this.getSessionManager());
+        }
+        return gameController;
     }
 
     public String getPlayerId() {

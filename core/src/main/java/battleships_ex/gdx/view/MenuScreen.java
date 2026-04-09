@@ -8,7 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-
+import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ButtonConfig;
@@ -44,6 +44,13 @@ public class MenuScreen extends ScreenAdapter {
         });
 
         GameButton singlePlayerButton = new GameButton("SINGLEPLAYER", secondaryButton, () -> {
+            // Generate a default local player
+            Player localPlayer = new Player("P1", "Player 1");
+
+            // Initialize the single-player backend
+            game.getGameController().initSinglePlayerSession(localPlayer);
+
+            // Proceed directly to ship placement
             game.setScreen(new PlacementScreen(game));
         });
 
