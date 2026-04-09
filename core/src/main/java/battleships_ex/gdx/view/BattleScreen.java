@@ -152,7 +152,7 @@ public class BattleScreen extends ScreenAdapter {
         ActionCard c5 = new ActionCard(cfg5); c5.bind(m5); actionCardTray.addCard(c5);
 
         GameButton fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 72f), () -> {
-            System.out.println("Executing Action Strategy...");
+            System.out.println("FIRE clicked");
         });
 
         actionsPanel.add(actionCardsLabel).left().padBottom(12f).row();
