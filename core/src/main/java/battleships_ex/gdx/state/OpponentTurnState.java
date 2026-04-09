@@ -1,5 +1,7 @@
 package battleships_ex.gdx.state;
 
+import com.badlogic.gdx.utils.Timer;
+
 /**
  * Transition map:
  *   Remote MISS  → MyTurnState   (opponent missed, local player's turn)
@@ -17,6 +19,28 @@ public class OpponentTurnState extends BaseGameState {
     @Override
     public void onEnter(GameStateManager manager) {
         manager.notifyStateChanged(getName());
+
+        // If in single-player, trigger the bot logic after a short delay to simulate thinking
+        if (manager.getGameController().isSinglePlayer()) {
+            scheduleBotMove(manager);
+        }
+    }
+
+    private void scheduleBotMove(GameStateManager manager) {
+        Timer.schedule(new Timer.Task() {
+            @Override
+            public void run() {
+                manager.getGameController().playBotTurn();
+
+                // If the shot was a HIT/SUNK, the session remains in OpponentTurnState.
+                // We must schedule the bot's next shot so it can continue its streak.
+                if (manager.getGameController().isSinglePlayer() &&
+                    !manager.getGameController().isLocalPlayerTurn() &&
+                    manager.getGameController().isSessionActive()) {
+                    scheduleBotMove(manager);
+                }
+            }
+        }, 1.0f); // 1-second delay for UI readability
     }
 
     @Override
