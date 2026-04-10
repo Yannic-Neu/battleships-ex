@@ -8,12 +8,15 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+
+import battleships_ex.gdx.controller.LobbyController;
 import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.data.DataCallback;
 import battleships_ex.gdx.data.SessionManager;
+import battleships_ex.gdx.state.GameStateManager;
 import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
@@ -49,6 +52,10 @@ public class MenuScreen extends ScreenAdapter {
 
             // Initialize the single-player backend
             game.getGameController().initSinglePlayerSession(localPlayer);
+
+            LobbyController lobbyController = new LobbyController(game.getLobbyDataSource());
+
+            GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
 
             // Proceed directly to ship placement
             game.setScreen(new PlacementScreen(game));

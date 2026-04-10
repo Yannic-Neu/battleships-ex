@@ -100,22 +100,19 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         );
         boardActor = new BoardActor(boardConfig);
 
-        Label deployPhase = new Label("DEPLOYMENT PHASE", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
+        deployPhaseLabel = new Label("DEPLOYMENT PHASE", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
         Label gridTitle = new Label("10x10 STRATEGIC GRID", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
 
         Table boardSection = new Table();
-        boardSection.add(deployPhase).padTop(10).row();
+        boardSection.add(deployPhaseLabel).padTop(10).row();
         boardSection.add(gridTitle).padBottom(16).row();
         boardSection.add(boardActor).size(boardConfig.size).row();
 
-        Label leftHint = new Label("Drag ships to grid", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
-        Label rightHint = new Label("Tap to rotate", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
-
-        Table hints = new Table();
-        hints.add(leftHint).left().expandX();
-        hints.add(rightHint).right();
-
-        boardSection.add(hints).growX().padTop(12);
+        buildHintsTable();
+        buildActionPanel();
+        dynamicSection = new Table();
+        dynamicSection.add(hintsTable).growX().padTop(12);
+        boardSection.add(dynamicSection).growX();
 
         // Docking Station Setup
         Label dockingTitle = new Label("DOCKING STATION", new Label.LabelStyle(Theme.fontSmall, Theme.WHITE));
@@ -154,6 +151,7 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         dockingSection.add(readyButton).center().padBottom(16);
 
         root.add(dockingSection).padTop(20).growX().bottom();
+
         // Initialize Drag and Drop
         setupDragAndDrop(carrierCard, ShipType.CARRIER);
         setupDragAndDrop(cruiserCard, ShipType.CRUISER);
