@@ -98,6 +98,12 @@ public class GameStateManager {
     // View-facing action API
     // -------------------------------------------------------------------------
 
+    /** Bypasses the LobbyState entirely for offline/bot matches. */
+    public void forceSinglePlayerPlacement(Player botPlayer) {
+        this.remotePlayer = botPlayer;
+        transitionTo(new PlacementState());
+    }
+
     /** Request to create a new lobby. Valid only in LobbyState. */
     public void createLobby() {
         currentState.onCreateLobby(this);

@@ -78,6 +78,9 @@ public class GameController {
     /**
      * Starts the game and activates real-time synchronization.
      */
+    public Player getRemotePlayer() {
+        return remotePlayer;
+    }
     public void startGame() {
         requireSession();
         session.startGame();

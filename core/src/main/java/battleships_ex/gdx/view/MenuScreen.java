@@ -54,8 +54,10 @@ public class MenuScreen extends ScreenAdapter {
             game.getGameController().initSinglePlayerSession(localPlayer);
 
             LobbyController lobbyController = new LobbyController(game.getLobbyDataSource());
-
             GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
+
+            Player botPLayer = game.getGameController().getRemotePlayer();
+            GameStateManager.getInstance().forceSinglePlayerPlacement(botPLayer);
 
             // Proceed directly to ship placement
             game.setScreen(new PlacementScreen(game));

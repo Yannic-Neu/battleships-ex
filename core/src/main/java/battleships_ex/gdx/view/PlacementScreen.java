@@ -163,6 +163,17 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         GameStateManager.getInstance().setStateListener(this);
     }
 
+    /** Automatically shifts out-of-bounds coordinates cleanly inside the grid */
+    private Coordinate getClampedCoordinate(int rawRow, int rawCol, int shipLength, Orientation orientation) {
+        int maxRow = (orientation == Orientation.VERTICAL) ? (10 - shipLength) : 9;
+        int maxCol = (orientation == Orientation.HORIZONTAL) ? (10 - shipLength) : 9;
+
+        int safeRow = Math.max(0, Math.min(maxRow, rawRow));
+        int safeCol = Math.max(0, Math.min(maxCol, rawCol));
+
+        return new Coordinate(safeRow, safeCol);
+    }
+
     private void buildHintsTable() {
         hintsTable = new Table();
         hintsTable.add(new Label("Drag ships to grid", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY))).left().expandX();
@@ -183,17 +194,17 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
             BoardActor.FloatingShipVisual floating = boardActor.getFloatingShip();
             if (floating != null) {
                 // Rotates perfectly on center axis (Java int division naturally rounds down for odds)
-                int offset = floating.type.getLength() / 2;
+                int len = floating.type.getLength();
+                int offset = len / 2;
                 int r = floating.start.getRow();
                 int c = floating.start.getCol();
 
-                if (floating.orientation == Orientation.HORIZONTAL) {
-                    floating.orientation = Orientation.VERTICAL;
-                    floating.start = new Coordinate(r - offset, c + offset);
-                } else {
-                    floating.orientation = Orientation.HORIZONTAL;
-                    floating.start = new Coordinate(r + offset, c - offset);
-                }
+                Orientation newOri = (floating.orientation == Orientation.HORIZONTAL) ? Orientation.VERTICAL : Orientation.HORIZONTAL;
+                int newR = (newOri == Orientation.VERTICAL) ? (r - offset) : (r + offset);
+                int newC = (newOri == Orientation.VERTICAL) ? (c + offset) : (c - offset);
+
+                floating.orientation = newOri;
+                floating.start = getClampedCoordinate(newR, newC, len, newOri);
                 floating.isLegalVisual = true; // Reset color to check again on next confirm
             }
         });
@@ -230,7 +241,7 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
             dragAndDrop.addTarget(new DragAndDrop.Target(boardActor) {
                 @Override
                 public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                    Coordinate hoverCoord = boardActor.pointToCoordinate(x, y);
+                    Coordinate rawCoord = boardActor.pointToCoordinate(x, y);
                     BoardActor.FloatingShipVisual floating = boardActor.getFloatingShip();
                     if (floating == null) {
                         floating = new BoardActor.FloatingShipVisual();
@@ -238,7 +249,7 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
                         floating.orientation = Orientation.HORIZONTAL;
                         boardActor.setFloatingShip(floating);
                     }
-                    floating.start = hoverCoord;
+                    floating.start = getClampedCoordinate(rawCoord.getRow(), rawCoord.getCol(), floating.type.getLength(), floating.orientation);
                     floating.isLegalVisual = true; // resets to yellow when moving
                     return true;
                 }
@@ -247,7 +258,8 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
                 public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
                     BoardActor.FloatingShipVisual floating = boardActor.getFloatingShip();
                     if (floating != null) {
-                        floating.start = boardActor.pointToCoordinate(x, y);
+                        Coordinate rawCoord = boardActor.pointToCoordinate(x, y);
+                        floating.start = getClampedCoordinate(rawCoord.getRow(), rawCoord.getCol(), floating.type.getLength(), floating.orientation);
                         showActionPanel();
                     }
                 }
