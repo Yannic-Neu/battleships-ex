@@ -117,8 +117,8 @@ public class EnterLobbyScreen extends ScreenAdapter {
 
         root.defaults().expand().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
-        root.add(hostingPanel).height(Value.percentHeight(0.4f, root)).row();
         root.add(joinPanel).height(Value.percentHeight(0.5f, root)).row();
+        root.add(hostingPanel).height(Value.percentHeight(0.4f, root)).row();
     }
 
     private void createRoom() {
