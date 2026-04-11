@@ -111,13 +111,15 @@ public class GameController {
             gameDataSource.addMoveListener(roomCode, new DataCallback<GameDataSource.MoveSnapshot>() {
                 @Override
                 public void onSuccess(GameDataSource.MoveSnapshot move) {
-                    // Only process moves from the opponent
-                    if (!move.playerId.equals(localPlayer.getId())) {
-                        onRemoteShotReceived(move.row, move.col);
-                        if (listener != null) {
-                            listener.onOpponentMoveReceived(move.row, move.col);
+                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                        // Only process moves from the opponent
+                        if (!move.playerId.equals(localPlayer.getId())) {
+                            onRemoteShotReceived(move.row, move.col);
+                            if (listener != null) {
+                                listener.onOpponentMoveReceived(move.row, move.col);
+                            }
                         }
-                    }
+                    });
                 }
 
                 @Override
@@ -150,9 +152,11 @@ public class GameController {
             gameDataSource.addPlacementStatusListener(roomCode, remotePlayer.getId(), new DataCallback<Boolean>() {
                 @Override
                 public void onSuccess(Boolean isReady) {
-                    if (listener != null) {
-                        listener.onOpponentPlacementReady(isReady);
-                    }
+                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                        if (listener != null) {
+                            listener.onOpponentPlacementReady(isReady);
+                        }
+                    });
                 }
 
                 @Override
@@ -165,9 +169,11 @@ public class GameController {
             gameDataSource.addPreviewListener(roomCode, remotePlayer.getId(), new DataCallback<Coordinate>() {
                 @Override
                 public void onSuccess(Coordinate previewCoord) {
-                    if (listener != null) {
-                        listener.onPreviewReceived(previewCoord);
-                    }
+                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                        if (listener != null) {
+                            listener.onPreviewReceived(previewCoord);
+                        }
+                    });
                 }
 
                 @Override
@@ -254,10 +260,12 @@ public class GameController {
             gameDataSource.addPlacementStatusListener(roomCode, remotePlayer.getId(), new DataCallback<Boolean>() {
                 @Override
                 public void onSuccess(Boolean ready) {
-                    if (listener != null) {
-                        listener.onOpponentPlacementReady(ready);
-                    }
-                    callback.onSuccess(ready);
+                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                        if (listener != null) {
+                            listener.onOpponentPlacementReady(ready);
+                        }
+                        callback.onSuccess(ready);
+                    });
                 }
 
                 @Override

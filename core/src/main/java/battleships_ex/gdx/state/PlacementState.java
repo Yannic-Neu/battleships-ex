@@ -40,8 +40,10 @@ public class PlacementState extends BaseGameState {
 
         // Listen for opponent readiness
         manager.getGameController().addPlacementStatusListener(ready -> {
-            remoteReady = ready;
-            checkBothReady(manager);
+            com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                remoteReady = ready;
+                checkBothReady(manager);
+            });
         });
     }
 

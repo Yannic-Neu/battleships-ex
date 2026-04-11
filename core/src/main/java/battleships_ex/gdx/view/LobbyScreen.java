@@ -144,6 +144,20 @@ public class LobbyScreen extends ScreenAdapter {
                         LobbyController lobbyController = new LobbyController(game.getLobbyDataSource());
                         GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
 
+                        // Inject the lobby state into the controller and manager to bypass LobbyState
+                        battleships_ex.gdx.model.lobby.Lobby lobby = new battleships_ex.gdx.model.lobby.Lobby(System.currentTimeMillis(), roomCode);
+                        Player hostPlayer = new Player(snapshot.hostPlayerId, snapshot.hostPlayerName);
+                        Player guestPlayer = new Player(snapshot.guestPlayerId, snapshot.guestPlayerName);
+                        if (isHost) {
+                            lobby.addPlayer(localPlayer);
+                            lobby.addPlayer(guestPlayer);
+                        } else {
+                            lobby.addPlayer(hostPlayer);
+                            lobby.addPlayer(localPlayer);
+                        }
+                        lobbyController.setActiveLobby(lobby);
+                        GameStateManager.getInstance().forceMultiplayerPlacement(isHost ? guestPlayer : hostPlayer);
+
                         game.getLobbyDataSource().removeLobbyListener(roomCode);
                         game.setScreen(new PlacementScreen(game));
                         return;

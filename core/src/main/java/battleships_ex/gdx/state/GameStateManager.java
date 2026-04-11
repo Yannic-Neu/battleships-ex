@@ -104,6 +104,12 @@ public class GameStateManager {
         transitionTo(new PlacementState());
     }
 
+    /** Forces transition to PlacementState for multiplayer after manual UI join. */
+    public void forceMultiplayerPlacement(Player remotePlayer) {
+        this.remotePlayer = remotePlayer;
+        transitionTo(new PlacementState());
+    }
+
     /** Request to create a new lobby. Valid only in LobbyState. */
     public void createLobby() {
         currentState.onCreateLobby(this);

@@ -201,6 +201,11 @@ public class LobbyController {
         return activeLobby;
     }
 
+    /** Set the active lobby (useful for restoring state) */
+    public void setActiveLobby(Lobby activeLobby) {
+        this.activeLobby = activeLobby;
+    }
+
     /** @return true if the local player is the host of the active lobby */
     public boolean isLocalPlayerHost() {
         return activeLobby != null
