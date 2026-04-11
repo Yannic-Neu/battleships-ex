@@ -161,4 +161,7 @@ public class GameSession {
     public Player getRemotePlayer() {
         return player2;
     }
+
+    public void setCurrentPlayer(Player localPlayer) {
+    }
 }

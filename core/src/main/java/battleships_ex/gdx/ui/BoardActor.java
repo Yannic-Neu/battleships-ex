@@ -32,6 +32,11 @@ public class BoardActor extends Actor {
     // View-specific visual state
     private final List<PlacedShipVisual> placedShips = new ArrayList<>();
     private FloatingShipVisual floatingShip;
+    private final List<Coordinate> misses = new ArrayList<>();
+    private final List<Coordinate> hits = new ArrayList<>();
+
+    public void markMiss(Coordinate coord) { misses.add(coord); }
+    public void markHit(Coordinate coord) { hits.add(coord); }
 
     public BoardActor(BoardConfig config) {
         this.config = config;
@@ -152,7 +157,24 @@ public class BoardActor extends Actor {
         }
         renderer.end();
 
-        // 5. Draw Grid Lines Over Top
+        // 5. Draw Pegs (Misses / Hits)
+        renderer.begin(ShapeRenderer.ShapeType.Filled);
+        float pegRadius = cell * 0.25f;
+        for (Coordinate miss : misses) {
+            float cx = x + miss.getCol() * cell + cell / 2f;
+            float cy = y + (config.gridSize - 1 - miss.getRow()) * cell + cell / 2f;
+            renderer.setColor(Color.WHITE);
+            renderer.circle(cx, cy, pegRadius);
+        }
+        for (Coordinate hit : hits) {
+            float cx = x + hit.getCol() * cell + cell / 2f;
+            float cy = y + (config.gridSize - 1 - hit.getRow()) * cell + cell / 2f;
+            renderer.setColor(Color.RED);
+            renderer.circle(cx, cy, pegRadius);
+        }
+        renderer.end();
+
+        // 6. Draw Grid Lines Over Top
         renderer.begin(ShapeRenderer.ShapeType.Line);
         renderer.setColor(config.lineColor);
 

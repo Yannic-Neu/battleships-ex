@@ -42,4 +42,6 @@ public interface GameStateListener {
 
     // Terminal
     void onGameOver(String winnerName);
+
+    void onTurnChanged(String currentPlayerId);
 }

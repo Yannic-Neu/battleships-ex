@@ -34,6 +34,7 @@ import battleships_ex.gdx.ui.cards.ParryCardPresentation;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.data.Assets;
+import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.ui.BoardActor;
 import battleships_ex.gdx.ui.CardTray;
 import battleships_ex.gdx.ui.ConfirmationDialog;
@@ -63,6 +64,8 @@ public class BattleScreen extends ScreenAdapter {
     private BoardActor boardActor;
     private Label tacGridLabel;
     private CardTray actionCardTray;
+    private GameButton fireButton;
+    private Coordinate targetCoord;
 
     public BattleScreen(MyGame game) {
         this.game = game;
@@ -81,28 +84,28 @@ public class BattleScreen extends ScreenAdapter {
             @Override
             public void onHit(Coordinate c, Ship ship) {
                 updateEnergyFromGame();
-                updateActionCardAvailability();
+                rebuildUI();
             }
             @Override
             public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
-                // Update energy and UI because cards cost energy
                 updateEnergyFromGame();
-                updateActionCardAvailability();
+                rebuildUI();
             }
             @Override
             public void onSunk(Coordinate c, Ship ship) {
                 updateEnergyFromGame();
-                updateActionCardAvailability();
+                rebuildUI();
             }
 
             @Override
             public void onMiss(Coordinate c) {
-                updateActionCardAvailability();
-                // no energy change
+                rebuildUI();
             }
 
             @Override
-            public void onAlreadyShot(Coordinate c) {}
+            public void onAlreadyShot(Coordinate c) {
+                updateFireButtonState();
+            }
 
             @Override
             public void onShipPlaced(Ship ship) {}
@@ -118,6 +121,10 @@ public class BattleScreen extends ScreenAdapter {
 
             }
 
+            @Override
+            public void onTurnChanged(String currentPlayerId) {
+                rebuildUI();
+            }
         });
     }
     private void updateEnergyFromGame() {
@@ -158,8 +165,14 @@ public class BattleScreen extends ScreenAdapter {
             ).show(stage);
         });
 
+        Label turnLabel = new Label("", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
+        boolean myTurn = battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn();
+        turnLabel.setText(myTurn ? "YOUR TURN" : "OPPONENT'S TURN");
+        turnLabel.setColor(myTurn ? Theme.BLUE : Theme.GRAY);
+
         topArea.add(backButton).left().pad(10);
-        topArea.add().expandX();
+        topArea.add(turnLabel).expandX().center();
+        topArea.add().width(60f).pad(10); // Balances the back button
 
         // --- View Switcher (State Toggle) ---
         Table switchInner = new Table();
@@ -194,9 +207,54 @@ public class BattleScreen extends ScreenAdapter {
         BoardConfig boardConfig = new BoardConfig(320f, 10, new Color(0.05f, 0.10f, 0.20f, 1f), new Color(0.15f, 0.22f, 0.35f, 1f));
         boardActor = new BoardActor(boardConfig);
 
+        battleships_ex.gdx.model.board.Board targetBoard = (currentMode == ViewMode.ENEMY_WATERS)
+            ? gameController.getRemotePlayer().getBoard()
+            : gameController.getLocalPlayer().getBoard();
+
+        for (int row = 0; row < 10; row++) {
+            for (int col = 0; col < 10; col++) {
+                battleships_ex.gdx.model.board.Cell cell = targetBoard.getCell(row, col);
+                if (cell.isHit()) {
+                    if (cell.hasShip()) {
+                        boardActor.markHit(new Coordinate(row, col));
+                    } else {
+                        boardActor.markMiss(new Coordinate(row, col));
+                    }
+                }
+            }
+        }
+
+        if (currentMode == ViewMode.ENEMY_WATERS) {
+            boardActor.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+                @Override
+                public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                    Coordinate coord = boardActor.pointToCoordinate(x, y);
+                    setTarget(coord);
+                    return true;
+                }
+                @Override
+                public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                    Coordinate coord = boardActor.pointToCoordinate(x, y);
+                    setTarget(coord);
+                }
+            });
+            // Restore visual target if it exists
+            if (targetCoord != null) {
+                boardActor.setPreviewCell(targetCoord);
+            }
+
+            // Draw sunken ships
+            for (battleships_ex.gdx.model.board.Ship ship : targetBoard.getShips()) {
+                if (ship.isSunk() && !ship.getOccupiedCoordinates().isEmpty()) {
+                    Coordinate start = ship.getOccupiedCoordinates().iterator().next();
+                    boardActor.addPlacedShip(ship.getType(), start, ship.getOrientation());
+                }
+            }
+        }
+
         if (currentMode == ViewMode.OWN_FLEET) {
-            List<Ship> ships = gameController.getSession().getLocalPlayer().getBoard().getShips();
-            for (Ship ship : ships) {
+            List<battleships_ex.gdx.model.board.Ship> ships = targetBoard.getShips();
+            for (battleships_ex.gdx.model.board.Ship ship : ships) {
                 if (ship.isPlaced() && !ship.getOccupiedCoordinates().isEmpty()) {
                     Coordinate start = ship.getOccupiedCoordinates().iterator().next();
                     boardActor.addPlacedShip(ship.getType(), start, ship.getOrientation());
@@ -244,8 +302,15 @@ public class BattleScreen extends ScreenAdapter {
         actionCardTray.addCard(bindCard("ERASE",         m4, new EraseCard()));
         actionCardTray.addCard(bindCard("SCAN",          m5, new ScanCard()));
 
-        GameButton fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 72f), () -> {
-            System.out.println("FIRE clicked");
+        fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 72f), () -> {
+            if (fireButton.isDisabled()) return;
+            if (targetCoord != null) {
+                battleships_ex.gdx.state.GameStateManager.getInstance().fireShot(targetCoord.getRow(), targetCoord.getCol());
+                // clear local target visually after shot
+                targetCoord = null;
+                boardActor.clearPreviewCell();
+                updateFireButtonState();
+            }
         });
 
         actionsPanel.add(energyBar).left().padBottom(6f).row();
@@ -265,6 +330,7 @@ public class BattleScreen extends ScreenAdapter {
         root.add(boardContainer).expandY().padTop(10f).row();
         root.add(actionsPanel).padBottom(12f).row();
         updateActionCardAvailability();
+        updateFireButtonState();
     }
 
     @Override
@@ -283,6 +349,35 @@ public class BattleScreen extends ScreenAdapter {
     public void dispose() {
         stage.dispose();
     }
+
+    private void setTarget(Coordinate coord) {
+        if (!battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn()) return;
+        this.targetCoord = coord;
+        boardActor.setPreviewCell(coord);
+        gameController.updatePreview(coord);
+        updateFireButtonState();
+    }
+
+    private void updateFireButtonState() {
+        if (fireButton == null) return;
+        boolean myTurn = battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn();
+        boolean validTarget = targetCoord != null;
+
+        if (validTarget) {
+            // Check if already hit
+            // "Disable the "FIRE" button if the selected tile has already been targeted previously."
+            Player opponent = gameController.getRemotePlayer();
+            if (opponent != null) {
+                // If cell is already hit, validTarget becomes false
+                if (opponent.getBoard().getCell(targetCoord).isHit()) {
+                    validTarget = false;
+                }
+            }
+        }
+
+        fireButton.setDisabled(!myTurn || !validTarget || currentMode != ViewMode.ENEMY_WATERS);
+    }
+
     private ActionCard bindCard(String name, ActionCardPresentation presentation,
                                 battleships_ex.gdx.model.cards.ActionCard modelCard) {
 

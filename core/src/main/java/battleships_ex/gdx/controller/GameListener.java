@@ -134,4 +134,10 @@ public interface GameListener {
 
     /** Called when the opponent's placement readiness changes. */
     default void onOpponentPlacementReady(boolean ready) {}
+
+    /**
+     * Called when the turn changes.
+     * @param currentPlayerId the ID of the player whose turn it is now
+     */
+    default void onTurnChanged(String currentPlayerId) {}
 }

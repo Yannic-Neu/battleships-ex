@@ -43,6 +43,7 @@ public class MenuScreen extends ScreenAdapter {
         ButtonConfig navButton = ButtonConfig.secondary(80f, 44f);
 
         GameButton enterLobbyButton = new GameButton("MULTIPLAYER", primaryButton, () -> {
+            game.getGameController().cleanup(); // Reset single player states if any
             game.setScreen(new EnterLobbyScreen(game));
         });
 

@@ -156,6 +156,7 @@ public class LobbyScreen extends ScreenAdapter {
                             lobby.addPlayer(localPlayer);
                         }
                         lobbyController.setActiveLobby(lobby);
+                        lobbyController.setLocalPlayer(localPlayer);
                         GameStateManager.getInstance().forceMultiplayerPlacement(isHost ? guestPlayer : hostPlayer);
 
                         game.getLobbyDataSource().removeLobbyListener(roomCode);

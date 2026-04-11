@@ -86,6 +86,11 @@ public class GameController {
     public Player getRemotePlayer() {
         return remotePlayer;
     }
+
+    public Player getLocalPlayer() {
+        return localPlayer;
+    }
+
     public void startGame() {
         requireSession();
         session.startGame();
@@ -104,6 +109,29 @@ public class GameController {
                 @Override public void onSuccess(Void result) {}
                 @Override public void onFailure(String error) {
                     System.out.println("[GameController] Failed to sync initial turn: " + error);
+                }
+            });
+
+            // Register turn listener
+            gameDataSource.addTurnListener(roomCode, new DataCallback<String>() {
+                @Override
+                public void onSuccess(String currentPlayerId) {
+                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                        if (session.getCurrentPlayer().getId().equals(currentPlayerId)) return;
+
+                        if (currentPlayerId.equals(localPlayer.getId())) {
+                            session.setCurrentPlayer(localPlayer);
+                            if (listener != null) listener.onTurnChanged(localPlayer.getId());
+                        } else {
+                            session.setCurrentPlayer(remotePlayer);
+                            if (listener != null) listener.onTurnChanged(remotePlayer.getId());
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    System.out.println("[GameController] Turn listener error: " + error);
                 }
             });
 
@@ -403,15 +431,18 @@ public class GameController {
 
             case MISS:
                 session.processMove(target);    // switches turn back to local
+                notify_miss(target);
                 break;
 
             case HIT:
                 localPlayer.addEnergy(1);
                 session.processMove(target);
+                notify_hit(target, result.getSunkShip());
                 break;
             case SUNK:
                 localPlayer.addEnergy(1);
                 session.processMove(target);
+                notify_sunk(target, result.getSunkShip());
                 if (result.isSunk() && engine.hasWon(localPlayer.getBoard())) {
                     notify_gameOver(remotePlayer.getName());
                 }
@@ -429,6 +460,7 @@ public class GameController {
      */
     public void cleanup() {
         sessionManager.endSession();
+        isSinglePlayer = false; // Issue #4/5: ensure single-player flag is reset when cleaning up
         if (roomCode != null) {
             gameDataSource.removeAllListeners(roomCode);
         }

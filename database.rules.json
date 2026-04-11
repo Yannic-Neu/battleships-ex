@@ -14,6 +14,11 @@
              ".write": "auth != null && (root.child('rooms').child($roomCode).child('hostPlayerId').val() === auth.uid || root.child('rooms').child($roomCode).child('guestPlayerId').val() === auth.uid)"
           },
 
+          "turn": {
+            ".write": "auth != null && (root.child('rooms').child($roomCode).child('hostPlayerId').val() === auth.uid || root.child('rooms').child($roomCode).child('guestPlayerId').val() === auth.uid)",
+            ".validate": "newData.isString()"
+          },
+
           "moves": {
             "$moveId": {
               ".validate": "newData.hasChildren(['playerId', 'row', 'col', 'hit'])"

@@ -206,6 +206,10 @@ public class LobbyController {
         this.activeLobby = activeLobby;
     }
 
+    public void setLocalPlayer(Player player) {
+        this.localPlayer = player;
+    }
+
     /** @return true if the local player is the host of the active lobby */
     public boolean isLocalPlayerHost() {
         return activeLobby != null

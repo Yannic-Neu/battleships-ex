@@ -267,6 +267,19 @@ public class GameStateManager {
                 if (stateListener != null) stateListener.onActionCardPlayed(result);
             }
 
+            @Override
+            public void onTurnChanged(String currentPlayerId) {
+                if (currentPlayerId.equals(localPlayer.getId())) {
+                    if (!(currentState instanceof MyTurnState)) {
+                        transitionTo(new MyTurnState());
+                    }
+                } else {
+                    if (!(currentState instanceof OpponentTurnState)) {
+                        transitionTo(new OpponentTurnState());
+                    }
+                }
+                if (stateListener != null) stateListener.onTurnChanged(currentPlayerId);
+            }
         };
     }
 

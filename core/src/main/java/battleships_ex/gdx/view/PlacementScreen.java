@@ -409,6 +409,12 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
 
     // Unused callbacks required by the interface contract
     @Override public void onGameOver(String winnerName) {}
+
+    @Override
+    public void onTurnChanged(String currentPlayerId) {
+
+    }
+
     @Override public void onMiss(Coordinate coordinate) {}
     @Override public void onHit(Coordinate coordinate, Ship ship) {}
     @Override public void onSunk(Coordinate coordinate, Ship ship) {}
