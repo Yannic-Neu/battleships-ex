@@ -169,6 +169,7 @@ public class GameStateManager {
 
     void transitionTo(GameState next) {
         if (next == null) return;
+        System.out.println("[GameStateManager] LOG: Transitioning from " + currentState.getName() + " to " + next.getName());
         currentState.onExit(this);
         currentState = next;
         currentState.onEnter(this);
@@ -269,6 +270,9 @@ public class GameStateManager {
 
             @Override
             public void onTurnChanged(String currentPlayerId) {
+                System.out.println("[GameStateManager] LOG: onTurnChanged received. currentPlayerId: " + currentPlayerId + ", localPlayerId: " + localPlayer.getId());
+                if (stateListener != null) stateListener.onTurnChanged(currentPlayerId);
+
                 if (currentPlayerId.equals(localPlayer.getId())) {
                     if (!(currentState instanceof MyTurnState)) {
                         transitionTo(new MyTurnState());
@@ -278,7 +282,6 @@ public class GameStateManager {
                         transitionTo(new OpponentTurnState());
                     }
                 }
-                if (stateListener != null) stateListener.onTurnChanged(currentPlayerId);
             }
         };
     }

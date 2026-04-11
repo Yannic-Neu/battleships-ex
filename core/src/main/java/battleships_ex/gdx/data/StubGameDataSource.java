@@ -1,5 +1,7 @@
 package battleships_ex.gdx.data;
 
+import java.util.List;
+
 import battleships_ex.gdx.model.board.Coordinate;
 
 /**
@@ -61,6 +63,21 @@ public class StubGameDataSource implements GameDataSource {
         System.out.println("[Stub] addPlacementStatusListener: room=" + roomCode + " opponent=" + opponentId);
         // In stub mode, assume opponent is ready immediately for easy testing
         callback.onSuccess(true);
+    }
+
+    @Override
+    public void updateBoardLayout(String roomCode, String playerId, List<ShipPlacement> ships, DataCallback<Void> callback) {
+
+    }
+
+    @Override
+    public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<List<ShipPlacement>> callback) {
+
+    }
+
+    @Override
+    public void removeBoardLayoutListener(String roomCode) {
+
     }
 
     @Override

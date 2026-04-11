@@ -62,6 +62,7 @@ public class GameController {
      * @param roomCode the active room code for Firebase sync
      */
     public void initSession(Player local, Player remote, String roomCode, boolean localIsPlayer1) {
+        System.out.println("[GameController] LOG: Initializing session. localIsPlayer1: " + localIsPlayer1);
         this.localPlayer  = local;
         this.remotePlayer = remote;
         this.roomCode     = roomCode;
@@ -105,6 +106,7 @@ public class GameController {
             });
 
             // Sync initial turn
+            System.out.println("[GameController] LOG: Syncing initial turn to: " + session.getCurrentPlayer().getId());
             gameDataSource.syncTurn(roomCode, session.getCurrentPlayer().getId(), new DataCallback<Void>() {
                 @Override public void onSuccess(Void result) {}
                 @Override public void onFailure(String error) {
@@ -116,6 +118,7 @@ public class GameController {
             gameDataSource.addTurnListener(roomCode, new DataCallback<String>() {
                 @Override
                 public void onSuccess(String currentPlayerId) {
+                    System.out.println("[GameController] LOG: Turn listener received new turn: " + currentPlayerId);
                     com.badlogic.gdx.Gdx.app.postRunnable(() -> {
                         if (session.getCurrentPlayer().getId().equals(currentPlayerId)) return;
 
@@ -209,6 +212,23 @@ public class GameController {
                     System.out.println("[GameController] Preview listener error: " + error);
                 }
             });
+
+            // Register board layout listener
+            gameDataSource.addBoardLayoutListener(roomCode, remotePlayer.getId(), new DataCallback<java.util.List<battleships_ex.gdx.data.ShipPlacement>>() {
+                @Override
+                public void onSuccess(java.util.List<battleships_ex.gdx.data.ShipPlacement> result) {
+                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                        for (battleships_ex.gdx.data.ShipPlacement placement : result) {
+                            remotePlayer.getBoard().placeShip(new Ship(battleships_ex.gdx.config.board.ShipType.valueOf(placement.type), battleships_ex.gdx.config.board.Orientation.valueOf(placement.orientation)), new Coordinate(placement.row, placement.col), battleships_ex.gdx.config.board.Orientation.valueOf(placement.orientation));
+                        }
+                    });
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    System.out.println("[GameController] Board layout listener error: " + error);
+                }
+            });
         }
     }
 
@@ -262,6 +282,23 @@ public class GameController {
     public void confirmPlacement() {
         requireSession();
         if (roomCode != null) {
+            // Upload the board layout
+            java.util.List<battleships_ex.gdx.data.ShipPlacement> placements = new java.util.ArrayList<>();
+            for (Ship ship : localPlayer.getBoard().getShips()) {
+                if (ship.isPlaced()) {
+                    // Convert Set to List to get the first coordinate, which represents the start
+                    Coordinate startCoord = new java.util.ArrayList<>(ship.getOccupiedCoordinates()).get(0);
+                    placements.add(new battleships_ex.gdx.data.ShipPlacement(ship.getType(), startCoord.getRow(), startCoord.getCol(), ship.getOrientation()));
+                }
+            }
+            gameDataSource.updateBoardLayout(roomCode, localPlayer.getId(), placements, new DataCallback<Void>() {
+                @Override public void onSuccess(Void result) {}
+                @Override public void onFailure(String error) {
+                    System.out.println("[GameController] Failed to upload board layout: " + error);
+                }
+            });
+
+            // Mark player as ready
             gameDataSource.updatePlacementStatus(roomCode, localPlayer.getId(), true, new DataCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {
@@ -344,8 +381,12 @@ public class GameController {
     }
 
     public void fireShot(int row, int col) {
+        System.out.println("[GameController] LOG: fireShot called at (" + row + ", " + col + ")");
         if (!isSessionActive())   return;
-        if (!isLocalPlayerTurn()) return;
+        if (!isLocalPlayerTurn()) {
+            System.out.println("[GameController] LOG: Blocked fireShot because it's not local player's turn.");
+            return;
+        }
 
         Coordinate target = new Coordinate(row, col);
 
@@ -357,7 +398,7 @@ public class GameController {
             clearPreview();
             sessionManager.resetInactivityTimer();
 
-            session.processMove(target);
+            session.processMove(target, ShotResult.miss(target));
             notify_miss(target);
             syncMoveToBackend(target, false);
             syncTurnToBackend();
@@ -375,26 +416,30 @@ public class GameController {
         switch (result.getOutcome()) {
 
             case ALREADY_SHOT:
+                System.out.println("[GameController] LOG: Shot outcome: ALREADY_SHOT");
                 notify_alreadyShot(target);
                 return;
 
             case MISS:
-                session.processMove(target);    // records move + switches turn
+                System.out.println("[GameController] LOG: Shot outcome: MISS");
+                session.processMove(target, result);    // records move + switches turn
                 notify_miss(target);
                 syncMoveToBackend(target, false);
                 syncTurnToBackend();
                 break;
 
             case HIT:
+                System.out.println("[GameController] LOG: Shot outcome: HIT");
                 remotePlayer.addEnergy(1);
-                session.processMove(target);    // records move; turn stays (hit-again)
+                session.processMove(target, result);    // records move; turn stays (hit-again)
                 notify_hit(target, result.getSunkShip());
                 syncMoveToBackend(target, true);
                 break;
 
             case SUNK:
+                System.out.println("[GameController] LOG: Shot outcome: SUNK");
                 remotePlayer.addEnergy(1);
-                session.processMove(target);
+                session.processMove(target, result);
                 notify_sunk(target, result.getSunkShip());
                 syncMoveToBackend(target, true);
 
@@ -414,6 +459,7 @@ public class GameController {
     }
 
     public void onRemoteShotReceived(int row, int col) {
+        System.out.println("[GameController] LOG: onRemoteShotReceived at (" + row + ", " + col + ")");
         if (!isSessionActive()) return;
 
         Coordinate target = new Coordinate(row, col);
@@ -421,7 +467,8 @@ public class GameController {
         // ---- SHIELD INTERCEPTION (LOCAL PLAYER) ----
         if (localPlayer.hasShield()) {
             localPlayer.consumeShield();
-            session.processMove(target);
+            // Manually create a MISS result to process
+            session.processMove(target, ShotResult.miss(target));
             return;
         }
 
@@ -430,18 +477,18 @@ public class GameController {
         switch (result.getOutcome()) {
 
             case MISS:
-                session.processMove(target);    // switches turn back to local
+                session.processMove(target, result);    // switches turn back to local
                 notify_miss(target);
                 break;
 
             case HIT:
                 localPlayer.addEnergy(1);
-                session.processMove(target);
+                session.processMove(target, result);
                 notify_hit(target, result.getSunkShip());
                 break;
             case SUNK:
                 localPlayer.addEnergy(1);
-                session.processMove(target);
+                session.processMove(target, result);
                 notify_sunk(target, result.getSunkShip());
                 if (result.isSunk() && engine.hasWon(localPlayer.getBoard())) {
                     notify_gameOver(remotePlayer.getName());
@@ -469,13 +516,12 @@ public class GameController {
     public boolean isLocalPlayerTurn() {
         return session != null
             && session.isStarted()
-            && !session.gameIsOver()
             && session.getCurrentPlayer() == localPlayer;
     }
 
     /** @return true if a session is active and not yet over */
     public boolean isSessionActive() {
-        return session != null && session.isStarted() && !session.gameIsOver();
+        return session != null && session.isStarted();
     }
 
     /** @return the current GameSession, or null if not yet initialised */
@@ -503,6 +549,7 @@ public class GameController {
 
     private void syncTurnToBackend() {
         if (roomCode == null) return;
+        System.out.println("[GameController] LOG: Syncing turn to backend. New turn: " + session.getCurrentPlayer().getId());
 
         gameDataSource.syncTurn(roomCode, session.getCurrentPlayer().getId(), new DataCallback<Void>() {
             @Override public void onSuccess(Void result) {}
@@ -574,7 +621,7 @@ public class GameController {
      * Fetches the next predetermined move and feeds it into the standard remote shot pipeline.
      */
     public void playBotTurn() {
-        if (botLogic == null || !isSessionActive()) return;
+        if (botLogic == null || !isSessionActive() || session.gameIsOver()) return;
 
         Coordinate target = botLogic.getNextMove();
         onRemoteShotReceived(target.getRow(), target.getCol());

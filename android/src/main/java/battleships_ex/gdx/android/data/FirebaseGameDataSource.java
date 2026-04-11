@@ -54,12 +54,14 @@ public class FirebaseGameDataSource implements GameDataSource {
     private final DatabaseReference roomsRef;
     private static final String NODE_PREVIEW    = "preview";
     private static final String NODE_PLACEMENT_READY = "placementReady";
+    private static final String NODE_BOARDS = "boards";
 
     private final Map<String, ValueEventListener> moveListeners      = new HashMap<>();
     private final Map<String, ValueEventListener> turnListeners      = new HashMap<>();
     private final Map<String, ValueEventListener> heartbeatListeners = new HashMap<>();
     private final Map<String, ValueEventListener> previewListeners   = new HashMap<>();
     private final Map<String, ValueEventListener> placementStatusListeners = new HashMap<>();
+    private final Map<String, ValueEventListener> boardLayoutListeners = new HashMap<>();
 
     public FirebaseGameDataSource() {
         this.roomsRef = FirebaseDatabase.getInstance().getReference("rooms");
@@ -359,6 +361,47 @@ public class FirebaseGameDataSource implements GameDataSource {
         }
     }
 
+    @Override
+    public void updateBoardLayout(String roomCode, String playerId, java.util.List<battleships_ex.gdx.data.ShipPlacement> ships, DataCallback<Void> callback) {
+        gameRef(roomCode).child(NODE_BOARDS).child(playerId).setValue(ships)
+            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    @Override
+    public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<java.util.List<battleships_ex.gdx.data.ShipPlacement>> callback) {
+        removeBoardLayoutListener(roomCode);
+        ValueEventListener listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) return;
+                java.util.List<battleships_ex.gdx.data.ShipPlacement> placements = new java.util.ArrayList<>();
+                for (DataSnapshot shipSnapshot : snapshot.getChildren()) {
+                    battleships_ex.gdx.data.ShipPlacement placement = shipSnapshot.getValue(battleships_ex.gdx.data.ShipPlacement.class);
+                    if (placement != null) {
+                        placements.add(placement);
+                    }
+                }
+                callback.onSuccess(placements);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onFailure(error.getMessage());
+            }
+        };
+        boardLayoutListeners.put(roomCode, listener);
+        gameRef(roomCode).child(NODE_BOARDS).child(opponentId).addValueEventListener(listener);
+    }
+
+    @Override
+    public void removeBoardLayoutListener(String roomCode) {
+        ValueEventListener listener = boardLayoutListeners.remove(roomCode);
+        if (listener != null) {
+            gameRef(roomCode).child(NODE_BOARDS).removeEventListener(listener);
+        }
+    }
+
     // ── Session re-join & cleanup (Issue #29) ─────────────────────
 
     @Override
@@ -421,5 +464,6 @@ public class FirebaseGameDataSource implements GameDataSource {
         removeHeartbeatListener(roomCode);
         removePreviewListener(roomCode);
         removePlacementStatusListener(roomCode);
+        removeBoardLayoutListener(roomCode);
     }
 }

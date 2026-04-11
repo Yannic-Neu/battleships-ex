@@ -17,6 +17,9 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import battleships_ex.gdx.controller.GameController;
 import battleships_ex.gdx.controller.GameListener;
+import battleships_ex.gdx.controller.LobbyController;
+import battleships_ex.gdx.state.GameStateListener;
+import battleships_ex.gdx.state.GameStateManager;
 
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
@@ -48,7 +51,7 @@ import battleships_ex.gdx.model.cards.EraseCard;
 import battleships_ex.gdx.model.cards.DoubleShotCard;
 
 
-public class BattleScreen extends ScreenAdapter {
+public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
     private enum ViewMode {
         OWN_FLEET, ENEMY_WATERS
@@ -77,61 +80,73 @@ public class BattleScreen extends ScreenAdapter {
         Gdx.input.setInputProcessor(stage);
 
         gameController = game.getGameController();
+        GameStateManager.getInstance().setStateListener(this);
 
         rebuildUI();
 
-        gameController.setListener(new GameListener() {
-            @Override
-            public void onHit(Coordinate c, Ship ship) {
-                updateEnergyFromGame();
-                rebuildUI();
-            }
-            @Override
-            public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
-                updateEnergyFromGame();
-                rebuildUI();
-            }
-            @Override
-            public void onSunk(Coordinate c, Ship ship) {
-                updateEnergyFromGame();
-                rebuildUI();
-            }
+        // The GameListener is now handled by the GameStateManager, which will
+        // in turn call the GameStateListener methods implemented by this screen.
+    }
 
-            @Override
-            public void onMiss(Coordinate c) {
-                rebuildUI();
-            }
+    // -------------------------------------------------------------------------
+    // GameStateListener implementation
+    // -------------------------------------------------------------------------
 
-            @Override
-            public void onAlreadyShot(Coordinate c) {
-                updateFireButtonState();
-            }
+    @Override
+    public void onStateChanged(String stateName) {
+        System.out.println("[BattleScreen] LOG: onStateChanged received, rebuilding UI.");
+        rebuildUI();
+    }
 
-            @Override
-            public void onShipPlaced(Ship ship) {}
-
-            @Override
-            public void onPlacementRejected(PlacementResult.Reason reason) {}
-
-            @Override
-            public void onGameOver(String winnerName) {}
-
-            @Override
-            public void onShipRemoved(Ship ship) {
-
-            }
-
-            @Override
-            public void onTurnChanged(String currentPlayerId) {
-                rebuildUI();
-            }
+    // Unused GameStateListener methods
+    @Override public void onLobbyCreated(String roomCode) {}
+    @Override public void onLobbyJoined() {}
+    @Override public void onGuestJoined(String guestName) {}
+    @Override public void onJoinRejected(LobbyController.JoinRejectionReason reason) {}
+    @Override public void onOpponentPlacementReady(boolean ready) {}
+    @Override
+    public void onGameOver(String winnerName) {
+        Gdx.app.postRunnable(() -> {
+            game.setScreen(new GameOverScreen(game, winnerName));
         });
     }
+
+    @Override
+    public void onTurnChanged(String currentPlayerId) {
+        System.out.println("[BattleScreen] LOG: onTurnChanged received, rebuilding UI.");
+        rebuildUI();
+    }
+
+    @Override public void onHit(Coordinate coordinate, Ship ship) {
+        updateEnergyFromGame();
+        rebuildUI();
+    }
+
+    @Override public void onMiss(Coordinate coordinate) {
+        rebuildUI();
+    }
+
+    @Override public void onSunk(Coordinate coordinate, Ship ship) {
+        updateEnergyFromGame();
+        rebuildUI();
+    }
+
+    @Override public void onAlreadyShot(Coordinate coordinate) {
+        updateFireButtonState();
+    }
+
+    @Override public void onShipPlaced(Ship ship) {}
+    @Override public void onShipRemoved(Ship ship) {}
+    @Override public void onPlacementRejected(PlacementResult.Reason reason) {}
+    @Override public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
+        updateEnergyFromGame();
+        rebuildUI();
+    }
+
     private void updateEnergyFromGame() {
         if (energyBar == null) return;
 
         int energy = gameController
-            .getSession()
             .getLocalPlayer()
             .getEnergy();
 
@@ -266,7 +281,7 @@ public class BattleScreen extends ScreenAdapter {
         Table actionsPanel = new Table();
         energyBar = new EnergyBar();
         energyBar.updateEnergy(
-            gameController.getSession().getLocalPlayer().getEnergy()
+            gameController.getLocalPlayer().getEnergy()
         );
 
 
@@ -408,7 +423,7 @@ public class BattleScreen extends ScreenAdapter {
     }
     private void updateActionCardAvailability() {
         boolean myTurn = gameController.isLocalPlayerTurn();
-        int energy = gameController.getSession().getLocalPlayer().getEnergy();
+        int energy = gameController.getLocalPlayer().getEnergy();
 
         for (ActionCard card : actionCards) {
 

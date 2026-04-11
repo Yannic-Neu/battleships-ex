@@ -104,6 +104,11 @@ public interface GameDataSource {
      */
     void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback);
 
+    // Board Layout Synchronization
+    void updateBoardLayout(String roomCode, String playerId, java.util.List<ShipPlacement> ships, DataCallback<Void> callback);
+    void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<java.util.List<ShipPlacement>> callback);
+    void removeBoardLayoutListener(String roomCode);
+
     /**
      * Signals game over with the winner's name.
      *

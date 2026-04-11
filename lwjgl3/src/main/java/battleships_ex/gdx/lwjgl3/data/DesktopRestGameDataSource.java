@@ -11,6 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Executors;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 import battleships_ex.gdx.data.DataCallback;
 import battleships_ex.gdx.data.GameDataSource;
+import battleships_ex.gdx.data.ShipPlacement;
 import battleships_ex.gdx.model.board.Coordinate;
 
 /**
@@ -91,6 +93,21 @@ public class DesktopRestGameDataSource implements GameDataSource {
                 // Ignore transient network errors
             }
         }, 0, 2, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void updateBoardLayout(String roomCode, String playerId, List<ShipPlacement> ships, DataCallback<Void> callback) {
+
+    }
+
+    @Override
+    public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<List<ShipPlacement>> callback) {
+
+    }
+
+    @Override
+    public void removeBoardLayoutListener(String roomCode) {
+
     }
 
     @Override

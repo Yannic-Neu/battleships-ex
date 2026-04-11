@@ -5,6 +5,7 @@ import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.cards.ActionCard;
 import battleships_ex.gdx.model.cards.ActionCardResult;
+import battleships_ex.gdx.model.rules.ShotResult;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,8 +39,8 @@ public class GameSession {
     public boolean isStarted()           { return started; }
     public Player  getCurrentPlayer()    { return currentPlayer; }
     public Board   getOpponentBoard()    { return getOpponent().getBoard(); }
-    public Player  getPlayer1()          { return player1; }
-    public Player  getPlayer2()          { return player2; }
+    public Player getPlayer1()          { return player1; }
+    public Player getPlayer2()          { return player2; }
 
     public List<Move> getMoveHistory() {
         return Collections.unmodifiableList(moveHistory);
@@ -52,22 +53,22 @@ public class GameSession {
     /**
      * Processes a shot at the given coordinate on the opponent's board.
      *
-     * Delegates to {@link Board#attack(Coordinate)} → {@link AttackResult}.
      * Turn switches only on a MISS; HIT and SUNK keep the turn with the attacker.
-     * ALREADY_HIT is guarded by the RulesEngine before reaching here.
+     * The result is provided by the GameController, which gets it from the RulesEngine.
      */
-    public Move processMove(Coordinate coordinate) {
+    public Move processMove(Coordinate coordinate, ShotResult result) {
         requireStarted();
-        requireNotOver();
 
-        Board        opponentBoard = getOpponent().getBoard();
-        AttackResult attackResult  = opponentBoard.attack(coordinate);
-
-        boolean hit = (attackResult == AttackResult.HIT || attackResult == AttackResult.SUNK);
+        boolean hit = result.getOutcome() == ShotResult.Outcome.HIT || result.getOutcome() == ShotResult.Outcome.SUNK;
         Move move   = new Move(coordinate, hit);
         moveHistory.add(move);
 
-        if (!hit) switchTurn();
+        if (!hit && !gameIsOver()) {
+            System.out.println("[GameSession] LOG: Shot was a miss. Switching turn.");
+            switchTurn();
+        } else if (hit) {
+            System.out.println("[GameSession] LOG: Shot was a hit. Turn remains with current player.");
+        }
 
         return move;
     }
@@ -144,7 +145,9 @@ public class GameSession {
     }
 
     private void switchTurn() {
+        Player oldPlayer = currentPlayer;
         currentPlayer = (currentPlayer == player1) ? player2 : player1;
+        System.out.println("[GameSession] LOG: Switched turn from " + oldPlayer.getId() + " to " + currentPlayer.getId());
     }
 
     private void requireStarted() {
@@ -154,14 +157,12 @@ public class GameSession {
     private void requireNotOver() {
         if (gameIsOver()) throw new IllegalStateException("Game is already over");
     }
-    public Player getLocalPlayer() {
-        return player1;
-    }
 
-    public Player getRemotePlayer() {
-        return player2;
-    }
-
-    public void setCurrentPlayer(Player localPlayer) {
+    public void setCurrentPlayer(Player player) {
+        if (player != player1 && player != player2) {
+            throw new IllegalArgumentException("Player is not part of this session");
+        }
+        System.out.println("[GameSession] LOG: Setting current player to " + player.getId());
+        this.currentPlayer = player;
     }
 }
