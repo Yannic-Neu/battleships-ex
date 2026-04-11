@@ -98,6 +98,12 @@ public class GameStateManager {
     // View-facing action API
     // -------------------------------------------------------------------------
 
+    /** Bypasses the LobbyState entirely for offline/bot matches. */
+    public void forceSinglePlayerPlacement(Player botPlayer) {
+        this.remotePlayer = botPlayer;
+        transitionTo(new PlacementState());
+    }
+
     /** Request to create a new lobby. Valid only in LobbyState. */
     public void createLobby() {
         currentState.onCreateLobby(this);
@@ -117,6 +123,10 @@ public class GameStateManager {
      */
     public void placeShip(Ship ship, Coordinate start, Orientation orientation) {
         currentState.onPlaceShip(this, ship, start, orientation);
+    }
+
+    public void removeShip(Coordinate coordinate) {
+        currentState.onRemoveShip(this, coordinate);
     }
 
     /** Signal that all ships are placed. Valid only in PlacementState. */
@@ -227,6 +237,11 @@ public class GameStateManager {
             @Override
             public void onShipPlaced(Ship ship) {
                 if (stateListener != null) stateListener.onShipPlaced(ship);
+            }
+
+            @Override
+            public void onShipRemoved(Ship ship) {
+                if (stateListener != null) stateListener.onShipRemoved(ship);
             }
 
             @Override

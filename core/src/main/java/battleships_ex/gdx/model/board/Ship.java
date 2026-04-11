@@ -71,6 +71,11 @@ public class Ship {
         this.occupiedCoordinates = new LinkedHashSet<>(coordinates);
     }
 
+    public void unplace() {
+        this.occupiedCoordinates.clear();
+        this.hitCoordinates.clear();
+    }
+
     public Set<Coordinate> getOccupiedCoordinates() {
         return Collections.unmodifiableSet(occupiedCoordinates);
     }

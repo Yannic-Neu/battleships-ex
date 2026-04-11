@@ -25,6 +25,7 @@ public interface GameStateListener {
 
     // Placement
     void onShipPlaced(Ship ship);
+    void onShipRemoved(Ship ship);
     void onPlacementRejected(PlacementResult.Reason reason);
 
     // Shots
