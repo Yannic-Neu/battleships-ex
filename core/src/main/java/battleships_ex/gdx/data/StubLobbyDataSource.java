@@ -50,4 +50,16 @@ public class StubLobbyDataSource implements LobbyDataSource {
     public void removeLobbyListener(String roomCode) {
         System.out.println("[Stub] removeLobbyListener: " + roomCode);
     }
+
+    @Override
+    public void setGuestReady(String roomCode, boolean ready, DataCallback<Void> callback) {
+        System.out.println("[Stub] setGuestReady: " + roomCode + " ready=" + ready);
+        callback.onSuccess(null);
+    }
+
+    @Override
+    public void setLobbyStatus(String roomCode, String status, DataCallback<Void> callback) {
+        System.out.println("[Stub] setLobbyStatus: " + roomCode + " status=" + status);
+        callback.onSuccess(null);
+    }
 }

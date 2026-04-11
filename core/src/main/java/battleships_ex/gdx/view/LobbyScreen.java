@@ -12,8 +12,11 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ButtonConfig;
+import battleships_ex.gdx.controller.LobbyController;
 import battleships_ex.gdx.data.DataCallback;
 import battleships_ex.gdx.data.LobbyDataSource;
+import battleships_ex.gdx.model.core.Player;
+import battleships_ex.gdx.state.GameStateManager;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 
@@ -26,7 +29,10 @@ public class LobbyScreen extends ScreenAdapter {
     private Stage stage;
     private Label statusLabel;
     private GameButton startMatchButton;
+    private GameButton readyButton;
     private boolean opponentJoined = false;
+    private boolean opponentReady = false;
+    private boolean iAmReady = false;
 
     public LobbyScreen(MyGame game, String roomCode, String playerId, boolean isHost) {
         this.game = game;
@@ -50,11 +56,35 @@ public class LobbyScreen extends ScreenAdapter {
         GameButton lobbyCodeButton = new GameButton(roomCode, secondaryButton, () -> {});
 
         startMatchButton = new GameButton("COMMENCE MISSION", primaryButton, () -> {
-            if (opponentJoined) {
-                game.getLobbyDataSource().removeLobbyListener(roomCode);
-                game.setScreen(new PlacementScreen(game));
+            if (opponentJoined && opponentReady) {
+                game.getLobbyDataSource().setLobbyStatus(roomCode, "ready", new DataCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        // The status update to "ready" will trigger transition via listener
+                    }
+                    @Override
+                    public void onFailure(String error) {
+                        Gdx.app.postRunnable(() -> statusLabel.setText("Error: " + error));
+                    }
+                });
             }
         });
+        startMatchButton.setVisible(isHost);
+        startMatchButton.setDisabled(true);
+
+        readyButton = new GameButton("READY", primaryButton, () -> {
+            iAmReady = !iAmReady;
+            readyButton.setText(iAmReady ? "WAITING FOR HOST" : "READY");
+            game.getLobbyDataSource().setGuestReady(roomCode, iAmReady, new DataCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {}
+                @Override
+                public void onFailure(String error) {
+                    Gdx.app.postRunnable(() -> statusLabel.setText("Error: " + error));
+                }
+            });
+        });
+        readyButton.setVisible(!isHost);
 
         Table root = new Table();
         root.setFillParent(true);
@@ -94,7 +124,7 @@ public class LobbyScreen extends ScreenAdapter {
         middlePanel.add(lobbyCodeButton).pad(10).center().row();
         middlePanel.add(accessCode).padBottom(20);
 
-        bottomPanel.add(startMatchButton).center().row();
+        bottomPanel.add(isHost ? startMatchButton : readyButton).center().row();
         root.defaults().expand().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
         root.add(middlePanel).height(Value.percentHeight(0.6f, root)).row();
@@ -105,12 +135,37 @@ public class LobbyScreen extends ScreenAdapter {
             @Override
             public void onSuccess(LobbyDataSource.LobbySnapshot snapshot) {
                 Gdx.app.postRunnable(() -> {
-                    if (snapshot.isFull()) {
-                        opponentJoined = true;
-                        statusLabel.setText("Opponent joined!");
+                    opponentJoined = snapshot.isFull();
+                    opponentReady = snapshot.guestReady;
+
+                    if ("ready".equals(snapshot.status)) {
+                        // Ensure GameStateManager is initialized for both players
+                        Player localPlayer = new Player(playerId, isHost ? "Host" : "Guest");
+                        LobbyController lobbyController = new LobbyController(game.getLobbyDataSource());
+                        GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
+
+                        game.getLobbyDataSource().removeLobbyListener(roomCode);
+                        game.setScreen(new PlacementScreen(game));
+                        return;
+                    }
+
+                    if (isHost) {
+                        if (!opponentJoined) {
+                            statusLabel.setText("Waiting for opponent...");
+                            startMatchButton.setDisabled(true);
+                        } else if (!opponentReady) {
+                            statusLabel.setText("Waiting for guest to be ready...");
+                            startMatchButton.setDisabled(true);
+                        } else {
+                            statusLabel.setText("Guest is READY!");
+                            startMatchButton.setDisabled(false);
+                        }
                     } else {
-                        opponentJoined = false;
-                        statusLabel.setText("Waiting for opponent...");
+                        if (opponentJoined) {
+                            statusLabel.setText("Joined lobby!");
+                        } else {
+                            statusLabel.setText("Connecting...");
+                        }
                     }
                 });
             }

@@ -27,24 +27,30 @@ public interface LobbyDataSource {
 
     void removeLobbyListener(String roomCode);
 
+    void setGuestReady(String roomCode, boolean ready, DataCallback<Void> callback);
+
+    void setLobbyStatus(String roomCode, String status, DataCallback<Void> callback);
+
     class LobbySnapshot {
         public final String roomCode;
         public final String hostPlayerId;
         public final String hostPlayerName;
         public final String guestPlayerId;    // null if guest slot is empty
         public final String guestPlayerName;  // null if guest slot is empty
-        public final String status;           // "waiting", "ready", "playing"
+        public final String status;           // "waiting", "joined", "ready", "playing"
+        public final boolean guestReady;
 
         public LobbySnapshot(String roomCode,
                              String hostPlayerId,  String hostPlayerName,
                              String guestPlayerId, String guestPlayerName,
-                             String status) {
+                             String status, boolean guestReady) {
             this.roomCode        = roomCode;
             this.hostPlayerId    = hostPlayerId;
             this.hostPlayerName  = hostPlayerName;
             this.guestPlayerId   = guestPlayerId;
             this.guestPlayerName = guestPlayerName;
             this.status          = status;
+            this.guestReady      = guestReady;
         }
 
         /** @return true if the guest slot is filled */

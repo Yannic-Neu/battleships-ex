@@ -48,7 +48,7 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
 
                 // Build JSON payload
                 String payload = String.format(Locale.ROOT,
-                    "{\"hostPlayerId\":\"%s\",\"hostPlayerName\":\"%s\",\"status\":\"waiting\",\"createdAt\":%d}",
+                    "{\"hostPlayerId\":\"%s\",\"hostPlayerName\":\"%s\",\"guestReady\":false,\"status\":\"waiting\",\"createdAt\":%d}",
                     hostPlayerId, hostPlayerName, System.currentTimeMillis()
                 );
 
@@ -95,7 +95,7 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                 patchConn.setDoOutput(true);
 
                 String payload = String.format(Locale.ROOT,
-                    "{\"guestPlayerId\":\"%s\",\"guestPlayerName\":\"%s\",\"status\":\"ready\"}",
+                    "{\"guestPlayerId\":\"%s\",\"guestPlayerName\":\"%s\",\"guestReady\":false,\"status\":\"joined\"}",
                     playerId, playerName
                 );
 
@@ -171,7 +171,8 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                     snapshot.getString("hostPlayerName", ""),
                     snapshot.getString("guestPlayerId", null),
                     snapshot.getString("guestPlayerName", null),
-                    snapshot.getString("status", "waiting")
+                    snapshot.getString("status", "waiting"),
+                    snapshot.getBoolean("guestReady", false)
                 );
 
                 Gdx.app.postRunnable(() -> callback.onSuccess(data));
@@ -189,5 +190,61 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
             poller.shutdownNow();
             poller = null;
         }
+    }
+
+    @Override
+    public void setGuestReady(String roomCode, boolean ready, DataCallback<Void> callback) {
+        new Thread(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                String payload = String.format(Locale.ROOT, "{\"guestReady\":%b}", ready);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(payload.getBytes(StandardCharsets.UTF_8));
+                }
+
+                if (conn.getResponseCode() == 200) {
+                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
+                } else {
+                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to set ready state."));
+                }
+            } catch (Exception e) {
+                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
+            }
+        }).start();
+    }
+
+    @Override
+    public void setLobbyStatus(String roomCode, String status, DataCallback<Void> callback) {
+        new Thread(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                String payload = String.format(Locale.ROOT, "{\"status\":\"%s\"}", status);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(payload.getBytes(StandardCharsets.UTF_8));
+                }
+
+                if (conn.getResponseCode() == 200) {
+                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
+                } else {
+                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to set lobby status."));
+                }
+            } catch (Exception e) {
+                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
+            }
+        }).start();
     }
 }

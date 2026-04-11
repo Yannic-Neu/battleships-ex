@@ -47,8 +47,10 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
     private static final String FIELD_GUEST_NAME = "guestPlayerName";
     private static final String FIELD_STATUS     = "status";
     private static final String FIELD_CREATED_AT = "createdAt";
+    private static final String FIELD_GUEST_READY = "guestReady";
 
     private static final String STATUS_WAITING  = "waiting";
+    private static final String STATUS_JOINED   = "joined";
     private static final String STATUS_READY    = "ready";
 
     private final DatabaseReference roomsRef;
@@ -78,6 +80,7 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
         roomData.put(FIELD_HOST_NAME,  hostPlayerName);
         roomData.put(FIELD_GUEST_ID,   null);
         roomData.put(FIELD_GUEST_NAME, null);
+        roomData.put(FIELD_GUEST_READY, false);
         roomData.put(FIELD_STATUS,     STATUS_WAITING);
         roomData.put(FIELD_CREATED_AT, System.currentTimeMillis());
 
@@ -109,7 +112,8 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
                 // Write guest id + name atomically with the status change
                 currentData.child(FIELD_GUEST_ID).setValue(playerId);
                 currentData.child(FIELD_GUEST_NAME).setValue(playerName);
-                currentData.child(FIELD_STATUS).setValue(STATUS_READY);
+                currentData.child(FIELD_GUEST_READY).setValue(false);
+                currentData.child(FIELD_STATUS).setValue(STATUS_JOINED);
                 return Transaction.success(currentData);
             }
 
@@ -152,6 +156,7 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
                     Map<String, Object> updates = new HashMap<>();
                     updates.put(FIELD_GUEST_ID,   null);
                     updates.put(FIELD_GUEST_NAME,  null);   // clear name alongside id
+                    updates.put(FIELD_GUEST_READY, false);
                     updates.put(FIELD_STATUS,      STATUS_WAITING);
                     roomRef.updateChildren(updates)
                         .addOnSuccessListener(unused -> callback.onSuccess(null))
@@ -203,6 +208,8 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
                 String guestId   = snapshot.child(FIELD_GUEST_ID).getValue(String.class);
                 String guestName = snapshot.child(FIELD_GUEST_NAME).getValue(String.class);
                 String status    = snapshot.child(FIELD_STATUS).getValue(String.class);
+                Boolean guestReadyObj = snapshot.child(FIELD_GUEST_READY).getValue(Boolean.class);
+                boolean guestReady = guestReadyObj != null && guestReadyObj;
 
                 // Null-safe fallback for name fields — handles entries written
                 // before names were added to the DB schema.
@@ -213,7 +220,8 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
                     roomCode,
                     hostId,   hostName,
                     guestId,  guestName,
-                    status
+                    status,
+                    guestReady
                 ));
             }
 
@@ -233,5 +241,19 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
         if (listener != null) {
             roomsRef.child(roomCode).removeEventListener(listener);
         }
+    }
+
+    @Override
+    public void setGuestReady(String roomCode, boolean ready, DataCallback<Void> callback) {
+        roomsRef.child(roomCode).child(FIELD_GUEST_READY).setValue(ready)
+            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    @Override
+    public void setLobbyStatus(String roomCode, String status, DataCallback<Void> callback) {
+        roomsRef.child(roomCode).child(FIELD_STATUS).setValue(status)
+            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 }
