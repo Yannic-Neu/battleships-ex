@@ -33,6 +33,10 @@ public class Cell {
         }
         this.ship = ship;
     }
+
+    public void removeShip() {
+        this.ship = null;
+    }
     public boolean isHit() {
         return hit;
     }

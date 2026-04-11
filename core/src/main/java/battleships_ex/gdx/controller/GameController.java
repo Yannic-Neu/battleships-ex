@@ -205,6 +205,19 @@ public class GameController {
         notify_shipPlaced(ship);
     }
 
+    public void removeShipAt(Coordinate coordinate) {
+        requireSession();
+        battleships_ex.gdx.model.board.Cell cell = localPlayer.getBoard().getCell(coordinate);
+        if (cell.hasShip()) {
+            Ship ship = cell.getShip();
+            // Notify listener before removal while coordinates are still intact
+            if (listener != null) {
+                listener.onShipRemoved(ship);
+            }
+            localPlayer.getBoard().removeShip(ship);
+        }
+    }
+
     public void playActionCard(battleships_ex.gdx.model.cards.ActionCard card) {
         if (!isSessionActive())   return;
         if (!isLocalPlayerTurn()) return;

@@ -20,6 +20,8 @@ public interface GameState {
     void onPlaceShip(GameStateManager manager,
                      Ship ship, Coordinate start, Orientation orientation);
 
+    void onRemoveShip(GameStateManager manager, Coordinate coordinate);
+
     void onPlacementComplete(GameStateManager manager);
 
     // Shots — row/col matches GameController.fireShot(int row, int col)

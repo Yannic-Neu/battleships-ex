@@ -53,6 +53,7 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
     // Interaction state
     private ShipCard activeDraggedCard;
     private int shipsPlacedCount = 0;
+    private final java.util.Map<ShipType, ShipCard> typeToCardMap = new java.util.HashMap<>();
 
     public PlacementScreen(MyGame game) {
         this.game = game;
@@ -130,6 +131,12 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         dockingTray.addCard(destroyerCard);
         dockingTray.addCard(patrolCard);
 
+        typeToCardMap.put(ShipType.CARRIER, carrierCard);
+        typeToCardMap.put(ShipType.CRUISER, cruiserCard);
+        typeToCardMap.put(ShipType.SUBMARINE, subCard);
+        typeToCardMap.put(ShipType.DESTROYER, destroyerCard);
+        typeToCardMap.put(ShipType.PATROL, patrolCard);
+
         readyButton = new GameButton("READY TO BATTLE", ButtonConfig.primary(300f, 56f), () -> {
             if (shipsPlacedCount >= 5) {
                 deployPhaseLabel.setText("WAITING FOR OPPONENT...");
@@ -158,6 +165,39 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         setupDragAndDrop(subCard, ShipType.SUBMARINE);
         setupDragAndDrop(destroyerCard, ShipType.DESTROYER);
         setupDragAndDrop(patrolCard, ShipType.PATROL);
+
+        // Interaction: Pick up placed ships or drag floating ones
+        boardActor.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override
+            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                Coordinate coord = boardActor.pointToCoordinate(x, y);
+                BoardActor.FloatingShipVisual floating = boardActor.getFloatingShip();
+
+                if (floating == null) {
+                    // Try to pick up a placed ship
+                    GameStateManager.getInstance().removeShip(coord);
+                } else {
+                    // Start moving the existing floating ship
+                    updateFloatingPosition(x, y);
+                }
+                return true;
+            }
+
+            @Override
+            public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                updateFloatingPosition(x, y);
+            }
+
+            private void updateFloatingPosition(float x, float y) {
+                BoardActor.FloatingShipVisual floating = boardActor.getFloatingShip();
+                if (floating != null) {
+                    Coordinate coord = boardActor.pointToCoordinate(x, y);
+                    floating.start = getClampedCoordinate(coord.getRow(), coord.getCol(), floating.type.getLength(), floating.orientation);
+                    floating.isLegalVisual = true;
+                    showActionPanel();
+                }
+            }
+        });
 
         // Architecture: Bind as listener to intercept Model outcomes
         GameStateManager.getInstance().setStateListener(this);
@@ -311,8 +351,39 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         hideActionPanel();
 
         shipsPlacedCount++;
+        updateReadyButton();
+    }
+
+    @Override
+    public void onShipRemoved(Ship ship) {
+        boardActor.removePlacedShip(ship.getType());
+
+        // Make it floating again for immediate relocation
+        BoardActor.FloatingShipVisual floating = new BoardActor.FloatingShipVisual();
+        floating.type = ship.getType();
+        floating.orientation = ship.getOrientation();
+
+        // Use the first coordinate as the start. Fallback to (0,0) if empty.
+        Coordinate startCoord = new Coordinate(0, 0);
+        java.util.Set<Coordinate> coords = ship.getOccupiedCoordinates();
+        if (coords != null && !coords.isEmpty()) {
+            startCoord = coords.iterator().next();
+        }
+        floating.start = startCoord;
+
+        boardActor.setFloatingShip(floating);
+        activeDraggedCard = typeToCardMap.get(ship.getType());
+        showActionPanel();
+
+        shipsPlacedCount--;
+        updateReadyButton();
+    }
+
+    private void updateReadyButton() {
         if (shipsPlacedCount >= 5) {
             deployPhaseLabel.setText("FLEET FULLY DEPLOYED");
+        } else {
+            deployPhaseLabel.setText("DEPLOYMENT PHASE");
         }
     }
 

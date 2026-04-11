@@ -132,6 +132,18 @@ public class Board {
         ships.add(ship);
     }
 
+    public void removeShip(Ship ship) {
+        if (ship == null || !ships.contains(ship)) {
+            return;
+        }
+
+        for (Coordinate coordinate : ship.getOccupiedCoordinates()) {
+            grid[coordinate.getRow()][coordinate.getCol()].removeShip();
+        }
+        ship.unplace();
+        ships.remove(ship);
+    }
+
     /**
      * Legacy helper method for placing ships.
      * Finds a matching ShipType for the given length and attempts placement.

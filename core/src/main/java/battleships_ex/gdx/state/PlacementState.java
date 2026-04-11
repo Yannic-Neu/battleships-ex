@@ -34,6 +34,11 @@ public class PlacementState extends BaseGameState {
         manager.getGameController().placeShip(ship, start, orientation);
     }
 
+    @Override
+    public void onRemoveShip(GameStateManager manager, Coordinate coordinate) {
+        manager.getGameController().removeShipAt(coordinate);
+    }
+
     /**
      * All ships placed — start the game and transition based on who goes first.
      */

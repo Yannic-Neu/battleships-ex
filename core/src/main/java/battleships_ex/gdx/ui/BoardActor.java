@@ -58,6 +58,10 @@ public class BoardActor extends Actor {
         placedShips.add(new PlacedShipVisual(type, start, orientation));
     }
 
+    public void removePlacedShip(ShipType type) {
+        placedShips.removeIf(ship -> ship.type == type);
+    }
+
     public void setFloatingShip(FloatingShipVisual floating) {
         this.floatingShip = floating;
     }

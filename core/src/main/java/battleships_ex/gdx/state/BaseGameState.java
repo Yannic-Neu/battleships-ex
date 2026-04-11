@@ -26,6 +26,9 @@ public abstract class BaseGameState implements GameState {
     public void onPlaceShip(GameStateManager manager,
                             Ship ship, Coordinate start, Orientation orientation) { }
 
+    @Override
+    public void onRemoveShip(GameStateManager manager, Coordinate coordinate) { }
+
     @Override public void onPlacementComplete(GameStateManager manager) { }
 
     @Override public void onFireShot(GameStateManager manager, int row, int col) { }

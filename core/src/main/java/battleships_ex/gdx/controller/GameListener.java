@@ -129,4 +129,6 @@ public interface GameListener {
      * @param coordinate the cell the opponent is targeting, or null if cleared
      */
     default void onPreviewReceived(battleships_ex.gdx.model.board.Coordinate coordinate) {}
+
+    void onShipRemoved(Ship ship);
 }

@@ -125,6 +125,10 @@ public class GameStateManager {
         currentState.onPlaceShip(this, ship, start, orientation);
     }
 
+    public void removeShip(Coordinate coordinate) {
+        currentState.onRemoveShip(this, coordinate);
+    }
+
     /** Signal that all ships are placed. Valid only in PlacementState. */
     public void confirmPlacementComplete() {
         currentState.onPlacementComplete(this);
@@ -233,6 +237,11 @@ public class GameStateManager {
             @Override
             public void onShipPlaced(Ship ship) {
                 if (stateListener != null) stateListener.onShipPlaced(ship);
+            }
+
+            @Override
+            public void onShipRemoved(Ship ship) {
+                if (stateListener != null) stateListener.onShipRemoved(ship);
             }
 
             @Override
