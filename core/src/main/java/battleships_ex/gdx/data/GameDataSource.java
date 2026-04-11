@@ -86,6 +86,25 @@ public interface GameDataSource {
     void updateGameStatus(String roomCode, String status, DataCallback<Void> callback);
 
     /**
+     * Updates a player's placement readiness in the backend.
+     *
+     * @param roomCode  the active room code
+     * @param playerId  the player whose status to update
+     * @param isReady   true if the player has confirmed their placement
+     * @param callback  success: null / failure: error message
+     */
+    void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback);
+
+    /**
+     * Registers a listener for opponent placement readiness.
+     *
+     * @param roomCode   the active room code
+     * @param opponentId the opponent's player id to watch
+     * @param callback   delivers true when the opponent is ready
+     */
+    void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback);
+
+    /**
      * Signals game over with the winner's name.
      *
      * @param roomCode   the active room code

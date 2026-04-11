@@ -121,16 +121,24 @@ public class LobbyController {
 
     /**
      * Called when the host confirms they are ready to start.
-     *
-     * TODO: extend LobbyDataSource with a dedicated setLobbyReady(roomCode)
-     * method that writes status="ready" to Firebase. Currently a no-op on the
-     * backend side — the View transition fires locally only.
+     * Updates the lobby status to "ready" on the backend so all participants
+     * transition to the deployment phase.
      */
     public void confirmReady() {
         if (activeLobby == null || !activeLobby.isReady()) return;
         if (!isLocalPlayerHost())                           return;
 
-        notify_lobbyReady();
+        dataSource.setLobbyStatus(activeLobby.getRoomCode(), "ready", new DataCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                // The local listener will catch the status change and call notify_lobbyReady()
+            }
+
+            @Override
+            public void onFailure(String error) {
+                System.err.println("[LobbyController] Failed to set lobby ready: " + error);
+            }
+        });
     }
 
     public void onSnapshotUpdated(LobbySnapshot snapshot) {

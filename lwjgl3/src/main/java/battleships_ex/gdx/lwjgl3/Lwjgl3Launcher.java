@@ -43,8 +43,7 @@ public class Lwjgl3Launcher {
 
         if (USE_FIREBASE && idToken != null) {
             lobbyDataSource = new DesktopRestLobbyDataSource(idToken);
-            // TODO: Implement DesktopRestGameDataSource later. Using stub for now.
-            gameDataSource = new StubGameDataSource();
+            gameDataSource = new battleships_ex.gdx.lwjgl3.data.DesktopRestGameDataSource(idToken);
         } else {
             lobbyDataSource = new StubLobbyDataSource();
             gameDataSource = new StubGameDataSource();

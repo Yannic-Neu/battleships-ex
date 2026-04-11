@@ -61,18 +61,23 @@ public class GameController {
      * @param remote   the remote player
      * @param roomCode the active room code for Firebase sync
      */
-    public void initSession(Player local, Player remote, String roomCode) {
+    public void initSession(Player local, Player remote, String roomCode, boolean localIsPlayer1) {
         this.localPlayer  = local;
         this.remotePlayer = remote;
         this.roomCode     = roomCode;
-        this.session      = new GameSession(local, remote);
+
+        if (localIsPlayer1) {
+            this.session = new GameSession(local, remote);
+        } else {
+            this.session = new GameSession(remote, local);
+        }
     }
 
     /**
      * Backward-compatible overload for local/stub usage without room code.
      */
     public void initSession(Player local, Player remote) {
-        initSession(local, remote, null);
+        initSession(local, remote, null, true);
     }
 
     /**
@@ -141,6 +146,21 @@ public class GameController {
 
             sessionManager.startSession(roomCode, localPlayer.getId(), remotePlayer.getId());
 
+            // Register placement status listener to see if opponent is ready
+            gameDataSource.addPlacementStatusListener(roomCode, remotePlayer.getId(), new DataCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean isReady) {
+                    if (listener != null) {
+                        listener.onOpponentPlacementReady(isReady);
+                    }
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    System.out.println("[GameController] Placement status listener error: " + error);
+                }
+            });
+
             // Register preview listener to see opponent's aim (Issue #28)
             gameDataSource.addPreviewListener(roomCode, remotePlayer.getId(), new DataCallback<Coordinate>() {
                 @Override
@@ -203,6 +223,49 @@ public class GameController {
         localPlayer.getBoard().placeShip(ship, start, orientation);
 
         notify_shipPlaced(ship);
+    }
+
+    public void confirmPlacement() {
+        requireSession();
+        if (roomCode != null) {
+            gameDataSource.updatePlacementStatus(roomCode, localPlayer.getId(), true, new DataCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    // Local status update if needed
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    System.out.println("[GameController] Failed to confirm placement: " + error);
+                }
+            });
+        }
+    }
+
+    public void addPlacementStatusListener(DataCallback<Boolean> callback) {
+        if (isSinglePlayer) {
+            // In single player, the bot is ready as soon as it's initialized
+            callback.onSuccess(true);
+            // Also notify the main game listener so the UI updates immediately
+            if (listener != null) {
+                listener.onOpponentPlacementReady(true);
+            }
+        } else if (roomCode != null && remotePlayer != null) {
+            gameDataSource.addPlacementStatusListener(roomCode, remotePlayer.getId(), new DataCallback<Boolean>() {
+                @Override
+                public void onSuccess(Boolean ready) {
+                    if (listener != null) {
+                        listener.onOpponentPlacementReady(ready);
+                    }
+                    callback.onSuccess(ready);
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    callback.onFailure(error);
+                }
+            });
+        }
     }
 
     public void removeShipAt(Coordinate coordinate) {

@@ -44,6 +44,7 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
     private DragAndDrop dragAndDrop;
     private GameButton readyButton;
     private Label deployPhaseLabel;
+    private Label opponentStatusLabel;
 
     // Dynamic interaction areas
     private Table dynamicSection;
@@ -105,7 +106,9 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         Label gridTitle = new Label("10x10 STRATEGIC GRID", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
 
         Table boardSection = new Table();
+        opponentStatusLabel = new Label("Opponent is placing ships...", new Label.LabelStyle(Theme.fontSmall, com.badlogic.gdx.graphics.Color.GRAY));
         boardSection.add(deployPhaseLabel).padTop(10).row();
+        boardSection.add(opponentStatusLabel).padBottom(5).row();
         boardSection.add(gridTitle).padBottom(16).row();
         boardSection.add(boardActor).size(boardConfig.size).row();
 
@@ -415,6 +418,19 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
     @Override public void onLobbyJoined() {}
     @Override public void onGuestJoined(String guestName) {}
     @Override public void onJoinRejected(LobbyController.JoinRejectionReason reason) {}
+
+    @Override
+    public void onOpponentPlacementReady(boolean ready) {
+        Gdx.app.postRunnable(() -> {
+            if (ready) {
+                opponentStatusLabel.setText("Opponent is ready!");
+                opponentStatusLabel.getStyle().fontColor = com.badlogic.gdx.graphics.Color.GREEN;
+            } else {
+                opponentStatusLabel.setText("Opponent is placing ships...");
+                opponentStatusLabel.getStyle().fontColor = com.badlogic.gdx.graphics.Color.GRAY;
+            }
+        });
+    }
 
     @Override
     public void render(float delta) {

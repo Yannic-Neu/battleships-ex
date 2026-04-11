@@ -53,11 +53,13 @@ public class FirebaseGameDataSource implements GameDataSource {
 
     private final DatabaseReference roomsRef;
     private static final String NODE_PREVIEW    = "preview";
+    private static final String NODE_PLACEMENT_READY = "placementReady";
 
     private final Map<String, ValueEventListener> moveListeners      = new HashMap<>();
     private final Map<String, ValueEventListener> turnListeners      = new HashMap<>();
     private final Map<String, ValueEventListener> heartbeatListeners = new HashMap<>();
     private final Map<String, ValueEventListener> previewListeners   = new HashMap<>();
+    private final Map<String, ValueEventListener> placementStatusListeners = new HashMap<>();
 
     public FirebaseGameDataSource() {
         this.roomsRef = FirebaseDatabase.getInstance().getReference("rooms");
@@ -322,6 +324,41 @@ public class FirebaseGameDataSource implements GameDataSource {
         }
     }
 
+    @Override
+    public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
+        gameRef(roomCode).child(NODE_PLACEMENT_READY).child(playerId).setValue(isReady)
+            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    @Override
+    public void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
+        removePlacementStatusListener(roomCode);
+
+        ValueEventListener listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Boolean ready = snapshot.getValue(Boolean.class);
+                callback.onSuccess(ready != null && ready);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                callback.onFailure(error.getMessage());
+            }
+        };
+
+        placementStatusListeners.put(roomCode, listener);
+        gameRef(roomCode).child(NODE_PLACEMENT_READY).child(opponentId).addValueEventListener(listener);
+    }
+
+    private void removePlacementStatusListener(String roomCode) {
+        ValueEventListener listener = placementStatusListeners.remove(roomCode);
+        if (listener != null) {
+            gameRef(roomCode).child(NODE_PLACEMENT_READY).removeEventListener(listener);
+        }
+    }
+
     // ── Session re-join & cleanup (Issue #29) ─────────────────────
 
     @Override
@@ -383,5 +420,6 @@ public class FirebaseGameDataSource implements GameDataSource {
         removeTurnListener(roomCode);
         removeHeartbeatListener(roomCode);
         removePreviewListener(roomCode);
+        removePlacementStatusListener(roomCode);
     }
 }

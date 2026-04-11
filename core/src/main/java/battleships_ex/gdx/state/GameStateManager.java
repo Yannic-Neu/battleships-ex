@@ -250,6 +250,13 @@ public class GameStateManager {
             }
 
             @Override
+            public void onOpponentPlacementReady(boolean ready) {
+                if (stateListener != null) {
+                    stateListener.onOpponentPlacementReady(ready);
+                }
+            }
+
+            @Override
             public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
                 if (stateListener != null) stateListener.onActionCardPlayed(result);
             }

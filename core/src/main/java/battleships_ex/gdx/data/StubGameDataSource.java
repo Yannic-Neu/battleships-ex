@@ -51,6 +51,19 @@ public class StubGameDataSource implements GameDataSource {
     }
 
     @Override
+    public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
+        System.out.println("[Stub] updatePlacementStatus: room=" + roomCode + " player=" + playerId + " ready=" + isReady);
+        callback.onSuccess(null);
+    }
+
+    @Override
+    public void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
+        System.out.println("[Stub] addPlacementStatusListener: room=" + roomCode + " opponent=" + opponentId);
+        // In stub mode, assume opponent is ready immediately for easy testing
+        callback.onSuccess(true);
+    }
+
+    @Override
     public void pushGameOver(String roomCode, String winnerName, DataCallback<Void> callback) {
         System.out.println("[Stub] pushGameOver: room=" + roomCode + " winner=" + winnerName);
         callback.onSuccess(null);

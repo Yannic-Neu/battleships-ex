@@ -3,12 +3,16 @@
     "rooms": {
       "$roomCode": {
         ".read": "auth != null",
-        ".write": "auth != null && (!data.exists() || data.child('hostPlayerId').val() === auth.uid || data.child('guestPlayerId').val() === auth.uid)",
+        ".write": "auth != null && (!data.exists() || data.child('hostPlayerId').val() === auth.uid || data.child('guestPlayerId').val() === auth.uid || (!data.child('guestPlayerId').exists() && newData.child('guestPlayerId').val() === auth.uid))",
         ".validate": "newData.hasChildren(['hostPlayerId', 'status', 'createdAt'])",
 
         "game": {
           ".read": "auth != null",
           ".write": "auth != null && (root.child('rooms').child($roomCode).child('hostPlayerId').val() === auth.uid || root.child('rooms').child($roomCode).child('guestPlayerId').val() === auth.uid)",
+
+          "status": {
+             ".write": "auth != null && (root.child('rooms').child($roomCode).child('hostPlayerId').val() === auth.uid || root.child('rooms').child($roomCode).child('guestPlayerId').val() === auth.uid)"
+          },
 
           "moves": {
             "$moveId": {
@@ -20,6 +24,19 @@
             "$playerId": {
               ".write": "auth.uid === $playerId",
               ".validate": "newData.hasChild('lastSeen')"
+            }
+          },
+
+          "preview": {
+            "$playerId": {
+              ".write": "auth.uid === $playerId"
+            }
+          },
+
+          "placementReady": {
+            "$playerId": {
+              ".write": "auth.uid === $playerId",
+              ".validate": "newData.isBoolean()"
             }
           }
         }

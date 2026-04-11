@@ -131,4 +131,7 @@ public interface GameListener {
     default void onPreviewReceived(battleships_ex.gdx.model.board.Coordinate coordinate) {}
 
     void onShipRemoved(Ship ship);
+
+    /** Called when the opponent's placement readiness changes. */
+    default void onOpponentPlacementReady(boolean ready) {}
 }

@@ -23,6 +23,9 @@ public interface GameStateListener {
     void onGuestJoined(String guestName);
     void onJoinRejected(LobbyController.JoinRejectionReason reason);
 
+    /** Called when the opponent's placement readiness changes. */
+    void onOpponentPlacementReady(boolean ready);
+
     // Placement
     void onShipPlaced(Ship ship);
     void onShipRemoved(Ship ship);

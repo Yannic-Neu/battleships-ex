@@ -12,16 +12,37 @@ import battleships_ex.gdx.model.board.Ship;
  */
 public class PlacementState extends BaseGameState {
 
+    private boolean localReady = false;
+    private boolean remoteReady = false;
+
     @Override
     public String getName() { return "PlacementState"; }
 
     @Override
     public void onEnter(GameStateManager manager) {
-        // Initialise the GameSession now that both players are known
+        // Initialize the GameSession now that both players are known
+        String roomCode = null;
+        boolean isHost = true;
+
+        if (manager.getLobbyController().getActiveLobby() != null) {
+            roomCode = manager.getLobbyController().getActiveLobby().getRoomCode();
+            isHost = manager.getLobbyController().isLocalPlayerHost();
+        }
+
         manager.getGameController().initSession(
             manager.getLocalPlayer(),
-            manager.getRemotePlayer());
+            manager.getRemotePlayer(),
+            roomCode,
+            isHost
+        );
+
         manager.notifyStateChanged(getName());
+
+        // Listen for opponent readiness
+        manager.getGameController().addPlacementStatusListener(ready -> {
+            remoteReady = ready;
+            checkBothReady(manager);
+        });
     }
 
     /**
@@ -40,16 +61,24 @@ public class PlacementState extends BaseGameState {
     }
 
     /**
-     * All ships placed — start the game and transition based on who goes first.
+     * All ships placed — wait for both players to be ready.
      */
     @Override
     public void onPlacementComplete(GameStateManager manager) {
-        manager.getGameController().startGame();
+        localReady = true;
+        manager.getGameController().confirmPlacement();
+        checkBothReady(manager);
+    }
 
-        if (manager.getGameController().isLocalPlayerTurn()) {
-            manager.transitionTo(new MyTurnState());
-        } else {
-            manager.transitionTo(new OpponentTurnState());
+    private void checkBothReady(GameStateManager manager) {
+        if (localReady && remoteReady) {
+            manager.getGameController().startGame();
+
+            if (manager.getGameController().isLocalPlayerTurn()) {
+                manager.transitionTo(new MyTurnState());
+            } else {
+                manager.transitionTo(new OpponentTurnState());
+            }
         }
     }
 }
