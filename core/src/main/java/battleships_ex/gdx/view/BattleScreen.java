@@ -194,6 +194,16 @@ public class BattleScreen extends ScreenAdapter {
         BoardConfig boardConfig = new BoardConfig(320f, 10, new Color(0.05f, 0.10f, 0.20f, 1f), new Color(0.15f, 0.22f, 0.35f, 1f));
         boardActor = new BoardActor(boardConfig);
 
+        if (currentMode == ViewMode.OWN_FLEET) {
+            List<Ship> ships = gameController.getSession().getLocalPlayer().getBoard().getShips();
+            for (Ship ship : ships) {
+                if (ship.isPlaced() && !ship.getOccupiedCoordinates().isEmpty()) {
+                    Coordinate start = ship.getOccupiedCoordinates().iterator().next();
+                    boardActor.addPlacedShip(ship.getType(), start, ship.getOrientation());
+                }
+            }
+        }
+
         // --- Actions Section ---
         Table actionsPanel = new Table();
         energyBar = new EnergyBar();
