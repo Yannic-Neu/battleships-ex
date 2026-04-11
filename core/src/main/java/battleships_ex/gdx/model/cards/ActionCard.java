@@ -8,4 +8,8 @@ public interface ActionCard {
     boolean canUse(Player user, Player opponent);
 
     ActionCardResult execute(Player user, Player opponent);
+
+    int getEnergyCost();
+    boolean endsTurn();
+    boolean allowsFireAfterUse();
 }

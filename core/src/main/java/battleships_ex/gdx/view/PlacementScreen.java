@@ -9,6 +9,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import battleships_ex.gdx.controller.GameController;
+import battleships_ex.gdx.model.core.Player;
 
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
@@ -109,14 +111,27 @@ public class PlacementScreen extends ScreenAdapter {
         dockingTray.addCard(new ShipCard(new ShipCardConfig(90f, 82f, "DESTROYER", Assets.ships.shipDestroyer3h)));
         dockingTray.addCard(new ShipCard(new ShipCardConfig(80f, 82f, "PATROL", Assets.ships.shipPatrol2h)));
 
+
         GameButton readyButton = new GameButton(
             "READY TO BATTLE",
             ButtonConfig.primary(300f, 56f),
             () -> {
                 System.out.println("Ready clicked");
+
+                // Create local + remote players (singleplayer)
+                Player local = new Player("P1", "You");
+                Player remote = new Player("P2", "Enemy");
+
+                // Initialize game session
+                GameController controller = game.getGameController();
+                controller.initSession(local, remote);
+                controller.startGame();
+
+                // Now switch screens safely
                 game.setScreen(new BattleScreen(game));
             }
         );
+
 
         root.defaults().growX();
 

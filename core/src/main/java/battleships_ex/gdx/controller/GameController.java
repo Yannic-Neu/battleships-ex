@@ -11,7 +11,6 @@ import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.model.rules.PlacementResult;
 import battleships_ex.gdx.model.rules.ShotResult;
 import battleships_ex.gdx.model.rules.StandardRulesEngine;
-import battleships_ex.gdx.model.core.SimpleBot;
 
 /**
  * Orchestrates game flow: ship placement, shot resolution, action cards,
@@ -39,8 +38,6 @@ public class GameController {
     private long lastPreviewSentMs;
     /** The last preview coordinate sent (to avoid duplicate sends). */
     private Coordinate lastPreviewCoord;
-    private boolean isSinglePlayer = false;
-    private SimpleBot botLogic;
 
     public GameController(StandardRulesEngine engine,
                           GameDataSource gameDataSource,
@@ -233,12 +230,26 @@ public class GameController {
         if (!isLocalPlayerTurn()) return;
 
         Coordinate target = new Coordinate(row, col);
-        ShotResult result  = engine.resolveShot(remotePlayer.getBoard(), target);
 
-        // Clear preview now that shot is confirmed (Issue #28)
+        // ---- SHIELD INTERCEPTION (REMOTE PLAYER) ----
+        if (remotePlayer.hasShield()) {
+            remotePlayer.consumeShield();
+
+            // Treat as MISS
+            clearPreview();
+            sessionManager.resetInactivityTimer();
+
+            session.processMove(target);
+            notify_miss(target);
+            syncMoveToBackend(target, false);
+            syncTurnToBackend();
+            return;
+        }
+
+        // ---- NORMAL SHOT ----
+        ShotResult result = engine.resolveShot(remotePlayer.getBoard(), target);
+
         clearPreview();
-
-        // Reset inactivity timer on action
         sessionManager.resetInactivityTimer();
 
         switch (result.getOutcome()) {
@@ -248,60 +259,70 @@ public class GameController {
                 return;
 
             case MISS:
-                session.processMove(target);    // records move + switches turn
+                session.processMove(target);
                 notify_miss(target);
                 syncMoveToBackend(target, false);
                 syncTurnToBackend();
                 break;
 
             case HIT:
-                session.processMove(target);    // records move; turn stays (hit-again)
+                // ENERGY GAIN: defender was hit
+                remotePlayer.addEnergy(1);
+
+                session.processMove(target);
                 notify_hit(target, result.getSunkShip());
                 syncMoveToBackend(target, true);
                 break;
 
             case SUNK:
+                // ENERGY GAIN: defender was hit
+                remotePlayer.addEnergy(1);
+
                 session.processMove(target);
                 notify_sunk(target, result.getSunkShip());
                 syncMoveToBackend(target, true);
 
                 if (engine.hasWon(remotePlayer.getBoard())) {
                     notify_gameOver(localPlayer.getName());
-                    if (roomCode != null) {
-                        gameDataSource.pushGameOver(roomCode, localPlayer.getName(), new DataCallback<Void>() {
-                            @Override public void onSuccess(Void r) {}
-                            @Override public void onFailure(String error) {
-                                System.out.println("[GameController] Failed to push game over: " + error);
-                            }
-                        });
-                    }
                 }
                 break;
         }
     }
-
     public void onRemoteShotReceived(int row, int col) {
         if (!isSessionActive()) return;
 
         Coordinate target = new Coordinate(row, col);
-        ShotResult result  = engine.resolveShot(localPlayer.getBoard(), target);
+
+        // ---- SHIELD INTERCEPTION (LOCAL PLAYER) ----
+        if (localPlayer.hasShield()) {
+            localPlayer.consumeShield();
+            session.processMove(target);
+            return;
+        }
+
+        ShotResult result = engine.resolveShot(localPlayer.getBoard(), target);
 
         switch (result.getOutcome()) {
 
             case MISS:
-                session.processMove(target);    // switches turn back to local
+                session.processMove(target);
                 break;
 
             case HIT:
-            case SUNK:
+                localPlayer.addEnergy(1);
                 session.processMove(target);
-                if (result.isSunk() && engine.hasWon(localPlayer.getBoard())) {
+                break;
+
+            case SUNK:
+                localPlayer.addEnergy(1);
+                session.processMove(target);
+
+                if (engine.hasWon(localPlayer.getBoard())) {
                     notify_gameOver(remotePlayer.getName());
                 }
                 break;
 
             case ALREADY_SHOT:
-                // Stale Firebase event — ignore silently.
                 break;
         }
     }
@@ -398,52 +419,5 @@ public class GameController {
             throw new IllegalStateException(
                 "GameController: initSession() must be called before this operation.");
         }
-    }
-    /**
-     * Initialises a local-only session against a simple computer opponent.
-     * Reuses the stubbed Data Source natively via initSession.
-     */
-    public void initSinglePlayerSession(Player local) {
-        this.isSinglePlayer = true;
-
-        Player remote = new Player("BOT", "Computer");
-        this.botLogic = new SimpleBot();
-        this.botLogic.placeHardcodedShips(remote.getBoard());
-
-        debugPrintEnemyBoard(remote.getBoard());
-
-        // Using the overloaded initSession without a room code ensures
-        // it functions locally (usually leveraging StubGameDataSource).
-        initSession(local, remote);
-    }
-
-    public boolean isSinglePlayer() {
-        return isSinglePlayer;
-    }
-
-    /**
-     * Fetches the next predetermined move and feeds it into the standard remote shot pipeline.
-     */
-    public void playBotTurn() {
-        if (botLogic == null || !isSessionActive()) return;
-
-        Coordinate target = botLogic.getNextMove();
-        onRemoteShotReceived(target.getRow(), target.getCol());
-    }
-    private void debugPrintEnemyBoard(battleships_ex.gdx.model.board.Board board) {
-        System.out.println("=== ENEMY BOT BOARD ===");
-        for (int row = 0; row < board.getHeight(); row++) {
-            StringBuilder rowString = new StringBuilder();
-            for (int col = 0; col < board.getWidth(); col++) {
-                // Check if the cell has a ship using the methods from Board.java
-                if (board.getCell(row, col).hasShip()) {
-                    rowString.append("[S]"); // S for Ship
-                } else {
-                    rowString.append("[ ]"); // Empty
-                }
-            }
-            System.out.println(rowString.toString());
-        }
-        System.out.println("=======================");
     }
 }

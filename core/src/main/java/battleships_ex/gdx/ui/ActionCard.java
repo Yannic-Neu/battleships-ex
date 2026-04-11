@@ -7,15 +7,37 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.ui.cards.ActionCardPresentation;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 
 public class ActionCard extends Table {
 
     private final GameConfig.ActionCardConfig config;
+    private battleships_ex.gdx.model.cards.ActionCard modelCard;
+
+
+    public void setModelCard(battleships_ex.gdx.model.cards.ActionCard modelCard) {
+        this.modelCard = modelCard;
+    }
+
+    public battleships_ex.gdx.model.cards.ActionCard getModelCard() {
+        return modelCard;
+    }
+
 
     private ActionCardPresentation model;
     private final Table front = new Table();
     private final Table back  = new Table();
     private boolean showingFront = true;
+    private boolean disabled = false;
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
+        setColor(disabled ? Theme.GRAY : Theme.WHITE);
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
 
     public ActionCard(GameConfig.ActionCardConfig config) {
         this.config = config;
