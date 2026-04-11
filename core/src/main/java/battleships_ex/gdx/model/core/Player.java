@@ -16,6 +16,20 @@ public class Player {
     private final String name;
     private final Board  board;
     private final List<ActionCard> cards;
+    private int energy;
+    private boolean shieldActive = false;
+
+    public void activateShield() {
+        shieldActive = true;
+    }
+
+    public boolean hasShield() {
+        return shieldActive;
+    }
+
+    public void consumeShield() {
+        shieldActive = false;
+    }
 
     public Player(String id, String name) {
         this.id    = id;
@@ -44,5 +58,36 @@ public class Player {
     /** @return true if the player currently holds the given card */
     public boolean hasCard(ActionCard card) {
         return cards.contains(card);
+    }
+
+    public int getEnergy() {
+        return energy;
+    }
+
+    public void addEnergy(int amount) {
+        if (amount < 0) {
+            throw new IllegalArgumentException("Energy amount must be non-negative");
+        }
+        energy += amount;
+    }
+
+    public boolean canSpendEnergy(int cost) {
+        return energy >= cost;
+    }
+
+    public void spendEnergy(int cost) {
+        if (cost < 0) {
+            throw new IllegalArgumentException("Energy cost must be non-negative");
+        }
+        if (!canSpendEnergy(cost)) {
+            throw new IllegalStateException("Not enough energy");
+        }
+        energy -= cost;
+    }
+    public void gainTurnEnergy() {
+        addEnergy(1);
+    }
+
+    public void setParryActive(boolean b) {
     }
 }

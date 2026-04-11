@@ -7,8 +7,8 @@ public class EraseCardPresentation extends ActionCardPresentationBase {
         super(
             "ERASE",
             "Remove a mark.",
-            "Erase one revealed hit or miss from your grid.",
-            icon
-        );
+            "Erase one revealed miss or hit from your own grid.",
+            icon,
+            2);
     }
 }

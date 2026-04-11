@@ -7,4 +7,6 @@ public interface ActionCardPresentation {
     String getShortText();
     String getLongText();
     TextureRegion getIcon();
+    int getMaxUses();
+    int getRemainingUses();
 }

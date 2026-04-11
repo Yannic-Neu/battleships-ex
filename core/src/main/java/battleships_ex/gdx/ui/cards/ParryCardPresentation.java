@@ -7,8 +7,8 @@ public class ParryCardPresentation extends ActionCardPresentationBase {
         super(
             "PARRY",
             "Counter an attack.",
-            "Reflect an enemy shot back to a random cell on their grid.",
-            icon
-        );
+            "Reflects an enemy shot back to a random cell on their grid.",
+            icon,
+            1);
     }
 }

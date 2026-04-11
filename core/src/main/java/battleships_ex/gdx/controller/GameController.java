@@ -249,6 +249,22 @@ public class GameController {
         if (!isLocalPlayerTurn()) return;
 
         Coordinate target = new Coordinate(row, col);
+
+        // ---- SHIELD INTERCEPTION (REMOTE PLAYER) ----
+        if (remotePlayer.hasShield()) {
+            remotePlayer.consumeShield();
+
+            // Treat as MISS
+            clearPreview();
+            sessionManager.resetInactivityTimer();
+
+            session.processMove(target);
+            notify_miss(target);
+            syncMoveToBackend(target, false);
+            syncTurnToBackend();
+            return;
+        }
+
         ShotResult result  = engine.resolveShot(remotePlayer.getBoard(), target);
 
         // Clear preview now that shot is confirmed (Issue #28)
@@ -271,12 +287,14 @@ public class GameController {
                 break;
 
             case HIT:
+                remotePlayer.addEnergy(1);
                 session.processMove(target);    // records move; turn stays (hit-again)
                 notify_hit(target, result.getSunkShip());
                 syncMoveToBackend(target, true);
                 break;
 
             case SUNK:
+                remotePlayer.addEnergy(1);
                 session.processMove(target);
                 notify_sunk(target, result.getSunkShip());
                 syncMoveToBackend(target, true);
@@ -300,6 +318,14 @@ public class GameController {
         if (!isSessionActive()) return;
 
         Coordinate target = new Coordinate(row, col);
+
+        // ---- SHIELD INTERCEPTION (LOCAL PLAYER) ----
+        if (localPlayer.hasShield()) {
+            localPlayer.consumeShield();
+            session.processMove(target);
+            return;
+        }
+
         ShotResult result  = engine.resolveShot(localPlayer.getBoard(), target);
 
         switch (result.getOutcome()) {
@@ -309,7 +335,11 @@ public class GameController {
                 break;
 
             case HIT:
+                localPlayer.addEnergy(1);
+                session.processMove(target);
+                break;
             case SUNK:
+                localPlayer.addEnergy(1);
                 session.processMove(target);
                 if (result.isSunk() && engine.hasWon(localPlayer.getBoard())) {
                     notify_gameOver(remotePlayer.getName());

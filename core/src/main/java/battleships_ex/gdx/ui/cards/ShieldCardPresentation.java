@@ -8,7 +8,7 @@ public class ShieldCardPresentation extends ActionCardPresentationBase {
             "SHIELD",
             "Block one hit.",
             "Absorbs the next incoming attack on your fleet.",
-            icon
-        );
+            icon,
+            1);
     }
 }

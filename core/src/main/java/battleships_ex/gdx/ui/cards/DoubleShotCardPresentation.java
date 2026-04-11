@@ -7,8 +7,8 @@ public class DoubleShotCardPresentation extends ActionCardPresentationBase {
         super(
             "DOUBLE SHOT",
             "Fire twice this turn.",
-            "Allows two separate shots this turn. Cannot target the same cell twice.",
-            icon
-        );
+            "Allows two separate shots this turn (not the same cell).",
+            icon,
+            1);
     }
 }

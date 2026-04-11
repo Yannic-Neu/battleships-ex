@@ -154,4 +154,11 @@ public class GameSession {
     private void requireNotOver() {
         if (gameIsOver()) throw new IllegalStateException("Game is already over");
     }
+    public Player getLocalPlayer() {
+        return player1;
+    }
+
+    public Player getRemotePlayer() {
+        return player2;
+    }
 }

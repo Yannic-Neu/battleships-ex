@@ -7,8 +7,8 @@ public class ScanCardPresentation extends ActionCardPresentationBase {
         super(
             "SCAN",
             "Reveal area.",
-            "Reveals a 3x3 area on the enemy grid.",
-            icon
-        );
+            "Reveals a 3x3 area on the enemy tactical grid.",
+            icon,
+            1);
     }
 }

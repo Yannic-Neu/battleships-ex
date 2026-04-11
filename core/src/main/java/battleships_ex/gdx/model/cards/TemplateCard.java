@@ -53,6 +53,21 @@ public class TemplateCard implements ActionCard {
 
     }
 
+    @Override
+    public int getEnergyCost() {
+        return 0; // default
+    }
+
+    @Override
+    public boolean endsTurn() {
+        return false;
+    }
+
+    @Override
+    public boolean allowsFireAfterUse() {
+        return true;
+    }
+
     /*
       TODO: Add helper methods specific to your card's logic
       Examples:
