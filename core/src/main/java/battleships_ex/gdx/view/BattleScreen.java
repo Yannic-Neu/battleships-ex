@@ -155,6 +155,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
     private void rebuildUI() {
         stage.clear();
+        actionCards.clear();
 
         float sidePad = 16f;
         float contentWidth = Math.min(320f, GameConfig.WORLD_WIDTH - 2f * sidePad);
@@ -279,43 +280,46 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
         // --- Actions Section ---
         Table actionsPanel = new Table();
-        energyBar = new EnergyBar();
-        energyBar.updateEnergy(
-            gameController.getLocalPlayer().getEnergy()
-        );
 
+        boolean exMode = battleships_ex.gdx.state.GameStateManager.getInstance().isExModeEnabled();
 
-        Label actionCardsLabel = new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
+        if (exMode) {
+            energyBar = new EnergyBar();
+            energyBar.updateEnergy(
+                gameController.getLocalPlayer().getEnergy()
+            );
 
-        actionCardTray = new CardTray();
-        // TODO: Replace ShipCard with ActionCard interface implementation once created.
-        //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "RECON", Assets.ships.ship2h)));
-        //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "SALVO", Assets.ships.ship3h)));
-        //actionCardTray.addCard(new ShipCard(new ShipCardConfig(95f, 82f, "AIRSTRIKE", Assets.ships.ship5h)));
-        TextureRegion iconA = Assets.ships.shipPatrol2h;
-        TextureRegion iconB = Assets.ships.shipPatrol2h;
-        TextureRegion iconC = Assets.ships.shipPatrol2h;
-        TextureRegion iconD = Assets.ships.shipPatrol2h;
-        TextureRegion iconE = Assets.ships.shipPatrol2h;
+            Label actionCardsLabel = new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
-        ActionCardPresentation m1 = new DoubleShotCardPresentation(iconA);
-        ActionCardPresentation m2 = new ShieldCardPresentation(iconB);
-        ActionCardPresentation m3 = new ParryCardPresentation(iconC);
-        ActionCardPresentation m4 = new EraseCardPresentation(iconD);
-        ActionCardPresentation m5 = new ScanCardPresentation(iconE);
+            actionCardTray = new CardTray();
+            TextureRegion iconA = Assets.ships.shipPatrol2h;
+            TextureRegion iconB = Assets.ships.shipPatrol2h;
+            TextureRegion iconC = Assets.ships.shipPatrol2h;
+            TextureRegion iconD = Assets.ships.shipPatrol2h;
+            TextureRegion iconE = Assets.ships.shipPatrol2h;
 
-        GameConfig.ActionCardConfig cfg1 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "DOUBLE SHOT");
-        GameConfig.ActionCardConfig cfg2 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SHIELD");
-        GameConfig.ActionCardConfig cfg3 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "PARRY");
-        GameConfig.ActionCardConfig cfg4 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "ERASE");
-        GameConfig.ActionCardConfig cfg5 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SCAN");
+            ActionCardPresentation m1 = new DoubleShotCardPresentation(iconA);
+            ActionCardPresentation m2 = new ShieldCardPresentation(iconB);
+            ActionCardPresentation m3 = new ParryCardPresentation(iconC);
+            ActionCardPresentation m4 = new EraseCardPresentation(iconD);
+            ActionCardPresentation m5 = new ScanCardPresentation(iconE);
 
+            GameConfig.ActionCardConfig cfg1 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "DOUBLE SHOT");
+            GameConfig.ActionCardConfig cfg2 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SHIELD");
+            GameConfig.ActionCardConfig cfg3 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "PARRY");
+            GameConfig.ActionCardConfig cfg4 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "ERASE");
+            GameConfig.ActionCardConfig cfg5 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SCAN");
 
-        actionCardTray.addCard(bindCard("DOUBLE SHOT",   m1, new DoubleShotCard()));
-        actionCardTray.addCard(bindCard("SHIELD",        m2, new ShieldCard()));
-        actionCardTray.addCard(bindCard("PARRY",         m3, new ParryCard()));
-        actionCardTray.addCard(bindCard("ERASE",         m4, new EraseCard()));
-        actionCardTray.addCard(bindCard("SCAN",          m5, new ScanCard()));
+            actionCardTray.addCard(bindCard("DOUBLE SHOT",   m1, new DoubleShotCard()));
+            actionCardTray.addCard(bindCard("SHIELD",        m2, new ShieldCard()));
+            actionCardTray.addCard(bindCard("PARRY",         m3, new ParryCard()));
+            actionCardTray.addCard(bindCard("ERASE",         m4, new EraseCard()));
+            actionCardTray.addCard(bindCard("SCAN",          m5, new ScanCard()));
+
+            actionsPanel.add(energyBar).left().padBottom(6f).row();
+            actionsPanel.add(actionCardsLabel).left().padBottom(12f).row();
+            actionsPanel.add(actionCardTray).growX().height(95f).padBottom(12f).row();
+        }
 
         fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 72f), () -> {
             if (fireButton.isDisabled()) return;
@@ -328,9 +332,6 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             }
         });
 
-        actionsPanel.add(energyBar).left().padBottom(6f).row();
-        actionsPanel.add(actionCardsLabel).left().padBottom(12f).row();
-        actionsPanel.add(actionCardTray).growX().height(95f).padBottom(12f).row();
         actionsPanel.add(fireButton).center().row();
 
         // --- Root Assembly ---
@@ -344,7 +345,9 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
         root.add(boardContainer).expandY().padTop(10f).row();
         root.add(actionsPanel).padBottom(12f).row();
-        updateActionCardAvailability();
+        if (exMode) {
+            updateActionCardAvailability();
+        }
         updateFireButtonState();
     }
 

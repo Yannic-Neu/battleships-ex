@@ -67,6 +67,7 @@ public class GameStateManager {
     private GameState         currentState;
     private Player            remotePlayer;
     private GameStateListener stateListener;
+    private boolean           exModeEnabled = true;
 
     // -------------------------------------------------------------------------
     // Construction (private — use init())
@@ -203,6 +204,8 @@ public class GameStateManager {
     public String  getCurrentStateName() { return currentState.getName(); }
     public boolean isMyTurn()            { return currentState instanceof MyTurnState; }
     public boolean isGameOver()          { return currentState instanceof GameOverState; }
+    public boolean isExModeEnabled()     { return exModeEnabled; }
+    public void    setExModeEnabled(boolean enabled) { this.exModeEnabled = enabled; }
 
     // -------------------------------------------------------------------------
     // Internal listener wiring
