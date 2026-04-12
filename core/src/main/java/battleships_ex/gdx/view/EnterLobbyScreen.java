@@ -42,7 +42,7 @@ public class EnterLobbyScreen extends ScreenAdapter {
 
         ButtonConfig primaryButton = ButtonConfig.primary(360f, 80f);
         ButtonConfig secondaryButton = ButtonConfig.secondary(260f, 80f);
-        ButtonConfig navButton = ButtonConfig.secondary(60f, 44f);
+        ButtonConfig navButton = ButtonConfig.secondary(80f, 44f);
 
         GameButton backButton = new GameButton("BACK", navButton, () -> {
             game.setScreen(new MenuScreen(game));
@@ -97,7 +97,7 @@ public class EnterLobbyScreen extends ScreenAdapter {
         Table hostingPanel = new Table();
         Table joinPanel = new Table();
 
-        topArea.setBackground(Theme.bluePanel);
+        topArea.setBackground(Theme.darkBluePanel);
         topArea.add(backButton).left().padLeft(25);
         topArea.add().expandX();
 

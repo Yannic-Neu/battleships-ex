@@ -101,7 +101,7 @@ public class LobbyScreen extends ScreenAdapter {
         Table middlePanel = new Table();
         Table bottomPanel = new Table();
 
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> {
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(80f, 44f), () -> {
             game.getLobbyDataSource().removeLobbyListener(roomCode);
             game.getLobbyDataSource().leaveLobby(roomCode, playerId, new DataCallback<Void>() {
                 @Override
@@ -112,7 +112,7 @@ public class LobbyScreen extends ScreenAdapter {
             game.setScreen(new EnterLobbyScreen(game));
         });
 
-        topArea.setBackground(Theme.bluePanel);
+        topArea.setBackground(Theme.darkBluePanel);
         topArea.add(backButton).padLeft(25);
         topArea.add(missionPrep).center().expandX();
 
