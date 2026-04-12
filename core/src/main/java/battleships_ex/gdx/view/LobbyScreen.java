@@ -111,7 +111,7 @@ public class LobbyScreen extends ScreenAdapter {
         root.setFillParent(true);
         stage.addActor(root);
 
-        Label missionPrep = new Label("MISSION PREPARATION", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
+        Label missionPrep = new Label("PREPARATION", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
         Label vs = new Label("VS", new Label.LabelStyle(Theme.fontMedium, Theme.GRAY));
         Label accessCode = new Label("SECTOR ACCESS CODE", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
@@ -122,7 +122,7 @@ public class LobbyScreen extends ScreenAdapter {
         Table middlePanel = new Table();
         Table bottomPanel = new Table();
 
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(100f, 50f), () -> {
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(80f, 44f), () -> {
             game.getLobbyDataSource().removeLobbyListener(roomCode);
             game.getLobbyDataSource().leaveLobby(roomCode, playerId, new DataCallback<Void>() {
                 @Override
@@ -133,9 +133,9 @@ public class LobbyScreen extends ScreenAdapter {
             game.setScreen(new EnterLobbyScreen(game));
         });
 
-        topArea.setBackground(Theme.bluePanel);
-        topArea.add(backButton).left().padLeft(10);
-        topArea.add(missionPrep).expandX().center();
+        topArea.setBackground(Theme.darkBluePanel);
+        topArea.add(backButton).padLeft(25);
+        topArea.add(missionPrep).center().expandX();
 
         middlePanel.defaults().expandX().center();
         middlePanel.add().expandY().row();

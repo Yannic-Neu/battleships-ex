@@ -97,7 +97,7 @@ public class EnterLobbyScreen extends ScreenAdapter {
         Table hostingPanel = new Table();
         Table joinPanel = new Table();
 
-        topArea.setBackground(Theme.bluePanel);
+        topArea.setBackground(Theme.darkBluePanel);
         topArea.add(backButton).left().padLeft(25);
         topArea.add().expandX();
 
