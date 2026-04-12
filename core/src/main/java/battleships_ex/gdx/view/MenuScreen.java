@@ -8,6 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
+import battleships_ex.gdx.state.GameStateManager;
+import battleships_ex.gdx.controller.LobbyController;
 import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
@@ -50,7 +52,15 @@ public class MenuScreen extends ScreenAdapter {
 
         GameButton singlePlayerButton = new GameButton("SINGLEPLAYER", secondaryButton, () -> {
             Player localPlayer = new Player("P1", "Player 1");
+
             game.getGameController().initSinglePlayerSession(localPlayer);
+
+            LobbyController lobbyController = new LobbyController(game.getLobbyDataSource());
+            GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
+
+            Player botPLayer = game.getGameController().getRemotePlayer();
+            GameStateManager.getInstance().forceSinglePlayerPlacement(botPLayer);
+
             game.setScreen(new PlacementScreen(game));
         });
 
