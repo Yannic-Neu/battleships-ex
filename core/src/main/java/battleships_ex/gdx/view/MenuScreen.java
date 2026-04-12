@@ -3,23 +3,22 @@ package battleships_ex.gdx.view;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
-import battleships_ex.gdx.controller.LobbyController;
 import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.data.DataCallback;
 import battleships_ex.gdx.data.SessionManager;
-import battleships_ex.gdx.state.GameStateManager;
 import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
-import battleships_ex.gdx.ui.Theme;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import battleships_ex.gdx.data.Assets;
 
 public class MenuScreen extends ScreenAdapter {
     private final MyGame game;
@@ -31,76 +30,66 @@ public class MenuScreen extends ScreenAdapter {
 
     @Override
     public void show() {
-        stage = new Stage(new FitViewport(
-            GameConfig.WORLD_WIDTH,
-            GameConfig.WORLD_HEIGHT
-        ));
+        stage = new Stage(new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
+
+        Image background = new Image(new TextureRegionDrawable(Assets.oceanBackground));
+        background.setFillParent(true);
+        stage.addActor(background);
 
         Gdx.input.setInputProcessor(stage);
 
-        ButtonConfig primaryButton = ButtonConfig.primary(360f, 80f);
-        ButtonConfig secondaryButton = ButtonConfig.secondary(360f, 80f);
-        ButtonConfig navButton = ButtonConfig.secondary(80f, 44f);
+        Image shipWithSight = new Image(new TextureRegionDrawable(Assets.shipWithSight));
+        Image logo = new Image(new TextureRegionDrawable(Assets.logo));
 
-        GameButton enterLobbyButton = new GameButton("MULTIPLAYER", primaryButton, () -> {
-            game.getGameController().cleanup(); // Reset single player states if any
-            game.setScreen(new EnterLobbyScreen(game));
-        });
+        ButtonConfig primaryButton = ButtonConfig.primary(320f, 72f);
+        ButtonConfig secondaryButton = ButtonConfig.secondary(320f, 72f);
+        ButtonConfig navButton = ButtonConfig.secondary(130f, 44f);
+
+        GameButton enterLobbyButton = new GameButton("MULTIPLAYER", primaryButton, () ->
+            game.setScreen(new EnterLobbyScreen(game)));
 
         GameButton singlePlayerButton = new GameButton("SINGLEPLAYER", secondaryButton, () -> {
-            // Generate a default local player
             Player localPlayer = new Player("P1", "Player 1");
-
-            // Initialize the single-player backend
             game.getGameController().initSinglePlayerSession(localPlayer);
-
-            LobbyController lobbyController = new LobbyController(game.getLobbyDataSource());
-            GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
-
-            Player botPLayer = game.getGameController().getRemotePlayer();
-            GameStateManager.getInstance().forceSinglePlayerPlacement(botPLayer);
-
-            // Proceed directly to ship placement
             game.setScreen(new PlacementScreen(game));
         });
 
-        GameButton tutorialButton = new GameButton("TUTORIAL", secondaryButton, () -> {
-            System.out.println("Tutorial clicked");
-        });
+        GameButton tutorialButton = new GameButton("TUTORIAL", secondaryButton, () ->
+            System.out.println("Tutorial clicked"));
 
-        GameButton settingsButton = new GameButton("SETTINGS", navButton, () -> {
-            game.setScreen(new SettingsScreen(game, this));
-        });
+        GameButton settingsButton = new GameButton("SETTINGS", navButton, () ->
+            game.setScreen(new SettingsScreen(game, this)));
 
-        GameButton profileButton = new GameButton("PROFILE", ButtonConfig.secondary(200, 50),
-            () -> game.setScreen(new ProfileScreen(game)));
-
-        Label hostOrJoin = new Label("HOST OR JOIN", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
+        GameButton profileButton = new GameButton("PROFILE", navButton, () ->
+            game.setScreen(new ProfileScreen(game)));
 
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
 
-        Table topArea = new Table();
-        Table middlePanel = new Table();
+        // Top nav bar
+        Table topBar = new Table();
+        topBar.add(profileButton).left().padLeft(20).expandX();
+        topBar.add(settingsButton).right().padRight(20);
 
-        topArea.setBackground(Theme.bluePanel);
-        topArea.add().expandX();
-        topArea.add(profileButton).left().padLeft(25);
-        topArea.add(settingsButton).right().padRight(25);
+        // Logo area
+        Table logoArea = new Table();
+        logoArea.add(logo).center().row();
+        logoArea.add(shipWithSight).center();
 
-        middlePanel.setBackground(Theme.blackPanel);
+        // Button stack
+        Table buttonStack = new Table();
+        buttonStack.add(enterLobbyButton).padBottom(8f).row();
+        buttonStack.add(singlePlayerButton).padBottom(8f).row();
+        buttonStack.add(tutorialButton).padBottom(8f).row();
 
-        middlePanel.add(enterLobbyButton).pad(10).center().row();
-        middlePanel.add(singlePlayerButton).pad(10).center().row();
-        middlePanel.add(hostOrJoin).center().row();
-        middlePanel.add(tutorialButton).pad(40).center().row();
-
+        // Root layout
         root.defaults().expandX().fillX();
-        root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
-        root.add(middlePanel).expandY().fillY().row();
+        root.add(topBar).height(Value.percentHeight(0.09f, root)).row();
+        root.add(logoArea).expandY().fillY().row();
+        root.add(buttonStack).center().padBottom(32f).row();
 
-        // Check for rejoinable session (Issue #29)
+        // Check for rejoinable session
         checkForRejoinableSession();
     }
 

@@ -44,6 +44,10 @@ public final class Assets {
     private Assets() {
     }
     public static TextureRegion[] profileIcons;
+    public static TextureRegion oceanBackground;
+    public static TextureRegion logoWithShip;
+    public static TextureRegion logo;
+    public static TextureRegion shipWithSight;
 
     public static void load() {
         ships.texPatrol2h = new Texture(Gdx.files.internal("ship-sprites/patrol_2_h.png"));
@@ -80,6 +84,11 @@ public final class Assets {
             new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_8.png"))),
             new TextureRegion(new Texture(Gdx.files.internal("player-icons/pfp_9.png")))
         };
+
+        oceanBackground = new TextureRegion(new Texture(Gdx.files.internal("backgrounds/Ocean.png")));
+        logoWithShip = new TextureRegion(new Texture(Gdx.files.internal("logo/logoWithShip.png")));
+        logo = new TextureRegion(new Texture(Gdx.files.internal("logo/logo.png")));
+        shipWithSight = new TextureRegion(new Texture(Gdx.files.internal("logo/shipWithSight.png")));
 
 
         /// icons.randomizeTexture = new Texture(Gdx.files.internal("navigation-icons/randomize.png"));
