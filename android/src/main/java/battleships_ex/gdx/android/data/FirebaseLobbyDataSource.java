@@ -48,6 +48,7 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
     private static final String FIELD_STATUS     = "status";
     private static final String FIELD_CREATED_AT = "createdAt";
     private static final String FIELD_GUEST_READY = "guestReady";
+    private static final String FIELD_EX_MODE    = "exModeEnabled";
 
     private static final String STATUS_WAITING  = "waiting";
     private static final String STATUS_JOINED   = "joined";
@@ -82,6 +83,7 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
         roomData.put(FIELD_GUEST_NAME, null);
         roomData.put(FIELD_GUEST_READY, false);
         roomData.put(FIELD_STATUS,     STATUS_WAITING);
+        roomData.put(FIELD_EX_MODE,    true);
         roomData.put(FIELD_CREATED_AT, System.currentTimeMillis());
 
         roomRef.setValue(roomData)
@@ -210,6 +212,8 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
                 String status    = snapshot.child(FIELD_STATUS).getValue(String.class);
                 Boolean guestReadyObj = snapshot.child(FIELD_GUEST_READY).getValue(Boolean.class);
                 boolean guestReady = guestReadyObj != null && guestReadyObj;
+                Boolean exModeObj = snapshot.child(FIELD_EX_MODE).getValue(Boolean.class);
+                boolean exModeEnabled = exModeObj == null || exModeObj;
 
                 // Null-safe fallback for name fields — handles entries written
                 // before names were added to the DB schema.
@@ -221,7 +225,8 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
                     hostId,   hostName,
                     guestId,  guestName,
                     status,
-                    guestReady
+                    guestReady,
+                    exModeEnabled
                 ));
             }
 
@@ -253,6 +258,13 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
     @Override
     public void setLobbyStatus(String roomCode, String status, DataCallback<Void> callback) {
         roomsRef.child(roomCode).child(FIELD_STATUS).setValue(status)
+            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    @Override
+    public void setExMode(String roomCode, boolean enabled, DataCallback<Void> callback) {
+        roomsRef.child(roomCode).child(FIELD_EX_MODE).setValue(enabled)
             .addOnSuccessListener(unused -> callback.onSuccess(null))
             .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }

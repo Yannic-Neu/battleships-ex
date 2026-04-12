@@ -31,6 +31,8 @@ public interface LobbyDataSource {
 
     void setLobbyStatus(String roomCode, String status, DataCallback<Void> callback);
 
+    void setExMode(String roomCode, boolean enabled, DataCallback<Void> callback);
+
     class LobbySnapshot {
         public final String roomCode;
         public final String hostPlayerId;
@@ -39,11 +41,13 @@ public interface LobbyDataSource {
         public final String guestPlayerName;  // null if guest slot is empty
         public final String status;           // "waiting", "joined", "ready", "playing"
         public final boolean guestReady;
+        public final boolean exModeEnabled;
 
         public LobbySnapshot(String roomCode,
                              String hostPlayerId,  String hostPlayerName,
                              String guestPlayerId, String guestPlayerName,
-                             String status, boolean guestReady) {
+                             String status, boolean guestReady,
+                             boolean exModeEnabled) {
             this.roomCode        = roomCode;
             this.hostPlayerId    = hostPlayerId;
             this.hostPlayerName  = hostPlayerName;
@@ -51,6 +55,15 @@ public interface LobbyDataSource {
             this.guestPlayerName = guestPlayerName;
             this.status          = status;
             this.guestReady      = guestReady;
+            this.exModeEnabled   = exModeEnabled;
+        }
+
+        public LobbySnapshot(String roomCode,
+                             String hostPlayerId,  String hostPlayerName,
+                             String guestPlayerId, String guestPlayerName,
+                             String status, boolean guestReady) {
+            this(roomCode, hostPlayerId, hostPlayerName, guestPlayerId,
+                 guestPlayerName, status, guestReady, true);
         }
 
         /** @return true if the guest slot is filled */

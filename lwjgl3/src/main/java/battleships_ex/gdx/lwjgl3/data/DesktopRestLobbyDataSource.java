@@ -46,9 +46,8 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                 conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
 
-                // Build JSON payload
                 String payload = String.format(Locale.ROOT,
-                    "{\"hostPlayerId\":\"%s\",\"hostPlayerName\":\"%s\",\"guestReady\":false,\"status\":\"waiting\",\"createdAt\":%d}",
+                    "{\"hostPlayerId\":\"%s\",\"hostPlayerName\":\"%s\",\"guestReady\":false,\"exModeEnabled\":true,\"status\":\"waiting\",\"createdAt\":%d}",
                     hostPlayerId, hostPlayerName, System.currentTimeMillis()
                 );
 
@@ -172,7 +171,8 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                     snapshot.getString("guestPlayerId", null),
                     snapshot.getString("guestPlayerName", null),
                     snapshot.getString("status", "waiting"),
-                    snapshot.getBoolean("guestReady", false)
+                    snapshot.getBoolean("guestReady", false),
+                    snapshot.getBoolean("exModeEnabled", true)
                 );
 
                 Gdx.app.postRunnable(() -> callback.onSuccess(data));
@@ -241,6 +241,34 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                     Gdx.app.postRunnable(() -> callback.onSuccess(null));
                 } else {
                     Gdx.app.postRunnable(() -> callback.onFailure("Failed to set lobby status."));
+                }
+            } catch (Exception e) {
+                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
+            }
+        }).start();
+    }
+
+    @Override
+    public void setExMode(String roomCode, boolean enabled, DataCallback<Void> callback) {
+        new Thread(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                String payload = String.format(Locale.ROOT, "{\"exModeEnabled\":%b}", enabled);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(payload.getBytes(StandardCharsets.UTF_8));
+                }
+
+                if (conn.getResponseCode() == 200) {
+                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
+                } else {
+                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to set EX mode."));
                 }
             } catch (Exception e) {
                 Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));

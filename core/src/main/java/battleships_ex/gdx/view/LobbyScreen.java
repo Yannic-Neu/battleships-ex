@@ -33,6 +33,9 @@ public class LobbyScreen extends ScreenAdapter {
     private boolean opponentJoined = false;
     private boolean opponentReady = false;
     private boolean iAmReady = false;
+    private boolean exModeEnabled = true;
+    private GameButton exModeButton;
+    private Label exModeLabel;
 
     public LobbyScreen(MyGame game, String roomCode, String playerId, boolean isHost) {
         this.game = game;
@@ -86,6 +89,24 @@ public class LobbyScreen extends ScreenAdapter {
         });
         readyButton.setVisible(!isHost);
 
+        // EX Mode toggle (host only)
+        exModeLabel = new Label("MODE: EX", new Label.LabelStyle(Theme.fontSmall, Theme.WHITE));
+        exModeButton = new GameButton("EX MODE", ButtonConfig.secondary(200f, 50f), () -> {
+            exModeEnabled = !exModeEnabled;
+            String label = exModeEnabled ? "EX MODE" : "CLASSIC MODE";
+            exModeButton.setText(label);
+            exModeLabel.setText(exModeEnabled ? "MODE: EX" : "MODE: CLASSIC");
+            game.getLobbyDataSource().setExMode(roomCode, exModeEnabled, new DataCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {}
+                @Override
+                public void onFailure(String error) {
+                    Gdx.app.postRunnable(() -> statusLabel.setText("Error: " + error));
+                }
+            });
+        });
+        exModeButton.setVisible(isHost);
+
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
@@ -124,6 +145,7 @@ public class LobbyScreen extends ScreenAdapter {
         middlePanel.add(lobbyCodeButton).pad(10).center().row();
         middlePanel.add(accessCode).padBottom(20);
 
+        bottomPanel.add(isHost ? exModeButton : exModeLabel).center().padBottom(10).row();
         bottomPanel.add(isHost ? startMatchButton : readyButton).center().row();
         root.defaults().expand().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
@@ -137,12 +159,19 @@ public class LobbyScreen extends ScreenAdapter {
                 Gdx.app.postRunnable(() -> {
                     opponentJoined = snapshot.isFull();
                     opponentReady = snapshot.guestReady;
+                    exModeEnabled = snapshot.exModeEnabled;
+
+                    // Update mode display for guest
+                    if (!isHost) {
+                        exModeLabel.setText(exModeEnabled ? "MODE: EX" : "MODE: CLASSIC");
+                    }
 
                     if ("ready".equals(snapshot.status)) {
                         // Ensure GameStateManager is initialized for both players
                         Player localPlayer = new Player(playerId, isHost ? "Host" : "Guest");
                         LobbyController lobbyController = new LobbyController(game.getLobbyDataSource());
                         GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
+                        GameStateManager.getInstance().setExModeEnabled(exModeEnabled);
 
                         // Inject the lobby state into the controller and manager to bypass LobbyState
                         battleships_ex.gdx.model.lobby.Lobby lobby = new battleships_ex.gdx.model.lobby.Lobby(System.currentTimeMillis(), roomCode);
