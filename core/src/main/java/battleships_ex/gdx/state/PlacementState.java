@@ -3,6 +3,12 @@ package battleships_ex.gdx.state;
 import battleships_ex.gdx.config.board.Orientation;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
+import battleships_ex.gdx.model.core.Player;
+import battleships_ex.gdx.model.cards.ShieldCard;
+import battleships_ex.gdx.model.cards.ScanCard;
+import battleships_ex.gdx.model.cards.ParryCard;
+import battleships_ex.gdx.model.cards.EraseCard;
+import battleships_ex.gdx.model.cards.DoubleShotCard;
 
 /**
  * PlacementState — local player is placing ships on their board.
@@ -16,7 +22,9 @@ public class PlacementState extends BaseGameState {
     private boolean remoteReady = false;
 
     @Override
-    public String getName() { return "PlacementState"; }
+    public String getName() {
+        return "PlacementState";
+    }
 
     @Override
     public void onEnter(GameStateManager manager) {
@@ -74,6 +82,18 @@ public class PlacementState extends BaseGameState {
 
     private void checkBothReady(GameStateManager manager) {
         if (localReady && remoteReady) {
+
+            // ✅ GIVE ACTION CARDS ONLY IN EX MODE (MULTIPLAYER)
+            if (manager.isExModeEnabled()) {
+                Player local = manager.getLocalPlayer();
+
+                local.addCard(new ShieldCard());
+                local.addCard(new ScanCard());
+                local.addCard(new ParryCard());
+                local.addCard(new EraseCard());
+                local.addCard(new DoubleShotCard());
+            }
+
             manager.getGameController().startGame();
 
             if (manager.getGameController().isLocalPlayerTurn()) {

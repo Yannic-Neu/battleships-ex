@@ -8,6 +8,7 @@ import battleships_ex.gdx.controller.LobbyListener;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
 import battleships_ex.gdx.model.core.Player;
+import battleships_ex.gdx.model.lobby.Lobby;
 import battleships_ex.gdx.model.rules.PlacementResult;
 
 /**
@@ -317,7 +318,7 @@ public class GameStateManager {
 
             @Override
             public void onLobbyReady() {
-                battleships_ex.gdx.model.lobby.Lobby lobby = lobbyController.getActiveLobby();
+                Lobby lobby = lobbyController.getActiveLobby();
                 if (lobby != null) {
                     Player host  = lobby.getHost();
                     Player guest = lobby.getGuest();

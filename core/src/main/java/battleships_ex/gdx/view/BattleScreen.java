@@ -70,6 +70,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private CardTray actionCardTray;
     private GameButton fireButton;
     private Coordinate targetCoord;
+    private battleships_ex.gdx.model.cards.ActionCard lastPlayedCard;
 
     public BattleScreen(MyGame game) {
         this.game = game;
@@ -139,11 +140,21 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     @Override public void onShipPlaced(Ship ship) {}
     @Override public void onShipRemoved(Ship ship) {}
     @Override public void onPlacementRejected(PlacementResult.Reason reason) {}
-    @Override public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
+    @Override
+    public void onActionCardPlayed(
+        battleships_ex.gdx.model.cards.ActionCardResult result
+    ) {
         updateEnergyFromGame();
+
+        if (lastPlayedCard instanceof ScanCard) {
+            revealScanArea();
+            lastPlayedCard = null;
+            return; //
+        }
+
+        lastPlayedCard = null;
         rebuildUI();
     }
-
     private void updateEnergyFromGame() {
         if (energyBar == null) return;
 
@@ -435,13 +446,39 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             public void clicked(InputEvent event, float x, float y) {
                 if (uiCard.isDisabled()) return;
 
-                // Play the REAL action card
+                lastPlayedCard = modelCard;
                 GameStateManager.getInstance().playActionCard(modelCard);
             }
         });
 
         actionCards.add(uiCard);
         return uiCard;
+    }
+    private void revealScanArea() {
+        if (targetCoord == null || currentMode != ViewMode.ENEMY_WATERS) return;
+
+        for (int dr = -1; dr <= 1; dr++) {
+            for (int dc = -1; dc <= 1; dc++) {
+
+                int r = targetCoord.getRow() + dr;
+                int c = targetCoord.getCol() + dc;
+
+                if (r < 0 || r >= 10 || c < 0 || c >= 10) continue;
+
+                Coordinate coord = new Coordinate(r, c);
+
+                if (gameController
+                    .getRemotePlayer()
+                    .getBoard()
+                    .getCell(coord)
+                    .hasShip()) {
+
+                    boardActor.markHit(coord);
+                } else {
+                    boardActor.markMiss(coord);
+                }
+            }
+        }
     }
     private void updateActionCardAvailability() {
         boolean myTurn = gameController.isLocalPlayerTurn();
