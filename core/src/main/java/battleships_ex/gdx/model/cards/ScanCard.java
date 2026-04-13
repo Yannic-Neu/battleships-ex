@@ -6,7 +6,7 @@ import java.util.Collections;
 
 public class ScanCard implements ActionCard {
 
-    private static final int ENERGY_COST = 1;
+    private static final int ENERGY_COST = 3;
 
     @Override
     public boolean canUse(Player user, Player opponent) {

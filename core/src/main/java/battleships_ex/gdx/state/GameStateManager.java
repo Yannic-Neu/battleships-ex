@@ -150,6 +150,14 @@ public class GameStateManager {
     public void fireShot(int row, int col) {
         currentState.onFireShot(this, row, col);
     }
+    /**
+     * Play an action card. Valid only in MyTurnState.
+     */
+    public void playActionCard(battleships_ex.gdx.model.cards.ActionCard card) {
+        if (currentState instanceof MyTurnState) {
+            ((MyTurnState) currentState).onPlayCard(this, card);
+        }
+    }
 
     /**
      * Remote shot received from Firebase. Valid only in OpponentTurnState.

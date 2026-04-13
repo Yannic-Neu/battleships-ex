@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -310,11 +311,31 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             GameConfig.ActionCardConfig cfg4 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "ERASE");
             GameConfig.ActionCardConfig cfg5 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SCAN");
 
-            actionCardTray.addCard(bindCard("DOUBLE SHOT",   m1, new DoubleShotCard()));
-            actionCardTray.addCard(bindCard("SHIELD",        m2, new ShieldCard()));
-            actionCardTray.addCard(bindCard("PARRY",         m3, new ParryCard()));
-            actionCardTray.addCard(bindCard("ERASE",         m4, new EraseCard()));
-            actionCardTray.addCard(bindCard("SCAN",          m5, new ScanCard()));
+            Player me = gameController.getLocalPlayer();
+
+            for (battleships_ex.gdx.model.cards.ActionCard card : me.getCards()) {
+
+                ActionCardPresentation presentation;
+
+                if (card instanceof DoubleShotCard) {
+                    presentation = new DoubleShotCardPresentation(iconA);
+                } else if (card instanceof ShieldCard) {
+                    presentation = new ShieldCardPresentation(iconB);
+                } else if (card instanceof ParryCard) {
+                    presentation = new ParryCardPresentation(iconC);
+                } else if (card instanceof EraseCard) {
+                    presentation = new EraseCardPresentation(iconD);
+                } else if (card instanceof ScanCard) {
+                    presentation = new ScanCardPresentation(iconE);
+                } else {
+                    continue;
+                }
+
+                actionCardTray.addCard(
+                    bindCard(card.getClass().getSimpleName(), presentation, card)
+                );
+            }
+            actionCardTray.setTouchable(Touchable.childrenOnly);
 
             actionsPanel.add(energyBar).left().padBottom(6f).row();
             actionsPanel.add(actionCardsLabel).left().padBottom(12f).row();
@@ -403,6 +424,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, name)
         );
         uiCard.bind(presentation);
+        uiCard.toFront();
 
         // Attach the REAL gameplay card to UI card
         uiCard.setModelCard(modelCard);
@@ -414,10 +436,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
                 if (uiCard.isDisabled()) return;
 
                 // Play the REAL action card
-                gameController.playActionCard(modelCard);
-
-                updateEnergyFromGame();
-                updateActionCardAvailability();
+                GameStateManager.getInstance().playActionCard(modelCard);
             }
         });
 

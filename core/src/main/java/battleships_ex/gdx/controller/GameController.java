@@ -6,6 +6,11 @@ import battleships_ex.gdx.data.GameDataSource;
 import battleships_ex.gdx.data.SessionManager;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
+import battleships_ex.gdx.model.cards.DoubleShotCard;
+import battleships_ex.gdx.model.cards.EraseCard;
+import battleships_ex.gdx.model.cards.ParryCard;
+import battleships_ex.gdx.model.cards.ScanCard;
+import battleships_ex.gdx.model.cards.ShieldCard;
 import battleships_ex.gdx.model.core.GameSession;
 import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.model.rules.PlacementResult;
@@ -601,6 +606,12 @@ public class GameController {
      */
     public void initSinglePlayerSession(Player local) {
         this.isSinglePlayer = true;
+        local.addCard(new ShieldCard());
+        local.addCard(new ScanCard());
+        local.addCard(new ParryCard());
+        local.addCard(new EraseCard());
+        local.addCard(new DoubleShotCard());
+
 
         Player remote = new Player("BOT", "Computer");
         this.botLogic = new SimpleBot();

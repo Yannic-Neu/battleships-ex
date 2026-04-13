@@ -32,6 +32,7 @@ public class ActionCard extends Table {
     public void setDisabled(boolean disabled) {
         this.disabled = disabled;
         setColor(disabled ? Theme.GRAY : Theme.WHITE);
+        setTouchable(disabled ? Touchable.disabled : Touchable.enabled);
     }
 
     public boolean isDisabled() {
