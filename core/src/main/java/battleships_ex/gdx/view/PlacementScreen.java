@@ -376,6 +376,9 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
 
         boardActor.setFloatingShip(floating);
         activeDraggedCard = typeToCardMap.get(ship.getType());
+        if (activeDraggedCard != null) {
+            activeDraggedCard.setVisible(true);
+        }
         showActionPanel();
 
         shipsPlacedCount--;
