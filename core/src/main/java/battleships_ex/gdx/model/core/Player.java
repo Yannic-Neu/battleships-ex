@@ -7,6 +7,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import java.util.Set;
+import java.util.HashSet;
+
+import battleships_ex.gdx.model.board.Coordinate;
+
+
 /**
  * Represents a player in the game, owning a board and a hand of action cards.
  */
@@ -17,18 +23,28 @@ public class Player {
     private final Board  board;
     private final List<ActionCard> cards;
     private int energy;
-    private boolean shieldActive = false;
-
-    public void activateShield() {
-        shieldActive = true;
+    private final Set<Coordinate> shieldedTiles = new HashSet<>();
+    public void addShieldedTile(Coordinate coord) {
+        shieldedTiles.add(coord);
     }
 
-    public boolean hasShield() {
-        return shieldActive;
+    public boolean isTileShielded(Coordinate coord) {
+        return shieldedTiles.contains(coord);
     }
 
-    public void consumeShield() {
-        shieldActive = false;
+    public void removeShieldedTile(Coordinate coord) {
+        shieldedTiles.remove(coord);
+    }
+
+
+    private Coordinate pendingTarget;
+
+    public void setPendingTarget(Coordinate coord) {
+        this.pendingTarget = coord;
+    }
+
+    public Coordinate getPendingTarget() {
+        return pendingTarget;
     }
 
     public Player(String id, String name) {

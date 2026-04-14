@@ -1,5 +1,6 @@
 package battleships_ex.gdx.model.cards;
 
+import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.core.Player;
 
 public class ShieldCard implements ActionCard {
@@ -8,14 +9,18 @@ public class ShieldCard implements ActionCard {
 
     @Override
     public boolean canUse(Player user, Player opponent) {
-        // You cannot activate shield twice
-        return !user.hasShield();
+        // ✅ Shield can only be placed if a target tile is selected
+        return user.getPendingTarget() != null;
     }
 
     @Override
     public ActionCardResult execute(Player user, Player opponent) {
-        user.activateShield();
-        return ActionCardResult.noEffect("Shield");
+
+        Coordinate target = user.getPendingTarget();
+        if (target != null) {
+            user.addShieldedTile(target);
+        }
+        return ActionCardResult.noEffect("Shield placed");
     }
 
     @Override

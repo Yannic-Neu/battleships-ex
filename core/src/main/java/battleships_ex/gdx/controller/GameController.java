@@ -396,19 +396,17 @@ public class GameController {
         Coordinate target = new Coordinate(row, col);
 
         // ---- SHIELD INTERCEPTION (REMOTE PLAYER) ----
-        if (remotePlayer.hasShield()) {
-            remotePlayer.consumeShield();
+        if (remotePlayer.isTileShielded(target)) {
 
-            // Treat as MISS
-            clearPreview();
-            sessionManager.resetInactivityTimer();
-
+            // Always treat as miss
             session.processMove(target, ShotResult.miss(target));
             notify_miss(target);
             syncMoveToBackend(target, false);
             syncTurnToBackend();
+
             return;
         }
+
 
         ShotResult result  = engine.resolveShot(remotePlayer.getBoard(), target);
 
@@ -469,11 +467,11 @@ public class GameController {
 
         Coordinate target = new Coordinate(row, col);
 
-        // ---- SHIELD INTERCEPTION (LOCAL PLAYER) ----
-        if (localPlayer.hasShield()) {
-            localPlayer.consumeShield();
-            // Manually create a MISS result to process
+// ---- TILE-BASED SHIELD INTERCEPTION (LOCAL PLAYER) ----
+        if (localPlayer.isTileShielded(target)) {
+
             session.processMove(target, ShotResult.miss(target));
+            notify_miss(target);
             return;
         }
 
