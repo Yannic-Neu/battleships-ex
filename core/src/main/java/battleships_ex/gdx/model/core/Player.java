@@ -47,7 +47,11 @@ public class Player {
     }
 
     public void addCard(ActionCard card) {
-        if (card == null) throw new IllegalArgumentException("Card must not be null");
+        for (ActionCard existing : cards) {
+            if (existing.getClass() == card.getClass()) {
+                return;
+            }
+        }
         cards.add(card);
     }
 
