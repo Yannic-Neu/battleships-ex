@@ -480,14 +480,12 @@ public class GameController {
                 session.processMove(target, result);    // switches turn back to local
                 notify_miss(target);
                 break;
-
             case HIT:
                 localPlayer.addEnergy(1);
                 session.processMove(target, result);
                 notify_hit(target, result.getSunkShip());
                 break;
             case SUNK:
-                localPlayer.addEnergy(1);
                 session.processMove(target, result);
                 notify_sunk(target, result.getSunkShip());
                 if (result.isSunk() && engine.hasWon(localPlayer.getBoard())) {
