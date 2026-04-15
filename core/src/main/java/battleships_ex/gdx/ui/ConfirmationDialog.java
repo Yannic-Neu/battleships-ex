@@ -20,16 +20,16 @@ public class ConfirmationDialog extends Dialog {
         Table buttonTable = getButtonTable();
         buttonTable.pad(20);
 
-        GameButton btnCancel = new GameButton(cancelText, ButtonConfig.secondary(120f, 44f), this::hide);
+        if (cancelText != null) {
+            GameButton btnCancel = new GameButton(cancelText, ButtonConfig.secondary(120f, 44f), this::hide);
+            buttonTable.add(btnCancel).padRight(10);
+        }
 
         GameButton btnConfirm = new GameButton(confirmText, ButtonConfig.primary(120f, 44f), () -> {
             hide();
-            if (onConfirm != null) {
-                onConfirm.run();
-            }
+            if (onConfirm != null) onConfirm.run();
         });
 
-        buttonTable.add(btnCancel).padRight(10);
         buttonTable.add(btnConfirm);
     }
 
