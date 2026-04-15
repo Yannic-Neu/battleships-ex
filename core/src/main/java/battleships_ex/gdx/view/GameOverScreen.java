@@ -39,7 +39,7 @@ public class GameOverScreen extends ScreenAdapter {
         stage.addActor(root);
 
         Label resultLabel = new Label(isVictory ? "YOU WON" : "YOU LOST",
-            new Label.LabelStyle(Theme.fontLarge, isVictory ? Theme.BLUE : com.badlogic.gdx.graphics.Color.RED));
+            new Label.LabelStyle(Theme.fontLarge, isVictory ? Theme.WHITE : com.badlogic.gdx.graphics.Color.RED));
 
         GameButton menuButton = new GameButton("RETURN TO MENU", ButtonConfig.primary(300f, 60f), () -> {
             game.getGameController().cleanup();

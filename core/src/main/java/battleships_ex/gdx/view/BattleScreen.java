@@ -184,7 +184,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         Label turnLabel = new Label("", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
         boolean myTurn = battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn();
         turnLabel.setText(myTurn ? "YOUR TURN" : "OPPONENT'S TURN");
-        turnLabel.setColor(myTurn ? Theme.BLUE : Theme.GRAY);
+        turnLabel.setColor(myTurn ? Theme.WHITE : Theme.GRAY);
 
         topArea.add(backButton).left().pad(10);
         topArea.add(turnLabel).expandX().center();
@@ -411,13 +411,20 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         uiCard.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (uiCard.isDisabled()) return;
-
-                // Play the REAL action card
-                gameController.playActionCard(modelCard);
-
-                updateEnergyFromGame();
-                updateActionCardAvailability();
+                if (uiCard.isDisabled()) {
+                    // Even when disabled, allow info popup
+                    uiCard.showInfoPopup(stage);
+                    return;
+                }
+                if (getTapCount() >= 2) {
+                    // Double-tap = show info
+                    uiCard.showInfoPopup(stage);
+                } else {
+                    // Single tap = play card
+                    gameController.playActionCard(modelCard);
+                    updateEnergyFromGame();
+                    updateActionCardAvailability();
+                }
             }
         });
 
