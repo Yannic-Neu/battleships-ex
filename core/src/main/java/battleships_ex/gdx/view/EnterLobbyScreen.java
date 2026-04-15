@@ -66,9 +66,14 @@ public class EnterLobbyScreen extends ScreenAdapter {
         codeInput.setMaxLength(6);
         codeInput.setMessageText("ENTER CODE");
         codeInput.setAlignment(1); // center
+        codeInput.setTextFieldListener((textField, c) -> {
+            int cursor = textField.getCursorPosition();
+            textField.setText(textField.getText().toUpperCase());
+            textField.setCursorPosition(cursor);
+        });
 
         GameButton joinLobbyButton = new GameButton("JOIN MATCH", primaryButton, () -> {
-            String code = codeInput.getText().trim().toUpperCase();
+            String code = codeInput.getText().trim();
             if (code.length() == 6) {
                 joinRoom(code);
             }
