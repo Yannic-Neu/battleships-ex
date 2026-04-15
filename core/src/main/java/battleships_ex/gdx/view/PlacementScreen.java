@@ -122,23 +122,23 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         Label dockingTitle = new Label("DOCKING STATION", new Label.LabelStyle(Theme.fontSmall, Theme.WHITE));
         CardTray dockingTray = new CardTray();
 
-        ShipCard carrierCard = new ShipCard(new ShipCardConfig(120f, 82f, "CARRIER", Assets.ships.shipCarrier5h));
-        ShipCard cruiserCard = new ShipCard(new ShipCardConfig(110f, 82f, "CRUISER", Assets.ships.shipCruiser4h));
-        ShipCard subCard = new ShipCard(new ShipCardConfig(90f, 82f, "SUBMARINE", Assets.ships.shipSubmarine3h));
-        ShipCard destroyerCard = new ShipCard(new ShipCardConfig(90f, 82f, "DESTROYER", Assets.ships.shipDestroyer3h));
-        ShipCard patrolCard = new ShipCard(new ShipCardConfig(80f, 82f, "PATROL", Assets.ships.shipPatrol2h));
+        ShipCard patrolCard = new ShipCard(new ShipCardConfig(60f, 82f, "PATROL", Assets.ships.shipPatrol2h));
+        ShipCard carrierCard = new ShipCard(new ShipCardConfig(100f, 82f, "CARRIER", Assets.ships.shipCarrier5h));
+        ShipCard cruiserCard = new ShipCard(new ShipCardConfig(90f, 82f, "CRUISER", Assets.ships.shipCruiser4h));
+        ShipCard subCard = new ShipCard(new ShipCardConfig(70f, 82f, "SUBMARINE", Assets.ships.shipSubmarine3h));
+        ShipCard destroyerCard = new ShipCard(new ShipCardConfig(70f, 82f, "DESTROYER", Assets.ships.shipDestroyer3h));
 
+        dockingTray.addCard(patrolCard);
         dockingTray.addCard(carrierCard);
         dockingTray.addCard(cruiserCard);
         dockingTray.addCard(subCard);
         dockingTray.addCard(destroyerCard);
-        dockingTray.addCard(patrolCard);
 
+        typeToCardMap.put(ShipType.PATROL, patrolCard);
         typeToCardMap.put(ShipType.CARRIER, carrierCard);
         typeToCardMap.put(ShipType.CRUISER, cruiserCard);
         typeToCardMap.put(ShipType.SUBMARINE, subCard);
         typeToCardMap.put(ShipType.DESTROYER, destroyerCard);
-        typeToCardMap.put(ShipType.PATROL, patrolCard);
 
         readyButton = new GameButton("READY TO BATTLE", ButtonConfig.primary(300f, 56f), () -> {
             if (shipsPlacedCount >= 5) {
@@ -157,17 +157,17 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         Table dockingSection = new Table();
         dockingSection.setBackground(Theme.darkBluePanel);
         dockingSection.add(dockingTitle).left().pad(12).row();
-        dockingSection.add(dockingTray).growX().height(95f).padLeft(12).padRight(12).padBottom(12).row();
+        dockingSection.add(dockingTray).height(95f).padLeft(6).padRight(6).padBottom(12).row();
         dockingSection.add(readyButton).center().padBottom(16);
 
         root.add(dockingSection).padTop(20).growX().bottom();
 
         // Initialize Drag and Drop
+        setupDragAndDrop(patrolCard, ShipType.PATROL);
         setupDragAndDrop(carrierCard, ShipType.CARRIER);
         setupDragAndDrop(cruiserCard, ShipType.CRUISER);
         setupDragAndDrop(subCard, ShipType.SUBMARINE);
         setupDragAndDrop(destroyerCard, ShipType.DESTROYER);
-        setupDragAndDrop(patrolCard, ShipType.PATROL);
 
         // Interaction: Pick up placed ships or drag floating ones
         boardActor.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
