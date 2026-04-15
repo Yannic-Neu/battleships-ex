@@ -10,13 +10,13 @@ public class CardTray extends Table {
 
     public CardTray() {
         this.cardRow = new Table();
-        this.cardRow.defaults().padRight(10);
+        this.cardRow.defaults().padRight(5);
 
         this.scrollPane = new ScrollPane(cardRow);
         this.scrollPane.setFadeScrollBars(false);
         this.scrollPane.setScrollingDisabled(false, true);
 
-        this.add(scrollPane).growX().height(95f);
+        this.add(scrollPane).growX().height(100f);
     }
 
     /**
