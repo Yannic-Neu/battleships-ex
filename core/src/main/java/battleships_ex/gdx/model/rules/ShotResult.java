@@ -76,6 +76,10 @@ public final class ShotResult {
         return outcome == Outcome.HIT || outcome == Outcome.SUNK || outcome == Outcome.MINE_HIT;
     }
 
+    public boolean isShipHit() {
+        return outcome == Outcome.HIT || outcome == Outcome.SUNK;
+    }
+
     public boolean isSunk()  { return outcome == Outcome.SUNK; }
     public boolean isMiss()  { return outcome == Outcome.MISS; }
     public boolean isMineHit() { return outcome == Outcome.MINE_HIT; }

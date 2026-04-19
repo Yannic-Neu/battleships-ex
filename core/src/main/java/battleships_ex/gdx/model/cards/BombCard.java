@@ -35,7 +35,7 @@ public class BombCard extends BaseActionCard {
         consumeUse(user);
 
         boolean anySunk = results.stream().anyMatch(ShotResult::isSunk);
-        boolean anyHit = results.stream().anyMatch(ShotResult::isHitOrSunk);
+        boolean anyHit = results.stream().anyMatch(ShotResult::isShipHit);
 
         List<Coordinate> affected = new ArrayList<>();
         for (ShotResult sr : results) {

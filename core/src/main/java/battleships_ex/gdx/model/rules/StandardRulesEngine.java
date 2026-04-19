@@ -55,6 +55,9 @@ public class StandardRulesEngine implements RulesEngine {
 
     @Override
     public ShotResult shootTile(Player opponent, Coordinate coord) {
+        if (opponent == null || opponent.getBoard() == null) {
+            return ShotResult.miss(coord);
+        }
         return shootTileInternal(opponent, opponent.getBoard(), coord);
     }
 

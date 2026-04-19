@@ -4,221 +4,45 @@ import battleships_ex.gdx.model.board.Coordinate;
 
 /**
  * Interface for game-state backend operations.
- * Abstracts real-time game synchronization so Firebase can be swapped
- * for another backend without affecting controllers or UI.
- *
- * Follows the same pattern as {@link LobbyDataSource}.
- *
- * DB structure (Firebase reference implementation):
- * <pre>
- * rooms/{roomCode}/
- *   game/
- *     currentTurn:   String (playerId)
- *     status:        "placing" | "playing" | "finished"
- *     moves/
- *       {pushId}:    { playerId: String, row: int, col: int, hit: boolean, timestamp: long }
- *     heartbeat/
- *       {playerId}:  { lastSeen: long }
- * </pre>
  */
 public interface GameDataSource {
 
-    // ── Move synchronization ────────────────────────────────────────
-
-    /**
-     * Submits a local move to the backend.
-     *
-     * @param roomCode  the active room code
-     * @param playerId  the player who fired the shot
-     * @param target    the coordinate that was targeted
-     * @param hit       true if the shot was a hit, false if miss
-     * @param callback  success: null / failure: error message
-     */
     void submitMove(String roomCode, String playerId, Coordinate target, boolean hit, DataCallback<Void> callback);
-
-    /**
-     * Registers a listener for incoming opponent moves.
-     * The callback fires each time a new move is pushed to the backend.
-     *
-     * @param roomCode  the active room code
-     * @param callback  delivers {@link MoveSnapshot} for each new move
-     */
     void addMoveListener(String roomCode, DataCallback<MoveSnapshot> callback);
-
-    /**
-     * Removes the move listener for the given room.
-     */
     void removeMoveListener(String roomCode);
 
-    // ── Turn synchronization ────────────────────────────────────────
+    void submitActionCardPlay(String roomCode, String playerId, String cardName, Coordinate target, String metadata, DataCallback<Void> callback);
+    void addActionCardListener(String roomCode, DataCallback<ActionCardSnapshot> callback);
+    void removeActionCardListener(String roomCode);
 
-    /**
-     * Updates the current turn holder in the backend.
-     *
-     * @param roomCode       the active room code
-     * @param currentPlayerId the player whose turn it now is
-     * @param callback       success: null / failure: error message
-     */
     void syncTurn(String roomCode, String currentPlayerId, DataCallback<Void> callback);
-
-    /**
-     * Registers a listener for turn changes.
-     *
-     * @param roomCode  the active room code
-     * @param callback  delivers the playerId of the new turn holder
-     */
     void addTurnListener(String roomCode, DataCallback<String> callback);
-
-    /**
-     * Removes the turn listener for the given room.
-     */
     void removeTurnListener(String roomCode);
 
-    // ── Game status ─────────────────────────────────────────────────
-
-    /**
-     * Updates the game status in the backend.
-     *
-     * @param roomCode  the active room code
-     * @param status    one of "placing", "playing", "finished"
-     * @param callback  success: null / failure: error message
-     */
     void updateGameStatus(String roomCode, String status, DataCallback<Void> callback);
-
-    /**
-     * Updates a player's placement readiness in the backend.
-     *
-     * @param roomCode  the active room code
-     * @param playerId  the player whose status to update
-     * @param isReady   true if the player has confirmed their placement
-     * @param callback  success: null / failure: error message
-     */
     void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback);
-
-    /**
-     * Registers a listener for opponent placement readiness.
-     *
-     * @param roomCode   the active room code
-     * @param opponentId the opponent's player id to watch
-     * @param callback   delivers true when the opponent is ready
-     */
     void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback);
 
-    // Board Layout Synchronization
     void updateBoardLayout(String roomCode, String playerId, java.util.List<ShipPlacement> ships, DataCallback<Void> callback);
     void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<java.util.List<ShipPlacement>> callback);
     void removeBoardLayoutListener(String roomCode);
 
-    /**
-     * Signals game over with the winner's name.
-     *
-     * @param roomCode   the active room code
-     * @param winnerName display name of the winner
-     * @param callback   success: null / failure: error message
-     */
     void pushGameOver(String roomCode, String winnerName, DataCallback<Void> callback);
 
-    // ── Heartbeat / session health ──────────────────────────────────
-
-    /**
-     * Sends a heartbeat timestamp for the given player.
-     * Should be called periodically (e.g. every 5 seconds).
-     *
-     * @param roomCode the active room code
-     * @param playerId the local player's id
-     */
     void sendHeartbeat(String roomCode, String playerId);
-
-    /**
-     * Registers a listener that fires when the opponent's heartbeat
-     * becomes stale (> threshold seconds old).
-     *
-     * @param roomCode   the active room code
-     * @param opponentId the opponent's player id
-     * @param callback   delivers true when opponent is considered disconnected,
-     *                   false when they reconnect
-     */
     void addHeartbeatListener(String roomCode, String opponentId, DataCallback<Boolean> callback);
-
-    /**
-     * Removes the heartbeat listener for the given room.
-     */
     void removeHeartbeatListener(String roomCode);
 
-    // ── Target preview (Issue #28) ────────────────────────────────
-
-    /**
-     * Sends the currently aimed cell to the backend so the opponent
-     * can see a real-time preview before the shot is confirmed.
-     *
-     * @param roomCode the active room code
-     * @param playerId the player who is aiming
-     * @param target   the coordinate being aimed at
-     */
     void sendPreview(String roomCode, String playerId, Coordinate target);
-
-    /**
-     * Clears the preview marker after a shot is confirmed or cancelled.
-     *
-     * @param roomCode the active room code
-     * @param playerId the player whose preview to clear
-     */
     void clearPreview(String roomCode, String playerId);
-
-    /**
-     * Registers a listener for the opponent's target preview updates.
-     *
-     * @param roomCode   the active room code
-     * @param opponentId the opponent's player id to watch
-     * @param callback   delivers the preview {@link Coordinate}, or null when cleared
-     */
     void addPreviewListener(String roomCode, String opponentId, DataCallback<Coordinate> callback);
-
-    /**
-     * Removes the preview listener for the given room.
-     */
     void removePreviewListener(String roomCode);
 
-    // ── Session re-join & cleanup (Issue #29) ─────────────────────
-
-    /**
-     * Checks whether a room still exists and is active.
-     *
-     * @param roomCode the room code to check
-     * @param callback delivers true if the room exists and game is not finished
-     */
     void roomIsActive(String roomCode, DataCallback<Boolean> callback);
-
-    /**
-     * Loads the full game snapshot for session recovery.
-     *
-     * @param roomCode the room code to rejoin
-     * @param callback delivers a {@link GameSnapshot} with the current state
-     */
     void loadGameState(String roomCode, DataCallback<GameSnapshot> callback);
-
-    /**
-     * Cleans up an abandoned room (sets status to "abandoned" or deletes).
-     *
-     * @param roomCode the room code to clean up
-     * @param callback success: null / failure: error message
-     */
     void cleanupSession(String roomCode, DataCallback<Void> callback);
-
-    // ── Cleanup ─────────────────────────────────────────────────────
-
-    /**
-     * Removes all game-related listeners for the given room.
-     * Should be called when leaving a game session.
-     * Implementations must also remove the preview listener.
-     */
     void removeAllListeners(String roomCode);
 
-    // ── Snapshot classes ────────────────────────────────────────────
-
-    /**
-     * Represents a single move received from the backend.
-     */
     class MoveSnapshot {
         public final String playerId;
         public final int row;
@@ -235,9 +59,22 @@ public interface GameDataSource {
         }
     }
 
-    /**
-     * Represents the full game state snapshot for session recovery.
-     */
+    class ActionCardSnapshot {
+        public final String playerId;
+        public final String cardName;
+        public final Coordinate target;
+        public final String metadata;
+        public final long timestamp;
+
+        public ActionCardSnapshot(String playerId, String cardName, Coordinate target, String metadata, long timestamp) {
+            this.playerId = playerId;
+            this.cardName = cardName;
+            this.target = target;
+            this.metadata = metadata;
+            this.timestamp = timestamp;
+        }
+    }
+
     class GameSnapshot {
         public final String currentTurn;
         public final String status;

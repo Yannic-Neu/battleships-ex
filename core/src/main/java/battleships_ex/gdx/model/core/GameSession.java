@@ -104,22 +104,31 @@ public class GameSession {
         requireStarted();
         requireNotOver();
 
+        if (!currentPlayer.hasCard(card)) {
+            throw new IllegalArgumentException("Player does not hold card: " + card.getClass().getSimpleName());
+        }
+
+        if (!card.canUse(currentPlayer, getOpponent())) {
+            throw new IllegalStateException("Card cannot be used right now: " + card.getClass().getSimpleName());
+        }
+
+        return executeActionCardPlay(card, target);
+    }
+
+    /**
+     * Executes a card play without the 'canUse' check.
+     * Used for confirmed plays received from the backend.
+     */
+    public ActionCardResult executeActionCardPlay(ActionCard card, Coordinate target) {
+        requireStarted();
+        requireNotOver();
+
         if (card == null) {
             throw new IllegalArgumentException("Card must not be null");
         }
 
         Player user     = currentPlayer;
         Player opponent = getOpponent();
-
-        if (!user.hasCard(card)) {
-            throw new IllegalArgumentException(
-                "Player " + user.getName() + " does not hold card: " + card.getClass().getSimpleName());
-        }
-
-        if (!card.canUse(user, opponent)) {
-            throw new IllegalStateException(
-                "Card cannot be used right now: " + card.getClass().getSimpleName());
-        }
 
         ActionCardResult result = card.execute(user, opponent, target);
         

@@ -92,6 +92,13 @@ public interface GameListener {
     void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result);
 
     /**
+     * An action card could not be played (e.g. insufficient energy or charges).
+     * @param card the card that was rejected
+     * @param reason a string explaining why (e.g. "INSUFFICIENT ENERGY")
+     */
+    default void onActionCardRejected(battleships_ex.gdx.model.cards.ActionCard card, String reason) {}
+
+    /**
      * A targeted action card was activated and requires the user to pick a target.
      * @param card the card being played
      */

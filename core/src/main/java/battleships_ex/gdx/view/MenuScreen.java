@@ -16,6 +16,8 @@ import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.data.DataCallback;
 import battleships_ex.gdx.data.SessionManager;
+import battleships_ex.gdx.data.LobbyDataSource;
+import battleships_ex.gdx.data.SessionStore;
 import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -124,9 +126,48 @@ public class MenuScreen extends ScreenAdapter {
                         "REJOIN",
                         "NEW GAME",
                         () -> {
-                            // Rejoin: navigate to BattleScreen
-                            // (BattleScreen will restore state via SessionManager)
-                            game.setScreen(new BattleScreen(game));
+                            // Rejoin: fetch snapshot first to initialize managers
+                            game.getLobbyDataSource().addLobbyListener(sm.getPersistedSession().roomCode, new DataCallback<LobbyDataSource.LobbySnapshot>() {
+                                @Override
+                                public void onSuccess(LobbyDataSource.LobbySnapshot snapshot) {
+                                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                                        game.getLobbyDataSource().removeLobbyListener(snapshot.roomCode);
+                                        
+                                        SessionStore.SessionInfo info = sm.getPersistedSession();
+                                        if (info == null) return;
+
+                                        boolean isHost = info.playerId.equals(snapshot.hostPlayerId);
+                                        Player localPlayer = new Player(info.playerId, isHost ? snapshot.hostPlayerName : snapshot.guestPlayerName);
+                                        Player remotePlayer = new Player(info.opponentId, isHost ? snapshot.guestPlayerName : snapshot.hostPlayerName);
+                                        
+                                        LobbyController lobbyController = new battleships_ex.gdx.controller.LobbyController(game.getLobbyDataSource());
+                                        battleships_ex.gdx.model.lobby.Lobby lobby = new battleships_ex.gdx.model.lobby.Lobby(System.currentTimeMillis(), snapshot.roomCode);
+                                        
+                                        if (isHost) {
+                                            lobby.addPlayer(localPlayer);
+                                            lobby.addPlayer(remotePlayer);
+                                        } else {
+                                            lobby.addPlayer(remotePlayer);
+                                            lobby.addPlayer(localPlayer);
+                                        }
+                                        lobby.setSelectedCards(snapshot.selectedCardNames);
+                                        lobbyController.setActiveLobby(lobby);
+                                        lobbyController.setLocalPlayer(localPlayer);
+
+                                        GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
+                                        GameStateManager.getInstance().setExModeEnabled(snapshot.exModeEnabled);
+                                        
+                                        game.getGameController().initSession(localPlayer, remotePlayer, snapshot.roomCode, isHost, snapshot.selectedCardNames);
+                                        
+                                        game.setScreen(new BattleScreen(game));
+                                    });
+                                }
+
+                                @Override
+                                public void onFailure(String error) {
+                                    System.out.println("[MenuScreen] Failed to fetch lobby for rejoin: " + error);
+                                }
+                            });
                         }
                     ).show(stage);
                 });

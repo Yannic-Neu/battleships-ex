@@ -273,7 +273,15 @@ public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult r
 }
 
 @Override
+public void onActionCardRejected(battleships_ex.gdx.model.cards.ActionCard card, String reason) {
+    if (stateListener != null) {
+        stateListener.onActionCardRejected(card, reason);
+    }
+}
+
+@Override
 public void onCardTargetRequested(battleships_ex.gdx.model.cards.ActionCard card) {
+
     if (stateListener != null) {
         stateListener.onCardTargetRequested(card);
     }

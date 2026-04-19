@@ -30,11 +30,14 @@ class AirstrikeCardTest {
 
     @Test
     void testAirstrikeRow() {
-        card.setOrientation(AirstrikeCard.Orientation.ROW);
+        // Default is ROW
+        if (card.getOrientation() != AirstrikeCard.Orientation.ROW) {
+            card.toggleOrientation();
+        }
         Coordinate target = new Coordinate(5, 0);
-        
+
         ActionCardResult result = card.execute(user, opponent, target);
-        
+
         assertEquals(10, result.getAffectedCoordinates().size());
         for (int col = 0; col < 10; col++) {
             assertTrue(opponent.getBoard().getCell(new Coordinate(5, col)).isHit());
@@ -43,11 +46,14 @@ class AirstrikeCardTest {
 
     @Test
     void testAirstrikeColumn() {
-        card.setOrientation(AirstrikeCard.Orientation.COLUMN);
+        // Ensure it is COLUMN
+        if (card.getOrientation() != AirstrikeCard.Orientation.COLUMN) {
+            card.toggleOrientation();
+        }
         Coordinate target = new Coordinate(0, 7);
-        
+
         ActionCardResult result = card.execute(user, opponent, target);
-        
+
         assertEquals(10, result.getAffectedCoordinates().size());
         for (int row = 0; row < 10; row++) {
             assertTrue(opponent.getBoard().getCell(new Coordinate(row, 7)).isHit());

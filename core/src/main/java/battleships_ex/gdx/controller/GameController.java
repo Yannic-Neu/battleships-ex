@@ -178,6 +178,20 @@ public class GameController {
                 }
             });
 
+            // Register action card listener
+            gameDataSource.addActionCardListener(roomCode, new DataCallback<GameDataSource.ActionCardSnapshot>() {
+                @Override
+                public void onSuccess(GameDataSource.ActionCardSnapshot snapshot) {
+                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                        if (snapshot.playerId.equals(localPlayer.getId())) return;
+                        onActionCardReceived(snapshot);
+                    });
+                }
+                @Override public void onFailure(String error) {
+                    System.out.println("[GameController] Action card listener error: " + error);
+                }
+            });
+
             // Start session manager (heartbeat + disconnect detection)
             sessionManager.setListener(new SessionManager.SessionListener() {
                 @Override
@@ -380,6 +394,17 @@ public class GameController {
     public void playActionCard(battleships_ex.gdx.model.cards.ActionCard card, Coordinate target) {
         if (!isSessionActive())   return;
         if (!isLocalPlayerTurn()) return;
+        
+        if (!card.canUse(localPlayer, remotePlayer)) {
+            String reason = "INSUFFICIENT ENERGY";
+            if (card instanceof battleships_ex.gdx.model.cards.BaseActionCard) {
+                if (((battleships_ex.gdx.model.cards.BaseActionCard)card).getRemainingUses() <= 0) {
+                    reason = "OUT OF USES";
+                }
+            }
+            if (listener != null) listener.onActionCardRejected(card, reason);
+            return;
+        }
 
         // If card requires targeting but no target provided, ask UI
         if (target == null && (card instanceof battleships_ex.gdx.model.cards.SonarCard || 
@@ -391,6 +416,13 @@ public class GameController {
         }
 
         battleships_ex.gdx.model.cards.ActionCardResult result = session.playActionCard(card, target);
+        
+        syncActionCardToBackend(card, target);
+
+        if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.HIT || 
+            result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK) {
+            remotePlayer.addEnergy(1);
+        }
 
         if (listener != null) listener.onActionCardPlayed(result);
 
@@ -624,6 +656,62 @@ public class GameController {
 
     private void notify_placementRejected(PlacementResult.Reason reason) {
         if (listener != null) listener.onPlacementRejected(reason);
+    }
+
+    private void onActionCardReceived(GameDataSource.ActionCardSnapshot snapshot) {
+        System.out.println("[GameController] LOG: Action card received: " + snapshot.cardName + " from " + snapshot.playerId);
+        
+        // Find card in remote player's hand by name
+        battleships_ex.gdx.model.cards.ActionCard cardToPlay = null;
+        for (battleships_ex.gdx.model.cards.ActionCard c : remotePlayer.getCards()) {
+            if (c.getClass().getSimpleName().startsWith(snapshot.cardName)) {
+                cardToPlay = c;
+                break;
+            }
+        }
+
+        if (cardToPlay == null) {
+            System.err.println("[GameController] Opponent played card they don't have: " + snapshot.cardName);
+            // Fallback: create a new instance if needed for sync (though they should have it)
+            cardToPlay = battleships_ex.gdx.model.cards.ActionCardRegistry.createCard(snapshot.cardName);
+            remotePlayer.addCard(cardToPlay);
+        }
+
+        // Apply metadata (e.g. orientation)
+        if (cardToPlay instanceof battleships_ex.gdx.model.cards.AirstrikeCard && snapshot.metadata != null) {
+            battleships_ex.gdx.model.cards.AirstrikeCard ac = (battleships_ex.gdx.model.cards.AirstrikeCard) cardToPlay;
+            if (!ac.getOrientation().name().equals(snapshot.metadata)) {
+                ac.toggleOrientation();
+            }
+        }
+
+        // Execute card from remote player perspective
+        battleships_ex.gdx.model.cards.ActionCardResult result = session.executeActionCardPlay(cardToPlay, snapshot.target);
+        
+        // Grant energy to local player if they were hit
+        if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.HIT ||
+            result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK) {
+            localPlayer.addEnergy(1);
+        }
+
+        if (listener != null) listener.onActionCardPlayed(result);
+    }
+
+    private void syncActionCardToBackend(battleships_ex.gdx.model.cards.ActionCard card, Coordinate target) {
+        if (roomCode == null) return;
+        
+        String cardName = card.getClass().getSimpleName().replace("Card", "");
+        String metadata = null;
+        if (card instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
+            metadata = ((battleships_ex.gdx.model.cards.AirstrikeCard) card).getOrientation().name();
+        }
+
+        gameDataSource.submitActionCardPlay(roomCode, localPlayer.getId(), cardName, target, metadata, new DataCallback<Void>() {
+            @Override public void onSuccess(Void result) {}
+            @Override public void onFailure(String error) {
+                System.err.println("[GameController] Failed to sync action card: " + error);
+            }
+        });
     }
 
     private void requireSession() {

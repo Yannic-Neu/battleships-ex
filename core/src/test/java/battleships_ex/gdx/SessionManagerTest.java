@@ -120,6 +120,21 @@ class SessionManagerTest {
         @Override public void removeMoveListener(String roomCode) {}
 
         @Override
+        public void submitActionCardPlay(String roomCode, String playerId, String cardName, Coordinate target, String metadata, DataCallback<Void> callback) {
+
+        }
+
+        @Override
+        public void addActionCardListener(String roomCode, DataCallback<ActionCardSnapshot> callback) {
+
+        }
+
+        @Override
+        public void removeActionCardListener(String roomCode) {
+
+        }
+
+        @Override
         public void syncTurn(String roomCode, String currentPlayerId, DataCallback<Void> callback) {
             callback.onSuccess(null);
         }

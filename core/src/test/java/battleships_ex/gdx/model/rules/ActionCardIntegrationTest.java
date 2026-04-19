@@ -71,7 +71,7 @@ class ActionCardIntegrationTest {
         p2.getBoard().placeShip(s2, new Coordinate(5, 5), Orientation.HORIZONTAL);
         
         AirstrikeCard airstrike = new AirstrikeCard();
-        airstrike.setOrientation(AirstrikeCard.Orientation.ROW);
+        // airstrike is ROW by default
         
         ActionCardResult result = airstrike.execute(p1, p2, new Coordinate(5, 0));
         

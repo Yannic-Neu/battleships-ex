@@ -19,7 +19,7 @@ public class MyTurnState extends BaseGameState {
     public void onEnter(GameStateManager manager) {
         manager.notifyStateChanged(getName());
         Player me = manager.getLocalPlayer();
-        me.gainTurnEnergy();   // +1 energy at start of turn
+        me.addEnergy(1);   // +1 energy at start of turn
     }
 
     @Override

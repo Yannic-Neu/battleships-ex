@@ -36,6 +36,7 @@ public class Player {
         this.name  = name;
         this.board = new Board(10, 10);
         this.cards = new ArrayList<>();
+        this.energy = 0;
     }
 
     public String getId()    { return id; }
@@ -87,9 +88,6 @@ public class Player {
             throw new IllegalStateException("Not enough energy");
         }
         energy -= cost;
-    }
-    public void gainTurnEnergy() {
-        addEnergy(1);
     }
 
     public void setParryActive(boolean b) {

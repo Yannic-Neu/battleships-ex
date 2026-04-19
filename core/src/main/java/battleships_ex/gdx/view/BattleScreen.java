@@ -69,6 +69,8 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private Label tacGridLabel;
     private CardTray actionCardTray;
     private GameButton fireButton;
+    private GameButton confirmCardButton;
+    private GameButton rotateCardButton;
     private Coordinate targetCoord;
     
     private battleships_ex.gdx.model.cards.ActionCard pendingCard;
@@ -146,6 +148,25 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
         updateEnergyFromGame();
         rebuildUI();
+    }
+
+    @Override
+    public void onActionCardRejected(battleships_ex.gdx.model.cards.ActionCard card, String reason) {
+        if (tacGridLabel != null) {
+            final String originalText = tacGridLabel.getText().toString();
+            tacGridLabel.setText("ERROR: " + reason);
+            tacGridLabel.setColor(Theme.YELLOW);
+            
+            com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
+                @Override
+                public void run() {
+                    if (tacGridLabel != null) {
+                        tacGridLabel.setText(originalText);
+                        tacGridLabel.setColor(Theme.GRAY);
+                    }
+                }
+            }, 2.0f);
+        }
     }
 
     @Override
@@ -363,18 +384,52 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             actionsPanel.add(actionCardTray).growX().height(95f).padBottom(12f).row();
         }
 
-        fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 72f), () -> {
+        // --- Standard Action Buttons ---
+        fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 60f), () -> {
             if (fireButton.isDisabled()) return;
             if (targetCoord != null) {
                 battleships_ex.gdx.state.GameStateManager.getInstance().fireShot(targetCoord.getRow(), targetCoord.getCol());
-                // clear local target visually after shot
                 targetCoord = null;
                 boardActor.clearPreviewCell();
                 updateFireButtonState();
             }
         });
 
-        actionsPanel.add(fireButton).center().row();
+        confirmCardButton = new GameButton("CONFIRM ACTION", ButtonConfig.primary(contentWidth, 60f), () -> {
+            if (pendingCard != null && targetCoord != null) {
+                gameController.playActionCard(pendingCard, targetCoord);
+                pendingCard = null;
+                targetingMode = false;
+                boardActor.clearPreviewCell();
+                rebuildUI();
+            }
+        });
+
+        rotateCardButton = new GameButton("ROTATE", ButtonConfig.secondary(contentWidth, 50f), () -> {
+            if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
+                ((battleships_ex.gdx.model.cards.AirstrikeCard) pendingCard).toggleOrientation();
+                if (targetCoord != null) setTarget(targetCoord);
+            }
+        });
+
+        GameButton cancelCardButton = new GameButton("CANCEL", ButtonConfig.secondary(contentWidth, 50f), () -> {
+            pendingCard = null;
+            targetingMode = false;
+            boardActor.clearPreviewCell();
+            // Reset to enemy waters if it was mine placement
+            currentMode = ViewMode.ENEMY_WATERS;
+            rebuildUI();
+        });
+
+        if (targetingMode) {
+            if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
+                actionsPanel.add(rotateCardButton).center().padBottom(10).row();
+            }
+            actionsPanel.add(confirmCardButton).center().padBottom(10).row();
+            actionsPanel.add(cancelCardButton).center().row();
+        } else {
+            actionsPanel.add(fireButton).center().row();
+        }
 
         // --- Root Assembly ---
         root.defaults().growX();
@@ -516,18 +571,21 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         return uiCard;
     }
     private void updateActionCardAvailability() {
-        boolean myTurn = gameController.isLocalPlayerTurn();
-        int energy = gameController.getLocalPlayer().getEnergy();
+        boolean myTurn = battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn();
+        Player localPlayer = gameController.getLocalPlayer();
+        int energy = localPlayer.getEnergy();
 
         for (ActionCard card : actionCards) {
+            battleships_ex.gdx.model.cards.ActionCard modelCard = card.getModelCard();
+            if (modelCard == null) continue;
 
-            // TEMPORARY cost until wiring card model layer
-            int cost = 1; // or 2 for shield later
+            boolean hasEnergy = energy >= modelCard.getEnergyCost();
+            boolean hasCharges = true;
+            if (modelCard instanceof battleships_ex.gdx.model.cards.BaseActionCard) {
+                hasCharges = ((battleships_ex.gdx.model.cards.BaseActionCard) modelCard).getRemainingUses() > 0;
+            }
 
-            boolean usable =
-                myTurn &&
-                    energy >= cost;
-
+            boolean usable = myTurn && hasEnergy && hasCharges;
             card.setDisabled(!usable);
         }
     }
