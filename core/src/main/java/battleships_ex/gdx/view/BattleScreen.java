@@ -153,6 +153,14 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         this.pendingCard = card;
         this.targetingMode = true;
 
+        String prompt = "SELECT TARGET";
+        if (card instanceof battleships_ex.gdx.model.cards.SonarCard) prompt = "SELECT TILE TO SCAN";
+        if (card instanceof battleships_ex.gdx.model.cards.BombCard) prompt = "SELECT 2x2 AREA (TOP-LEFT)";
+        if (card instanceof battleships_ex.gdx.model.cards.MineCard) prompt = "PLACE MINE ON OWN WATERS";
+        if (card instanceof battleships_ex.gdx.model.cards.AirstrikeCard) prompt = "SELECT ROW/COLUMN";
+
+        if (tacGridLabel != null) tacGridLabel.setText(prompt);
+
         // Mine card requires targeting own board
         if (card instanceof battleships_ex.gdx.model.cards.MineCard) {
             this.currentMode = ViewMode.OWN_FLEET;
@@ -409,11 +417,39 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             gameController.playActionCard(pendingCard, coord);
             targetingMode = false;
             pendingCard = null;
+            boardActor.clearPreviewCell();
             return;
         }
 
         this.targetCoord = coord;
-        boardActor.setPreviewCell(coord);
+        
+        // Visual feedback for area cards
+        if (targetingMode && pendingCard != null) {
+            List<Coordinate> area = new ArrayList<>();
+            if (pendingCard instanceof battleships_ex.gdx.model.cards.BombCard) {
+                area.add(coord);
+                area.add(new Coordinate(coord.getRow() + 1, coord.getCol()));
+                area.add(new Coordinate(coord.getRow(), coord.getCol() + 1));
+                area.add(new Coordinate(coord.getRow() + 1, coord.getCol() + 1));
+            } else if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
+                battleships_ex.gdx.model.cards.AirstrikeCard ac = (battleships_ex.gdx.model.cards.AirstrikeCard) pendingCard;
+                if (ac.getOrientation() == battleships_ex.gdx.model.cards.AirstrikeCard.Orientation.ROW) {
+                    for (int i = 0; i < 10; i++) {
+                        area.add(new Coordinate(coord.getRow(), i));
+                    }
+                } else {
+                    for (int i = 0; i < 10; i++) {
+                        area.add(new Coordinate(i, coord.getCol()));
+                    }
+                }
+            } else {
+                area.add(coord);
+            }
+            boardActor.setPreviewCells(area);
+        } else {
+            boardActor.setPreviewCell(coord);
+        }
+        
         gameController.updatePreview(coord);
         updateFireButtonState();
     }
@@ -463,9 +499,15 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
                     uiCard.showInfoPopup(stage);
                 } else {
                     // Single tap = play card
-                    gameController.playActionCard(modelCard);
-                    updateEnergyFromGame();
-                    updateActionCardAvailability();
+                    if (targetingMode && pendingCard == modelCard && modelCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
+                        // Toggle orientation if clicking same card in targeting mode
+                        ((battleships_ex.gdx.model.cards.AirstrikeCard) modelCard).toggleOrientation();
+                        if (targetCoord != null) setTarget(targetCoord); // Refresh preview
+                    } else {
+                        gameController.playActionCard(modelCard);
+                        updateEnergyFromGame();
+                        updateActionCardAvailability();
+                    }
                 }
             }
         });

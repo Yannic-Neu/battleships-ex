@@ -23,8 +23,12 @@ public class AirstrikeCard extends BaseActionCard {
         super("Airstrike", 4, 1);
     }
 
-    public void setOrientation(Orientation orientation) {
-        this.orientation = orientation;
+    public Orientation getOrientation() {
+        return orientation;
+    }
+
+    public void toggleOrientation() {
+        this.orientation = (this.orientation == Orientation.ROW) ? Orientation.COLUMN : Orientation.ROW;
     }
 
     @Override

@@ -19,6 +19,7 @@ import battleships_ex.gdx.model.core.Player;
 import battleships_ex.gdx.state.GameStateManager;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
+import battleships_ex.gdx.ui.CardSelectionDialog;
 
 public class LobbyScreen extends ScreenAdapter {
 
@@ -35,7 +36,10 @@ public class LobbyScreen extends ScreenAdapter {
     private boolean iAmReady = false;
     private boolean exModeEnabled = true;
     private GameButton exModeButton;
+    private GameButton selectCardsButton;
     private Label exModeLabel;
+    private Label selectedCardsLabel;
+    private java.util.List<String> currentSelectedCards = new java.util.ArrayList<>();
 
     public LobbyScreen(MyGame game, String roomCode, String playerId, boolean isHost) {
         this.game = game;
@@ -60,6 +64,12 @@ public class LobbyScreen extends ScreenAdapter {
 
         startMatchButton = new GameButton("COMMENCE MISSION", primaryButton, () -> {
             if (opponentJoined && opponentReady) {
+                // Ensure 4 cards are selected if in EX mode
+                if (exModeEnabled && currentSelectedCards.size() != 4) {
+                    Gdx.app.postRunnable(() -> statusLabel.setText("Select 4 cards first!"));
+                    return;
+                }
+                
                 game.getLobbyDataSource().setLobbyStatus(roomCode, "ready", new DataCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
@@ -91,11 +101,14 @@ public class LobbyScreen extends ScreenAdapter {
 
         // EX Mode toggle (host only)
         exModeLabel = new Label("MODE: EX", new Label.LabelStyle(Theme.fontSmall, Theme.WHITE));
-        exModeButton = new GameButton("EX MODE", ButtonConfig.secondary(200f, 50f), () -> {
+        exModeButton = new GameButton("EX MODE", ButtonConfig.secondary(160f, 50f), () -> {
             exModeEnabled = !exModeEnabled;
             String label = exModeEnabled ? "EX MODE" : "CLASSIC MODE";
             exModeButton.setText(label);
             exModeLabel.setText(exModeEnabled ? "MODE: EX" : "MODE: CLASSIC");
+            selectCardsButton.setVisible(isHost && exModeEnabled);
+            selectedCardsLabel.setVisible(exModeEnabled);
+            
             game.getLobbyDataSource().setExMode(roomCode, exModeEnabled, new DataCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {}
@@ -106,6 +119,21 @@ public class LobbyScreen extends ScreenAdapter {
             });
         });
         exModeButton.setVisible(isHost);
+
+        selectCardsButton = new GameButton("SELECT CARDS", ButtonConfig.secondary(180f, 50f), () -> {
+            new CardSelectionDialog(cardNames -> {
+                game.getLobbyDataSource().setSelectedCards(roomCode, cardNames, new DataCallback<Void>() {
+                    @Override public void onSuccess(Void result) {}
+                    @Override public void onFailure(String error) {
+                        Gdx.app.postRunnable(() -> statusLabel.setText("Error: " + error));
+                    }
+                });
+            }).show(stage);
+        });
+        selectCardsButton.setVisible(isHost && exModeEnabled);
+        
+        selectedCardsLabel = new Label("CARDS: NONE", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
+        selectedCardsLabel.setVisible(exModeEnabled);
 
         Table root = new Table();
         root.setFillParent(true);
@@ -143,10 +171,16 @@ public class LobbyScreen extends ScreenAdapter {
         middlePanel.add(vs).center().padTop(10).row();
         middlePanel.add().expandY().row();
         middlePanel.add(lobbyCodeButton).pad(10).center().row();
-        middlePanel.add(accessCode).padBottom(20);
+        middlePanel.add(accessCode).padBottom(10).row();
+        middlePanel.add(selectedCardsLabel).padBottom(20);
 
-        bottomPanel.add(isHost ? exModeButton : exModeLabel).center().padBottom(10).row();
+        Table controlsRow = new Table();
+        controlsRow.add(exModeButton).padRight(10);
+        controlsRow.add(selectCardsButton);
+        
+        bottomPanel.add(isHost ? controlsRow : exModeLabel).center().padBottom(10).row();
         bottomPanel.add(isHost ? startMatchButton : readyButton).center().row();
+        
         root.defaults().expand().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
         root.add(middlePanel).height(Value.percentHeight(0.6f, root)).row();
@@ -160,23 +194,31 @@ public class LobbyScreen extends ScreenAdapter {
                     opponentJoined = snapshot.isFull();
                     opponentReady = snapshot.guestReady;
                     exModeEnabled = snapshot.exModeEnabled;
+                    currentSelectedCards = snapshot.selectedCardNames;
 
-                    // Update mode display for guest
+                    // Update UI
                     if (!isHost) {
                         exModeLabel.setText(exModeEnabled ? "MODE: EX" : "MODE: CLASSIC");
                     }
+                    
+                    if (currentSelectedCards.isEmpty()) {
+                        selectedCardsLabel.setText("CARDS: NONE");
+                    } else {
+                        selectedCardsLabel.setText("CARDS: " + String.join(", ", currentSelectedCards));
+                    }
+                    selectedCardsLabel.setVisible(exModeEnabled);
 
                     if ("ready".equals(snapshot.status)) {
-                        // Ensure GameStateManager is initialized for both players
+                        // Transition to game
                         Player localPlayer = new Player(playerId, isHost ? "Host" : "Guest");
                         LobbyController lobbyController = new LobbyController(game.getLobbyDataSource());
                         GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
                         GameStateManager.getInstance().setExModeEnabled(exModeEnabled);
 
-                        // Inject the lobby state into the controller and manager to bypass LobbyState
                         battleships_ex.gdx.model.lobby.Lobby lobby = new battleships_ex.gdx.model.lobby.Lobby(System.currentTimeMillis(), roomCode);
                         Player hostPlayer = new Player(snapshot.hostPlayerId, snapshot.hostPlayerName);
                         Player guestPlayer = new Player(snapshot.guestPlayerId, snapshot.guestPlayerName);
+                        
                         if (isHost) {
                             lobby.addPlayer(localPlayer);
                             lobby.addPlayer(guestPlayer);
@@ -184,9 +226,14 @@ public class LobbyScreen extends ScreenAdapter {
                             lobby.addPlayer(hostPlayer);
                             lobby.addPlayer(localPlayer);
                         }
+                        lobby.setSelectedCards(currentSelectedCards);
+                        
                         lobbyController.setActiveLobby(lobby);
                         lobbyController.setLocalPlayer(localPlayer);
                         GameStateManager.getInstance().forceMultiplayerPlacement(isHost ? guestPlayer : hostPlayer);
+
+                        // Important: Pass cards to GameController
+                        game.getGameController().initSession(localPlayer, isHost ? guestPlayer : hostPlayer, roomCode, isHost, currentSelectedCards);
 
                         game.getLobbyDataSource().removeLobbyListener(roomCode);
                         game.setScreen(new PlacementScreen(game));
@@ -199,6 +246,9 @@ public class LobbyScreen extends ScreenAdapter {
                             startMatchButton.setDisabled(true);
                         } else if (!opponentReady) {
                             statusLabel.setText("Waiting for guest to be ready...");
+                            startMatchButton.setDisabled(true);
+                        } else if (exModeEnabled && currentSelectedCards.size() != 4) {
+                            statusLabel.setText("Select 4 cards!");
                             startMatchButton.setDisabled(true);
                         } else {
                             statusLabel.setText("Guest is READY!");

@@ -23,8 +23,8 @@ public class BoardActor extends Actor {
     private final BoardConfig config;
     private final ShapeRenderer renderer = new ShapeRenderer();
 
-    /** The cell the opponent is currently aiming at, or null if none. */
-    private Coordinate previewCell;
+    /** The cells the opponent is currently aiming at. */
+    private final List<Coordinate> previewCells = new ArrayList<>();
 
     /** Elapsed time for blink animation. */
     private float blinkTimer;
@@ -99,14 +99,24 @@ public class BoardActor extends Actor {
      * @param coord the cell to highlight, or null to clear
      */
     public void setPreviewCell(Coordinate coord) {
-        this.previewCell = coord;
+        this.previewCells.clear();
+        if (coord != null) {
+            this.previewCells.add(coord);
+        }
+    }
+
+    public void setPreviewCells(List<Coordinate> coords) {
+        this.previewCells.clear();
+        if (coords != null) {
+            this.previewCells.addAll(coords);
+        }
     }
 
     /**
      * Clears the preview cell.
      */
     public void clearPreviewCell() {
-        this.previewCell = null;
+        this.previewCells.clear();
     }
 
     @Override
@@ -144,16 +154,19 @@ public class BoardActor extends Actor {
         }
 
         // 4. Draw preview cell overlay (blinks between 0.2 and 0.5 alpha)
-        if (previewCell != null
-            && previewCell.getRow() >= 0 && previewCell.getRow() < config.gridSize
-            && previewCell.getCol() >= 0 && previewCell.getCol() < config.gridSize) {
-
+        if (!previewCells.isEmpty()) {
             float alpha = 0.2f + 0.3f * (0.5f + 0.5f * (float) Math.sin(blinkTimer * 4.0));
             renderer.setColor(new Color(1f, 1f, 0f, alpha));
 
-            float cellX = x + previewCell.getCol() * cell;
-            float cellY = y + (config.gridSize - 1 - previewCell.getRow()) * cell;
-            renderer.rect(cellX, cellY, cell, cell);
+            for (Coordinate previewCell : previewCells) {
+                if (previewCell.getRow() >= 0 && previewCell.getRow() < config.gridSize
+                    && previewCell.getCol() >= 0 && previewCell.getCol() < config.gridSize) {
+
+                    float cellX = x + previewCell.getCol() * cell;
+                    float cellY = y + (config.gridSize - 1 - previewCell.getRow()) * cell;
+                    renderer.rect(cellX, cellY, cell, cell);
+                }
+            }
         }
         renderer.end();
 
