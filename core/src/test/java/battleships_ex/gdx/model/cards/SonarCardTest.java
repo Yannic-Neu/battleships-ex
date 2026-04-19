@@ -29,9 +29,14 @@ class SonarCardTest {
     void testCanUse() {
         assertTrue(card.canUse(user, opponent));
         
-        // Use all charges
-        card.execute(user, opponent, new Coordinate(0, 0));
-        card.execute(user, opponent, new Coordinate(1, 1));
+        // Use all charges - must hit tile first
+        Coordinate c1 = new Coordinate(0, 0);
+        Coordinate c2 = new Coordinate(1, 1);
+        opponent.getBoard().attack(c1);
+        opponent.getBoard().attack(c2);
+        
+        card.execute(user, opponent, c1);
+        card.execute(user, opponent, c2);
         
         assertFalse(card.canUse(user, opponent), "Should be out of uses");
     }
@@ -47,7 +52,10 @@ class SonarCardTest {
         int initialEnergy = user.getEnergy();
         int initialUses = card.getRemainingUses();
         
-        card.execute(user, opponent, new Coordinate(0, 0));
+        Coordinate target = new Coordinate(0, 0);
+        opponent.getBoard().attack(target); // Must be hit
+        
+        card.execute(user, opponent, target);
         
         assertEquals(initialEnergy - 2, user.getEnergy());
         assertEquals(initialUses - 1, card.getRemainingUses());
@@ -55,14 +63,16 @@ class SonarCardTest {
 
     @Test
     void testSonarMetadata() {
-        // Place a ship near (5,5)
-        // (5,5) adjacency includes (4,4), (4,5), (4,6), (5,4), (5,6), (6,4), (6,5), (6,6)
+        Coordinate target = new Coordinate(5, 5);
+        opponent.getBoard().attack(target); // Must be hit
+        
+        // Place a mine near (5,5)
         opponent.getBoard().placeMine(new Coordinate(4, 4));
         
-        ActionCardResult result = card.execute(user, opponent, new Coordinate(5, 5));
+        ActionCardResult result = card.execute(user, opponent, target);
         
         assertEquals(ActionCardResult.Outcome.REVEALED, result.getOutcome());
         assertEquals(1, result.getMetadataAsInt("adjacentCount", -1));
-        assertTrue(opponent.getBoard().hasBeenScanned(new Coordinate(5, 5)));
+        assertTrue(opponent.getBoard().hasBeenScanned(target));
     }
 }

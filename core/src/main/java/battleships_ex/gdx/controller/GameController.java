@@ -1,5 +1,7 @@
 package battleships_ex.gdx.controller;
 
+import java.util.List;
+
 import battleships_ex.gdx.config.board.Orientation;
 import battleships_ex.gdx.data.DataCallback;
 import battleships_ex.gdx.data.GameDataSource;
@@ -394,7 +396,7 @@ public class GameController {
     public void playActionCard(battleships_ex.gdx.model.cards.ActionCard card, Coordinate target) {
         if (!isSessionActive())   return;
         if (!isLocalPlayerTurn()) return;
-        
+
         if (!card.canUse(localPlayer, remotePlayer)) {
             String reason = "INSUFFICIENT ENERGY";
             if (card instanceof battleships_ex.gdx.model.cards.BaseActionCard) {
@@ -407,7 +409,7 @@ public class GameController {
         }
 
         // If card requires targeting but no target provided, ask UI
-        if (target == null && (card instanceof battleships_ex.gdx.model.cards.SonarCard || 
+        if (target == null && (card instanceof battleships_ex.gdx.model.cards.SonarCard ||
                                card instanceof battleships_ex.gdx.model.cards.BombCard ||
                                card instanceof battleships_ex.gdx.model.cards.MineCard ||
                                card instanceof battleships_ex.gdx.model.cards.AirstrikeCard)) {
@@ -416,12 +418,17 @@ public class GameController {
         }
 
         battleships_ex.gdx.model.cards.ActionCardResult result = session.playActionCard(card, target);
-        
+
         syncActionCardToBackend(card, target);
 
-        if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.HIT || 
+        if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.HIT ||
             result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK) {
             remotePlayer.addEnergy(1);
+        }
+
+        if (Boolean.TRUE.equals(result.getMetadata("mineHit"))) {
+            // Local player triggered a remote mine via action card
+            handleMineHit(localPlayer);
         }
 
         if (listener != null) listener.onActionCardPlayed(result);
@@ -430,7 +437,7 @@ public class GameController {
         sessionManager.resetInactivityTimer();
 
         // Sync with backend if needed
-        // For now, moves from cards are not automatically synced as moves, 
+        // For now, moves from cards are not automatically synced as moves,
         // but the board state changes should be reflected.
         // TODO: Implement card effect synchronization
 
@@ -524,6 +531,14 @@ public class GameController {
                     }
                 }
                 break;
+
+            case MINE_HIT:
+                System.out.println("[GameController] LOG: Shot outcome: MINE_HIT");
+                session.processMove(target, result);
+                // localPlayer hit a remote mine. localPlayer gets hit by 2 random shots.
+                handleMineHit(localPlayer);
+                syncMoveToBackend(target, true);
+                break;
         }
     }
 
@@ -564,9 +579,38 @@ public class GameController {
                 }
                 break;
 
+            case MINE_HIT:
+                session.processMove(target, result);
+                // Remote player hit a local mine. They get hit by 2 random shots.
+                handleMineHit(remotePlayer);
+                break;
+
             case ALREADY_SHOT:
                 // Stale Firebase event — ignore silently.
                 break;
+        }
+    }
+
+    private void handleMineHit(Player attacker) {
+        // Trigger 2 random shots at the attacker's board
+        List<ShotResult> counterShots = engine.triggerRandomShots(attacker, 2);
+        for (ShotResult sr : counterShots) {
+            if (sr.isShipHit()) {
+                attacker.addEnergy(1);
+            }
+            if (listener != null) {
+                battleships_ex.gdx.model.cards.ActionCardResult detox =
+                    battleships_ex.gdx.model.cards.ActionCardResult.hit("Mine Detonation",
+                    java.util.Collections.singletonList(sr.getCoordinate()));
+                listener.onActionCardPlayed(detox);
+            }
+            // If we are local, and we just hit a remote mine, we need to sync our own hits.
+            // If the remote player hit our mine, we (local) are firing shots at them (attacker).
+            // Actually, if we are in onRemoteShotReceived, the remote player (attacker) hit OUR mine.
+            // So we (local) should fire back at them.
+            if (attacker == remotePlayer) {
+                 syncMoveToBackend(sr.getCoordinate(), sr.isShipHit());
+            }
         }
     }
 
@@ -660,7 +704,7 @@ public class GameController {
 
     private void onActionCardReceived(GameDataSource.ActionCardSnapshot snapshot) {
         System.out.println("[GameController] LOG: Action card received: " + snapshot.cardName + " from " + snapshot.playerId);
-        
+
         // Find card in remote player's hand by name
         battleships_ex.gdx.model.cards.ActionCard cardToPlay = null;
         for (battleships_ex.gdx.model.cards.ActionCard c : remotePlayer.getCards()) {
@@ -687,11 +731,16 @@ public class GameController {
 
         // Execute card from remote player perspective
         battleships_ex.gdx.model.cards.ActionCardResult result = session.executeActionCardPlay(cardToPlay, snapshot.target);
-        
+
         // Grant energy to local player if they were hit
         if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.HIT ||
             result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK) {
             localPlayer.addEnergy(1);
+        }
+
+        if (Boolean.TRUE.equals(result.getMetadata("mineHit"))) {
+            // Remote player triggered a local mine via action card
+            handleMineHit(remotePlayer);
         }
 
         if (listener != null) listener.onActionCardPlayed(result);
@@ -699,7 +748,7 @@ public class GameController {
 
     private void syncActionCardToBackend(battleships_ex.gdx.model.cards.ActionCard card, Coordinate target) {
         if (roomCode == null) return;
-        
+
         String cardName = card.getClass().getSimpleName().replace("Card", "");
         String metadata = null;
         if (card instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
@@ -757,7 +806,7 @@ public class GameController {
             StringBuilder rowString = new StringBuilder();
             for (int col = 0; col < board.getWidth(); col++) {
                 // Check if the cell has a ship using the methods from Board.java
-                if (board.getCell(row, col).hasShip()) {
+                if (board.getCell(new Coordinate(row, col)).hasShip()) {
                     rowString.append("[S]"); // S for Ship
                 } else {
                     rowString.append("[ ]"); // Empty

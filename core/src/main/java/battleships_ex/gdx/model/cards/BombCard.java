@@ -36,6 +36,7 @@ public class BombCard extends BaseActionCard {
 
         boolean anySunk = results.stream().anyMatch(ShotResult::isSunk);
         boolean anyHit = results.stream().anyMatch(ShotResult::isShipHit);
+        boolean anyMine = results.stream().anyMatch(ShotResult::isMineHit);
 
         List<Coordinate> affected = new ArrayList<>();
         for (ShotResult sr : results) {
@@ -44,6 +45,12 @@ public class BombCard extends BaseActionCard {
 
         if (anySunk) return ActionCardResult.sunk(cardName, affected);
         if (anyHit) return ActionCardResult.hit(cardName, affected);
+        if (anyMine) {
+            ActionCardResult res = ActionCardResult.revealed(cardName, affected);
+            // We use a custom outcome or metadata to tell GameController it's a mine hit
+            res.setMetadata("mineHit", true);
+            return res;
+        }
         return ActionCardResult.revealed(cardName, affected); // All misses
     }
 

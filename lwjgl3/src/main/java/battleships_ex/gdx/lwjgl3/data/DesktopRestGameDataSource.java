@@ -29,9 +29,8 @@ import battleships_ex.gdx.model.board.Coordinate;
  */
 public class DesktopRestGameDataSource implements GameDataSource {
 
-    private static final String DB_URL = "https://battleships-ex-default-rtdb.europe-west1.firebasedatabase.app";
+    private static final String DB_URL = "https://battleshipsex-8968a-default-rtdb.europe-west1.firebasedatabase.app";
     private final String idToken;
-
     private final Map<String, ScheduledExecutorService> pollers = new HashMap<>();
 
     public DesktopRestGameDataSource(String idToken) {
@@ -43,102 +42,99 @@ public class DesktopRestGameDataSource implements GameDataSource {
     }
 
     @Override
-    public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
+    public void submitMove(String roomCode, String playerId, Coordinate target, boolean hit, DataCallback<Void> callback) {
         new Thread(() -> {
             try {
-                URL url = new URL(buildUrl(roomCode, "placementReady/" + playerId));
+                URL url = new URL(buildUrl(roomCode, "moves"));
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("PUT");
+                conn.setRequestMethod("POST");
                 conn.setDoOutput(true);
-
-                String payload = String.valueOf(isReady);
+                String payload = String.format(Locale.ROOT,
+                    "{\"playerId\":\"%s\",\"row\":%d,\"col\":%d,\"hit\":%b,\"timestamp\":%d}",
+                    playerId, target.getRow(), target.getCol(), hit, System.currentTimeMillis());
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(payload.getBytes(StandardCharsets.UTF_8));
                 }
-
-                if (conn.getResponseCode() == 200) {
-                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
-                } else {
-                    Gdx.app.postRunnable(() -> {
-                        try {
-                            callback.onFailure("HTTP " + conn.getResponseCode());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
-            }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
         }).start();
     }
 
     @Override
-    public void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
-        String key = "placement_" + roomCode + "_" + opponentId;
+    public void addMoveListener(String roomCode, DataCallback<MoveSnapshot> callback) {
+        String key = "moves_" + roomCode;
         removePoller(key);
-
         ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor();
         pollers.put(key, poller);
-
         poller.scheduleAtFixedRate(() -> {
             try {
-                URL url = new URL(buildUrl(roomCode, "placementReady/" + opponentId));
+                URL url = new URL(buildUrl(roomCode, "moves"));
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                JsonValue snapshot = new JsonReader().parse(new InputStreamReader(conn.getInputStream()));
-
-                boolean ready = snapshot != null && snapshot.asBoolean();
-                Gdx.app.postRunnable(() -> callback.onSuccess(ready));
-            } catch (Exception e) {
-                // Ignore transient network errors
-            }
+                JsonValue root = new JsonReader().parse(new InputStreamReader(conn.getInputStream()));
+                if (root == null || root.isNull() || root.size == 0) return;
+                JsonValue last = null;
+                for (JsonValue child : root) last = child;
+                if (last == null) return;
+                MoveSnapshot snap = new MoveSnapshot(last.getString("playerId"), last.getInt("row"), last.getInt("col"), last.getBoolean("hit"), last.getLong("timestamp", 0));
+                Gdx.app.postRunnable(() -> callback.onSuccess(snap));
+            } catch (Exception ignored) {}
         }, 0, 2, TimeUnit.SECONDS);
     }
 
     @Override
-    public void updateBoardLayout(String roomCode, String playerId, List<ShipPlacement> ships, DataCallback<Void> callback) {
-
+    public void removeMoveListener(String roomCode) {
+        removePoller("moves_" + roomCode);
     }
 
     @Override
-    public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<List<ShipPlacement>> callback) {
-
-    }
-
-    @Override
-    public void removeBoardLayoutListener(String roomCode) {
-
-    }
-
-    @Override
-    public void updateGameStatus(String roomCode, String status, DataCallback<Void> callback) {
+    public void submitActionCardPlay(String roomCode, String playerId, String cardName, Coordinate target, String metadata, DataCallback<Void> callback) {
         new Thread(() -> {
             try {
-                URL url = new URL(buildUrl(roomCode, "status"));
+                URL url = new URL(buildUrl(roomCode, "cards"));
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("PUT");
+                conn.setRequestMethod("POST");
                 conn.setDoOutput(true);
-
-                String payload = "\"" + status + "\"";
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(payload.getBytes(StandardCharsets.UTF_8));
+                StringBuilder sb = new StringBuilder("{");
+                sb.append("\"playerId\":\"").append(playerId).append("\",");
+                sb.append("\"cardName\":\"").append(cardName).append("\",");
+                if (target != null) {
+                    sb.append("\"row\":").append(target.getRow()).append(",");
+                    sb.append("\"col\":").append(target.getCol()).append(",");
                 }
-
-                if (conn.getResponseCode() == 200) {
-                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
-                } else {
-                    Gdx.app.postRunnable(() -> {
-                        try {
-                            callback.onFailure("HTTP " + conn.getResponseCode());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
-            }
+                if (metadata != null) sb.append("\"metadata\":\"").append(metadata).append("\",");
+                sb.append("\"timestamp\":").append(System.currentTimeMillis()).append("}");
+                try (OutputStream os = conn.getOutputStream()) { os.write(sb.toString().getBytes(StandardCharsets.UTF_8)); }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
         }).start();
+    }
+
+    @Override
+    public void addActionCardListener(String roomCode, DataCallback<ActionCardSnapshot> callback) {
+        String key = "cards_" + roomCode;
+        removePoller(key);
+        ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor();
+        pollers.put(key, poller);
+        poller.scheduleAtFixedRate(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode, "cards"));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                JsonValue root = new JsonReader().parse(new InputStreamReader(conn.getInputStream()));
+                if (root == null || root.isNull() || root.size == 0) return;
+                JsonValue last = null;
+                for (JsonValue child : root) last = child;
+                if (last == null) return;
+                Coordinate target = null;
+                if (last.has("row") && last.has("col")) target = new Coordinate(last.getInt("row"), last.getInt("col"));
+                ActionCardSnapshot snap = new ActionCardSnapshot(last.getString("playerId"), last.getString("cardName"), target, last.getString("metadata", null), last.getLong("timestamp", 0));
+                Gdx.app.postRunnable(() -> callback.onSuccess(snap));
+            } catch (Exception ignored) {}
+        }, 0, 2, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void removeActionCardListener(String roomCode) {
+        removePoller("cards_" + roomCode);
     }
 
     @Override
@@ -149,84 +145,82 @@ public class DesktopRestGameDataSource implements GameDataSource {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("PUT");
                 conn.setDoOutput(true);
-
-                String payload = "\"" + currentPlayerId + "\"";
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(payload.getBytes(StandardCharsets.UTF_8));
-                }
-
-                if (conn.getResponseCode() == 200) {
-                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
-                } else {
-                    Gdx.app.postRunnable(() -> {
-                        try {
-                            callback.onFailure("HTTP " + conn.getResponseCode());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
-            }
+                try (OutputStream os = conn.getOutputStream()) { os.write(("\"" + currentPlayerId + "\"").getBytes(StandardCharsets.UTF_8)); }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
         }).start();
     }
 
     @Override
-    public void submitMove(String roomCode, String playerId, Coordinate target, boolean hit, DataCallback<Void> callback) {
-        new Thread(() -> {
+    public void addTurnListener(String roomCode, DataCallback<String> callback) {
+        String key = "turn_" + roomCode;
+        removePoller(key);
+        ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor();
+        pollers.put(key, poller);
+        poller.scheduleAtFixedRate(() -> {
             try {
-                URL url = new URL(buildUrl(roomCode, "moves"));
+                URL url = new URL(buildUrl(roomCode, "currentTurn"));
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setDoOutput(true);
-
-                String payload = String.format(Locale.ROOT,
-                    "{\"playerId\":\"%s\",\"row\":%d,\"col\":%d,\"hit\":%b,\"timestamp\":%d}",
-                    playerId, target.getRow(), target.getCol(), hit, System.currentTimeMillis()
-                );
-
-                try (OutputStream os = conn.getOutputStream()) {
-                    os.write(payload.getBytes(StandardCharsets.UTF_8));
-                }
-
-                if (conn.getResponseCode() == 200) {
-                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
-                } else {
-                    Gdx.app.postRunnable(() -> {
-                        try {
-                            callback.onFailure("HTTP " + conn.getResponseCode());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
-            }
-        }).start();
+                JsonValue val = new JsonReader().parse(new InputStreamReader(conn.getInputStream()));
+                if (val != null && !val.isNull()) Gdx.app.postRunnable(() -> callback.onSuccess(val.asString()));
+            } catch (Exception ignored) {}
+        }, 0, 2, TimeUnit.SECONDS);
     }
 
-    @Override public void addMoveListener(String roomCode, DataCallback<MoveSnapshot> callback) {
-        // TODO: Implement move polling for battle phase
-    }
-
-    @Override public void removeMoveListener(String roomCode) {
-        removePoller("moves_" + roomCode);
-    }
-
-    @Override public void addTurnListener(String roomCode, DataCallback<String> callback) {
-        // TODO: Implement turn polling
-    }
-
-    @Override public void removeTurnListener(String roomCode) {
+    @Override
+    public void removeTurnListener(String roomCode) {
         removePoller("turn_" + roomCode);
     }
 
-    @Override public void pushGameOver(String roomCode, String winnerName, DataCallback<Void> callback) {
-        // Handled by updateGameStatus + additional field logic if needed
+    @Override
+    public void updateGameStatus(String roomCode, String status, DataCallback<Void> callback) {
+        new Thread(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode, "status"));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("PUT");
+                conn.setDoOutput(true);
+                try (OutputStream os = conn.getOutputStream()) { os.write(("\"" + status + "\"").getBytes(StandardCharsets.UTF_8)); }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
+        }).start();
     }
 
+    @Override
+    public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
+        new Thread(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode, "placementReady/" + playerId));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("PUT");
+                conn.setDoOutput(true);
+                try (OutputStream os = conn.getOutputStream()) { os.write(String.valueOf(isReady).getBytes(StandardCharsets.UTF_8)); }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
+        }).start();
+    }
+
+    @Override
+    public void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
+        String key = "placement_" + roomCode + "_" + opponentId;
+        removePoller(key);
+        ScheduledExecutorService poller = Executors.newSingleThreadScheduledExecutor();
+        pollers.put(key, poller);
+        poller.scheduleAtFixedRate(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode, "placementReady/" + opponentId));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                JsonValue snapshot = new JsonReader().parse(new InputStreamReader(conn.getInputStream()));
+                boolean ready = snapshot != null && snapshot.asBoolean();
+                Gdx.app.postRunnable(() -> callback.onSuccess(ready));
+            } catch (Exception ignored) {}
+        }, 0, 2, TimeUnit.SECONDS);
+    }
+
+    @Override public void updateBoardLayout(String roomCode, String playerId, List<ShipPlacement> ships, DataCallback<Void> callback) {}
+    @Override public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<List<ShipPlacement>> callback) {}
+    @Override public void removeBoardLayoutListener(String roomCode) {}
+    @Override public void pushGameOver(String roomCode, String winnerName, DataCallback<Void> callback) {}
     @Override public void sendHeartbeat(String roomCode, String playerId) {}
     @Override public void addHeartbeatListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {}
     @Override public void removeHeartbeatListener(String roomCode) {}
@@ -241,16 +235,12 @@ public class DesktopRestGameDataSource implements GameDataSource {
     @Override
     public void removeAllListeners(String roomCode) {
         for (String key : new java.util.HashSet<>(pollers.keySet())) {
-            if (key.contains(roomCode)) {
-                removePoller(key);
-            }
+            if (key.contains(roomCode)) removePoller(key);
         }
     }
 
     private void removePoller(String key) {
         ScheduledExecutorService poller = pollers.remove(key);
-        if (poller != null) {
-            poller.shutdownNow();
-        }
+        if (poller != null) poller.shutdownNow();
     }
 }

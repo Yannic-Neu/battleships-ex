@@ -6,35 +6,20 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.Value;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+
 import java.util.ArrayList;
 import java.util.List;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-
-
-import battleships_ex.gdx.controller.GameController;
-import battleships_ex.gdx.controller.GameListener;
-import battleships_ex.gdx.controller.LobbyController;
-import battleships_ex.gdx.state.GameStateListener;
-import battleships_ex.gdx.state.GameStateManager;
-
-import battleships_ex.gdx.model.board.Coordinate;
-import battleships_ex.gdx.model.board.Ship;
-import battleships_ex.gdx.model.rules.PlacementResult;
 
 import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.ui.ActionCard;
 import battleships_ex.gdx.ui.cards.ActionCardPresentation;
 import battleships_ex.gdx.ui.cards.ActionCardPresentationBase;
-// import battleships_ex.gdx.ui.cards.DoubleShotCardPresentation;
-// import battleships_ex.gdx.ui.cards.EraseCardPresentation;
-// import battleships_ex.gdx.ui.cards.ScanCardPresentation;
-// import battleships_ex.gdx.ui.cards.ShieldCardPresentation;
-// import battleships_ex.gdx.ui.cards.ParryCardPresentation;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.data.Assets;
@@ -45,12 +30,16 @@ import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 import battleships_ex.gdx.ui.EnergyBar;
-// import battleships_ex.gdx.model.cards.ShieldCard;
-// import battleships_ex.gdx.model.cards.ScanCard;
-// import battleships_ex.gdx.model.cards.ParryCard;
-// import battleships_ex.gdx.model.cards.EraseCard;
-// import battleships_ex.gdx.model.cards.DoubleShotCard;
-
+import battleships_ex.gdx.state.GameStateManager;
+import battleships_ex.gdx.state.GameStateListener;
+import battleships_ex.gdx.controller.LobbyController;
+import battleships_ex.gdx.controller.GameController;
+import battleships_ex.gdx.model.board.Board;
+import battleships_ex.gdx.model.board.Cell;
+import battleships_ex.gdx.model.board.Coordinate;
+import battleships_ex.gdx.model.board.Ship;
+import battleships_ex.gdx.model.cards.ActionCardResult;
+import battleships_ex.gdx.model.rules.PlacementResult;
 
 public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
@@ -69,7 +58,6 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private Label tacGridLabel;
     private CardTray actionCardTray;
     private GameButton fireButton;
-    private GameButton confirmCardButton;
     private GameButton rotateCardButton;
     private Coordinate targetCoord;
     
@@ -84,71 +72,21 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     public void show() {
         stage = new Stage(new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
         Gdx.input.setInputProcessor(stage);
-
         gameController = game.getGameController();
         GameStateManager.getInstance().setStateListener(this);
-
-        rebuildUI();
-
-        // The GameListener is now handled by the GameStateManager, which will
-        // in turn call the GameStateListener methods implemented by this screen.
-    }
-
-    // -------------------------------------------------------------------------
-    // GameStateListener implementation
-    // -------------------------------------------------------------------------
-
-    @Override
-    public void onStateChanged(String stateName) {
-        System.out.println("[BattleScreen] LOG: onStateChanged received, rebuilding UI.");
         rebuildUI();
     }
 
-    // Unused GameStateListener methods
-    @Override public void onLobbyCreated(String roomCode) {}
-    @Override public void onLobbyJoined() {}
-    @Override public void onGuestJoined(String guestName) {}
-    @Override public void onJoinRejected(LobbyController.JoinRejectionReason reason) {}
-    @Override public void onOpponentPlacementReady(boolean ready) {}
-    @Override
-    public void onGameOver(String winnerName) {
-        Gdx.app.postRunnable(() -> {
-            game.setScreen(new GameOverScreen(game, winnerName));
-        });
+    @Override public void onStateChanged(String stateName) { rebuildUI(); }
+    @Override public void onGameOver(String winnerName) {
+        Gdx.app.postRunnable(() -> game.setScreen(new GameOverScreen(game, winnerName)));
     }
-
-    @Override
-    public void onTurnChanged(String currentPlayerId) {
-        System.out.println("[BattleScreen] LOG: onTurnChanged received, rebuilding UI.");
-        rebuildUI();
-    }
-
-    @Override public void onHit(Coordinate coordinate, Ship ship) {
-        updateEnergyFromGame();
-        rebuildUI();
-    }
-
-    @Override public void onMiss(Coordinate coordinate) {
-        rebuildUI();
-    }
-
-    @Override public void onSunk(Coordinate coordinate, Ship ship) {
-        updateEnergyFromGame();
-        rebuildUI();
-    }
-
-    @Override public void onAlreadyShot(Coordinate coordinate) {
-        updateFireButtonState();
-    }
-
-    @Override public void onShipPlaced(Ship ship) {}
-    @Override public void onShipRemoved(Ship ship) {}
-    @Override public void onPlacementRejected(PlacementResult.Reason reason) {}
-    @Override
-    public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
-        updateEnergyFromGame();
-        rebuildUI();
-    }
+    @Override public void onTurnChanged(String currentPlayerId) { rebuildUI(); }
+    @Override public void onHit(Coordinate coordinate, Ship ship) { updateEnergyFromGame(); rebuildUI(); }
+    @Override public void onMiss(Coordinate coordinate) { rebuildUI(); }
+    @Override public void onSunk(Coordinate coordinate, Ship ship) { updateEnergyFromGame(); rebuildUI(); }
+    @Override public void onAlreadyShot(Coordinate coordinate) { updateFireButtonState(); }
+    @Override public void onActionCardPlayed(ActionCardResult result) { updateEnergyFromGame(); rebuildUI(); }
 
     @Override
     public void onActionCardRejected(battleships_ex.gdx.model.cards.ActionCard card, String reason) {
@@ -156,14 +94,9 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             final String originalText = tacGridLabel.getText().toString();
             tacGridLabel.setText("ERROR: " + reason);
             tacGridLabel.setColor(Theme.YELLOW);
-            
             com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
-                @Override
-                public void run() {
-                    if (tacGridLabel != null) {
-                        tacGridLabel.setText(originalText);
-                        tacGridLabel.setColor(Theme.GRAY);
-                    }
+                @Override public void run() {
+                    if (tacGridLabel != null) { tacGridLabel.setText(originalText); tacGridLabel.setColor(Theme.GRAY); }
                 }
             }, 2.0f);
         }
@@ -173,235 +106,125 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     public void onCardTargetRequested(battleships_ex.gdx.model.cards.ActionCard card) {
         this.pendingCard = card;
         this.targetingMode = true;
-
-        String prompt = "SELECT TARGET";
-        if (card instanceof battleships_ex.gdx.model.cards.SonarCard) prompt = "SELECT TILE TO SCAN";
-        if (card instanceof battleships_ex.gdx.model.cards.BombCard) prompt = "SELECT 2x2 AREA (TOP-LEFT)";
-        if (card instanceof battleships_ex.gdx.model.cards.MineCard) prompt = "PLACE MINE ON OWN WATERS";
-        if (card instanceof battleships_ex.gdx.model.cards.AirstrikeCard) prompt = "SELECT ROW/COLUMN";
-
-        if (tacGridLabel != null) tacGridLabel.setText(prompt);
-
-        // Mine card requires targeting own board
-        if (card instanceof battleships_ex.gdx.model.cards.MineCard) {
-            this.currentMode = ViewMode.OWN_FLEET;
-        } else {
-            this.currentMode = ViewMode.ENEMY_WATERS;
-        }
-
+        if (card instanceof battleships_ex.gdx.model.cards.MineCard) this.currentMode = ViewMode.OWN_FLEET;
+        else this.currentMode = ViewMode.ENEMY_WATERS;
         rebuildUI();
     }
 
+    @Override public void onShipPlaced(Ship ship) { rebuildUI(); }
+    @Override public void onShipRemoved(Ship ship) { rebuildUI(); }
+    @Override public void onPlacementRejected(PlacementResult.Reason reason) { rebuildUI(); }
+    @Override public void onOpponentPlacementReady(boolean ready) { rebuildUI(); }
+    @Override public void onJoinRejected(LobbyController.JoinRejectionReason reason) {}
+    @Override public void onLobbyCreated(String roomCode) {}
+    @Override public void onLobbyJoined() {}
+    @Override public void onGuestJoined(String guestName) {}
 
     private void updateEnergyFromGame() {
         if (energyBar == null) return;
-
-        int energy = gameController
-            .getLocalPlayer()
-            .getEnergy();
-
-        energyBar.updateEnergy(energy);
+        energyBar.updateEnergy(gameController.getLocalPlayer().getEnergy());
     }
 
     private void rebuildUI() {
         stage.clear();
         actionCards.clear();
-
-        float sidePad = 16f;
-        float contentWidth = Math.min(320f, GameConfig.WORLD_WIDTH - 2f * sidePad);
-
+        float contentWidth = 360f;
         Table root = new Table();
         root.setFillParent(true);
-        root.top().pad(sidePad);
         root.setBackground(Theme.blackPanel);
         stage.addActor(root);
 
-        // --- Header ---
+        // Header
         Table topArea = new Table();
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> {
-            new ConfirmationDialog(
-                "ABANDON MISSION?",
-                "Retreating during active combat results in an immediate loss. Do you still wish to withdraw?",
-                "RETREAT",
-                "STAY",
-                () -> {
-                    System.out.println("Player abandoned during battle - Result: LOSS");
-                    game.setScreen(new MenuScreen(game));
+        topArea.setBackground(Theme.darkBluePanel);
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new MenuScreen(game)));
+        Label titleLabel = new Label("BATTLE STATION", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
+        topArea.add(backButton).left().padLeft(20);
+        topArea.add(titleLabel).center().expandX().padRight(80);
+
+        // Switch Mode
+        Table switchInner = new Table();
+        switchInner.setBackground(Theme.bluePanel);
+        GameButton ownFleetBtn = new GameButton("OWN FLEET", ButtonConfig.secondary(170f, 44f), () -> {
+            currentMode = ViewMode.OWN_FLEET; targetCoord = null; targetingMode = false; pendingCard = null; rebuildUI();
+        });
+        GameButton enemyWatersBtn = new GameButton("ENEMY WATERS", ButtonConfig.secondary(170f, 44f), () -> {
+            currentMode = ViewMode.ENEMY_WATERS; targetCoord = null; targetingMode = false; pendingCard = null; rebuildUI();
+        });
+        if (currentMode == ViewMode.OWN_FLEET) ownFleetBtn.setColor(Theme.YELLOW);
+        else enemyWatersBtn.setColor(Theme.YELLOW);
+        switchInner.add(ownFleetBtn).padRight(5);
+        switchInner.add(enemyWatersBtn);
+
+        // Board
+        BoardConfig boardConfig = new BoardConfig(360f, 10, Theme.DARK_NAVY, Theme.BLUE);
+        boardActor = new BoardActor(boardConfig);
+        Board targetBoard = (currentMode == ViewMode.OWN_FLEET) ? gameController.getLocalPlayer().getBoard() : gameController.getRemotePlayer().getBoard();
+        
+        boardActor.setBoardModel(targetBoard); // For dynamic Sonar
+        for (int r = 0; r < 10; r++) {
+            for (int c = 0; c < 10; c++) {
+                Cell cell = targetBoard.getCell(new Coordinate(r, c));
+                if (cell.isHit()) {
+                    if (cell.hasShip()) boardActor.markHit(cell.getCoordinate());
+                    else boardActor.markMiss(cell.getCoordinate());
                 }
-            ).show(stage);
+            }
+        }
+        boardActor.setMines(targetBoard.getMines());
+        boardActor.setScannedTiles(targetBoard.getScannedTiles());
+
+        boardActor.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                setTarget(boardActor.pointToCoordinate(x, y)); return true;
+            }
+            @Override public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                setTarget(boardActor.pointToCoordinate(x, y));
+            }
         });
 
-        Label turnLabel = new Label("", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
-        boolean myTurn = battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn();
-        turnLabel.setText(myTurn ? "YOUR TURN" : "OPPONENT'S TURN");
-        turnLabel.setColor(myTurn ? Theme.WHITE : Theme.GRAY);
-
-        topArea.add(backButton).left().pad(10);
-        topArea.add(turnLabel).expandX().center();
-        topArea.add().width(60f).pad(10); // Balances the back button
-
-        // --- View Switcher (State Toggle) ---
-        Table switchInner = new Table();
-        switchInner.setBackground(Theme.darkBluePanel);
-        switchInner.pad(6f);
-
-        GameButton enemyWatersBtn = new GameButton("ENEMY WATERS",
-            currentMode == ViewMode.ENEMY_WATERS ? ButtonConfig.primary((contentWidth - 12f) / 2f, 44f) : ButtonConfig.secondary((contentWidth - 12f) / 2f, 44f),
-            () -> {
-                if (currentMode != ViewMode.ENEMY_WATERS) {
-                    currentMode = ViewMode.ENEMY_WATERS;
-                    rebuildUI();
-                }
-            });
-
-        GameButton yourFleetBtn = new GameButton("YOUR FLEET",
-            currentMode == ViewMode.OWN_FLEET ? ButtonConfig.primary((contentWidth - 12f) / 2f, 44f) : ButtonConfig.secondary((contentWidth - 12f) / 2f, 44f),
-            () -> {
-                if (currentMode != ViewMode.OWN_FLEET) {
-                    currentMode = ViewMode.OWN_FLEET;
-                    rebuildUI();
-                }
-            });
-
-        switchInner.add(enemyWatersBtn).width((contentWidth - 12f) / 2f).height(44f);
-        switchInner.add(yourFleetBtn).width((contentWidth - 12f) / 2f).height(44f);
-
-        // --- Board Section ---
-        String gridText = currentMode == ViewMode.ENEMY_WATERS ? "ENEMY TACTICAL GRID" : "YOUR STRATEGIC GRID";
-        tacGridLabel = new Label(gridText, new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
-
-        BoardConfig boardConfig = new BoardConfig(320f, 10, new Color(0.05f, 0.10f, 0.20f, 1f), new Color(0.15f, 0.22f, 0.35f, 1f));
-        boardActor = new BoardActor(boardConfig);
-
-        battleships_ex.gdx.model.board.Board targetBoard = (currentMode == ViewMode.ENEMY_WATERS)
-            ? gameController.getRemotePlayer().getBoard()
-            : gameController.getLocalPlayer().getBoard();
-
-        for (int row = 0; row < 10; row++) {
-            for (int col = 0; col < 10; col++) {
-                battleships_ex.gdx.model.board.Cell cell = targetBoard.getCell(row, col);
-                if (cell.isHit()) {
-                    if (cell.hasShip()) {
-                        boardActor.markHit(new Coordinate(row, col));
-                    } else {
-                        boardActor.markMiss(new Coordinate(row, col));
-                    }
-                }
+        for (Ship ship : targetBoard.getShips()) {
+            if (currentMode == ViewMode.OWN_FLEET || ship.isSunk()) {
+                boardActor.addPlacedShip(ship.getType(), ship.getOccupiedCoordinates().iterator().next(), ship.getOrientation());
             }
         }
 
-        if (currentMode == ViewMode.ENEMY_WATERS) {
-            boardActor.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
-                @Override
-                public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                    Coordinate coord = boardActor.pointToCoordinate(x, y);
-                    setTarget(coord);
-                    return true;
-                }
-                @Override
-                public void touchDragged(InputEvent event, float x, float y, int pointer) {
-                    Coordinate coord = boardActor.pointToCoordinate(x, y);
-                    setTarget(coord);
-                }
-            });
-            // Restore visual target if it exists
-            if (targetCoord != null) {
-                boardActor.setPreviewCell(targetCoord);
-            }
+        // Restore preview cells
+        if (targetCoord != null) setTarget(targetCoord);
 
-            // Draw sunken ships
-            for (battleships_ex.gdx.model.board.Ship ship : targetBoard.getShips()) {
-                if (ship.isSunk() && !ship.getOccupiedCoordinates().isEmpty()) {
-                    Coordinate start = ship.getOccupiedCoordinates().iterator().next();
-                    boardActor.addPlacedShip(ship.getType(), start, ship.getOrientation());
-                }
-            }
-        }
-
-        if (currentMode == ViewMode.OWN_FLEET) {
-            List<battleships_ex.gdx.model.board.Ship> ships = targetBoard.getShips();
-            for (battleships_ex.gdx.model.board.Ship ship : ships) {
-                if (ship.isPlaced() && !ship.getOccupiedCoordinates().isEmpty()) {
-                    Coordinate start = ship.getOccupiedCoordinates().iterator().next();
-                    boardActor.addPlacedShip(ship.getType(), start, ship.getOrientation());
-                }
-            }
-        }
-
-        // --- Actions Section ---
+        // Actions
         Table actionsPanel = new Table();
-
-        boolean exMode = battleships_ex.gdx.state.GameStateManager.getInstance().isExModeEnabled();
-
-        if (exMode) {
-            energyBar = new EnergyBar();
-            energyBar.updateEnergy(
-                gameController.getLocalPlayer().getEnergy()
-            );
-
-            Label actionCardsLabel = new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
-
+        if (GameStateManager.getInstance().isExModeEnabled()) {
+            energyBar = new EnergyBar(); updateEnergyFromGame();
             actionCardTray = new CardTray();
-            
             for (battleships_ex.gdx.model.cards.ActionCard modelCard : gameController.getLocalPlayer().getCards()) {
-                String name = "";
-                String shortDesc = "";
-                String longDesc = "";
-                TextureRegion icon = Assets.ships.shipPatrol2h; // Default
-
+                String name = ""; String shortDesc = ""; String longDesc = ""; TextureRegion icon = Assets.ships.shipPatrol2h;
                 if (modelCard instanceof battleships_ex.gdx.model.cards.SonarCard) {
-                    name = "SONAR";
-                    shortDesc = "Reveal adjacency";
-                    longDesc = "Reveal number of ships/mines in adjacent tiles. Costs 2 energy. 2 uses.";
-                    icon = Assets.shipWithSight;
+                    name = "SONAR"; shortDesc = "Adjacency"; longDesc = "Scan 3x3 on a HIT tile. Costs 2. 2 uses."; icon = Assets.shipWithSight;
                 } else if (modelCard instanceof battleships_ex.gdx.model.cards.BombCard) {
-                    name = "BOMB";
-                    shortDesc = "2x2 Blast";
-                    longDesc = "Shoot a 2x2 area on the opponent's board. Costs 3 energy. 2 uses.";
-                    icon = Assets.logoWithShip;
+                    name = "BOMB"; shortDesc = "2x2 Blast"; longDesc = "Shoot 2x2 area. Costs 3. 2 uses."; icon = Assets.logoWithShip;
                 } else if (modelCard instanceof battleships_ex.gdx.model.cards.MineCard) {
-                    name = "MINE";
-                    shortDesc = "Defensive Trap";
-                    longDesc = "Place a mine on your own board. Triggers random shots if hit. Costs 1 energy. 3 uses.";
-                    icon = Assets.ships.shipSubmarine3h;
+                    name = "MINE"; shortDesc = "Defensive"; longDesc = "Place on own board. Costs 1. 3 uses."; icon = Assets.ships.shipSubmarine3h;
                 } else if (modelCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
-                    name = "AIRSTRIKE";
-                    shortDesc = "Row/Col Clear";
-                    longDesc = "Shoot an entire row or column. Costs 4 energy. 1 use.";
-                    icon = Assets.ships.shipCarrier5h;
+                    name = "AIRSTRIKE"; shortDesc = "Row/Col"; longDesc = "Clear row or column. Costs 4. 1 use."; icon = Assets.ships.shipCarrier5h;
                 }
-
-                ActionCardPresentation presentation = new ActionCardPresentationBase(
-                    name, shortDesc, longDesc, icon, 
-                    ((battleships_ex.gdx.model.cards.BaseActionCard)modelCard).getRemainingUses()
-                );
-                
-                actionCardTray.addCard(bindCard(name, presentation, modelCard));
+                ActionCardPresentation pres = new ActionCardPresentationBase(name, shortDesc, longDesc, icon, ((battleships_ex.gdx.model.cards.BaseActionCard)modelCard).getRemainingUses());
+                actionCardTray.addCard(bindCard(name, pres, modelCard));
             }
-
             actionsPanel.add(energyBar).left().padBottom(6f).row();
-            actionsPanel.add(actionCardsLabel).left().padBottom(12f).row();
+            actionsPanel.add(new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY))).left().padBottom(12f).row();
             actionsPanel.add(actionCardTray).growX().height(95f).padBottom(12f).row();
         }
 
-        // --- Standard Action Buttons ---
-        fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 60f), () -> {
+        String fireText = targetingMode ? "ACTIVATE" : "FIRE";
+        fireButton = new GameButton(fireText, ButtonConfig.primary(contentWidth, 60f), () -> {
             if (fireButton.isDisabled()) return;
-            if (targetCoord != null) {
-                battleships_ex.gdx.state.GameStateManager.getInstance().fireShot(targetCoord.getRow(), targetCoord.getCol());
-                targetCoord = null;
-                boardActor.clearPreviewCell();
-                updateFireButtonState();
-            }
-        });
-
-        confirmCardButton = new GameButton("CONFIRM ACTION", ButtonConfig.primary(contentWidth, 60f), () -> {
-            if (pendingCard != null && targetCoord != null) {
+            if (targetingMode && pendingCard != null && targetCoord != null) {
                 gameController.playActionCard(pendingCard, targetCoord);
-                pendingCard = null;
-                targetingMode = false;
-                boardActor.clearPreviewCell();
-                rebuildUI();
+                pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); rebuildUI();
+            } else if (targetCoord != null) {
+                GameStateManager.getInstance().fireShot(targetCoord.getRow(), targetCoord.getCol());
+                targetCoord = null; boardActor.clearPreviewCell(); updateFireButtonState();
             }
         });
 
@@ -413,180 +236,112 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         });
 
         GameButton cancelCardButton = new GameButton("CANCEL", ButtonConfig.secondary(contentWidth, 50f), () -> {
-            pendingCard = null;
-            targetingMode = false;
-            boardActor.clearPreviewCell();
-            // Reset to enemy waters if it was mine placement
-            currentMode = ViewMode.ENEMY_WATERS;
-            rebuildUI();
+            pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); currentMode = ViewMode.ENEMY_WATERS; rebuildUI();
         });
 
         if (targetingMode) {
-            if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
-                actionsPanel.add(rotateCardButton).center().padBottom(10).row();
-            }
-            actionsPanel.add(confirmCardButton).center().padBottom(10).row();
+            if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) actionsPanel.add(rotateCardButton).center().padBottom(10).row();
+            actionsPanel.add(fireButton).center().padBottom(10).row();
             actionsPanel.add(cancelCardButton).center().row();
         } else {
             actionsPanel.add(fireButton).center().row();
         }
 
-        // --- Root Assembly ---
-        root.defaults().growX();
+        String gridTitle = (currentMode == ViewMode.OWN_FLEET) ? "DEFENSIVE GRID" : "TACTICAL GRID";
+        if (targetingMode) {
+            if (pendingCard instanceof battleships_ex.gdx.model.cards.SonarCard) gridTitle = "SELECT TILE TO SCAN (MUST BE HIT)";
+            else if (pendingCard instanceof battleships_ex.gdx.model.cards.BombCard) gridTitle = "SELECT 2x2 AREA (TOP-LEFT)";
+            else if (pendingCard instanceof battleships_ex.gdx.model.cards.MineCard) gridTitle = "PLACE MINE ON OWN WATERS";
+            else if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) gridTitle = "SELECT ROW/COLUMN";
+        }
+        tacGridLabel = new Label(gridTitle, new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
+
         root.add(topArea).height(48f).row();
         root.add(switchInner).width(contentWidth).height(56f).padTop(12f).center().row();
-
         Table boardContainer = new Table();
         boardContainer.add(tacGridLabel).left().padTop(5).padBottom(5).row();
         boardContainer.add(boardActor).size(boardConfig.size).center().row();
-
         root.add(boardContainer).expandY().padTop(10f).row();
         root.add(actionsPanel).padBottom(12f).row();
-        if (exMode) {
-            updateActionCardAvailability();
-        }
+        if (GameStateManager.getInstance().isExModeEnabled()) updateActionCardAvailability();
         updateFireButtonState();
     }
 
-    @Override
-    public void render(float delta) {
-        ScreenUtils.clear(0f, 0f, 0f, 1f);
-        stage.act(delta);
-        stage.draw();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true);
-    }
-
-    @Override
-    public void dispose() {
-        stage.dispose();
-    }
-
     private void setTarget(Coordinate coord) {
-        if (!battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn()) return;
-
-        if (targetingMode && pendingCard != null) {
-            gameController.playActionCard(pendingCard, coord);
-            targetingMode = false;
-            pendingCard = null;
-            boardActor.clearPreviewCell();
-            return;
-        }
-
+        if (!GameStateManager.getInstance().isMyTurn()) return;
         this.targetCoord = coord;
-        
-        // Visual feedback for area cards
         if (targetingMode && pendingCard != null) {
             List<Coordinate> area = new ArrayList<>();
             if (pendingCard instanceof battleships_ex.gdx.model.cards.BombCard) {
-                area.add(coord);
-                area.add(new Coordinate(coord.getRow() + 1, coord.getCol()));
-                area.add(new Coordinate(coord.getRow(), coord.getCol() + 1));
-                area.add(new Coordinate(coord.getRow() + 1, coord.getCol() + 1));
+                for (int r = coord.getRow(); r <= coord.getRow() + 1; r++)
+                    for (int c = coord.getCol(); c <= coord.getCol() + 1; c++)
+                        if (r < 10 && c < 10) area.add(new Coordinate(r, c));
             } else if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
                 battleships_ex.gdx.model.cards.AirstrikeCard ac = (battleships_ex.gdx.model.cards.AirstrikeCard) pendingCard;
-                if (ac.getOrientation() == battleships_ex.gdx.model.cards.AirstrikeCard.Orientation.ROW) {
-                    for (int i = 0; i < 10; i++) {
-                        area.add(new Coordinate(coord.getRow(), i));
-                    }
-                } else {
-                    for (int i = 0; i < 10; i++) {
-                        area.add(new Coordinate(i, coord.getCol()));
-                    }
-                }
-            } else {
-                area.add(coord);
-            }
+                if (ac.getOrientation() == battleships_ex.gdx.model.cards.AirstrikeCard.Orientation.ROW)
+                    for (int i = 0; i < 10; i++) area.add(new Coordinate(coord.getRow(), i));
+                else
+                    for (int i = 0; i < 10; i++) area.add(new Coordinate(i, coord.getCol()));
+            } else { area.add(coord); }
             boardActor.setPreviewCells(area);
-        } else {
-            boardActor.setPreviewCell(coord);
-        }
-        
+        } else { boardActor.setPreviewCell(coord); }
         gameController.updatePreview(coord);
         updateFireButtonState();
     }
 
     private void updateFireButtonState() {
         if (fireButton == null) return;
-        boolean myTurn = battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn();
+        boolean myTurn = GameStateManager.getInstance().isMyTurn();
         boolean validTarget = targetCoord != null;
-
-        if (validTarget) {
-            // Check if already hit
-            // "Disable the "FIRE" button if the selected tile has already been targeted previously."
+        if (validTarget && !targetingMode) {
             Player opponent = gameController.getRemotePlayer();
-            if (opponent != null) {
-                // If cell is already hit, validTarget becomes false
-                if (opponent.getBoard().getCell(targetCoord).isHit()) {
-                    validTarget = false;
-                }
-            }
+            if (opponent != null && opponent.getBoard().getCell(targetCoord).isHit()) validTarget = false;
+            if (currentMode == ViewMode.OWN_FLEET) validTarget = false;
         }
-
-        fireButton.setDisabled(!myTurn || !validTarget || currentMode != ViewMode.ENEMY_WATERS);
+        if (validTarget && targetingMode && pendingCard instanceof battleships_ex.gdx.model.cards.SonarCard) {
+            Board targetBoard = gameController.getRemotePlayer().getBoard();
+            if (!targetBoard.getCell(targetCoord).isHit()) validTarget = false;
+        }
+        fireButton.setDisabled(!myTurn || !validTarget);
     }
 
-    private ActionCard bindCard(String name, ActionCardPresentation presentation,
-                                battleships_ex.gdx.model.cards.ActionCard modelCard) {
-
-        ActionCard uiCard = new ActionCard(
-            new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, name)
-        );
-        uiCard.bind(presentation);
-
-        // Attach the REAL gameplay card to UI card
-        uiCard.setModelCard(modelCard);
-
-        // Add click listener
-        uiCard.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
-                if (uiCard.isDisabled()) {
-                    // Even when disabled, allow info popup
-                    uiCard.showInfoPopup(stage);
-                    return;
-                }
-                if (getTapCount() >= 2) {
-                    // Double-tap = show info
-                    uiCard.showInfoPopup(stage);
-                } else {
-                    // Single tap = play card
+    private ActionCard bindCard(String name, ActionCardPresentation presentation, battleships_ex.gdx.model.cards.ActionCard modelCard) {
+        ActionCard uiCard = new ActionCard(new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, name));
+        uiCard.setModelCard(modelCard); uiCard.bind(presentation);
+        uiCard.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                if (uiCard.isDisabled()) { if (getTapCount() >= 2) uiCard.showInfoPopup(stage); return; }
+                if (getTapCount() >= 2) uiCard.showInfoPopup(stage);
+                else {
                     if (targetingMode && pendingCard == modelCard && modelCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
-                        // Toggle orientation if clicking same card in targeting mode
                         ((battleships_ex.gdx.model.cards.AirstrikeCard) modelCard).toggleOrientation();
-                        if (targetCoord != null) setTarget(targetCoord); // Refresh preview
+                        if (targetCoord != null) setTarget(targetCoord);
                     } else {
                         gameController.playActionCard(modelCard);
-                        updateEnergyFromGame();
-                        updateActionCardAvailability();
+                        updateEnergyFromGame(); updateActionCardAvailability();
                     }
                 }
             }
         });
-
-        actionCards.add(uiCard);
-        return uiCard;
+        actionCards.add(uiCard); return uiCard;
     }
+
     private void updateActionCardAvailability() {
-        boolean myTurn = battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn();
+        boolean myTurn = GameStateManager.getInstance().isMyTurn();
         Player localPlayer = gameController.getLocalPlayer();
         int energy = localPlayer.getEnergy();
-
         for (ActionCard card : actionCards) {
             battleships_ex.gdx.model.cards.ActionCard modelCard = card.getModelCard();
             if (modelCard == null) continue;
-
-            boolean hasEnergy = energy >= modelCard.getEnergyCost();
-            boolean hasCharges = true;
-            if (modelCard instanceof battleships_ex.gdx.model.cards.BaseActionCard) {
-                hasCharges = ((battleships_ex.gdx.model.cards.BaseActionCard) modelCard).getRemainingUses() > 0;
-            }
-
-            boolean usable = myTurn && hasEnergy && hasCharges;
+            boolean usable = myTurn && energy >= modelCard.getEnergyCost();
+            if (modelCard instanceof battleships_ex.gdx.model.cards.BaseActionCard)
+                if (((battleships_ex.gdx.model.cards.BaseActionCard) modelCard).getRemainingUses() <= 0) usable = false;
             card.setDisabled(!usable);
         }
     }
+
+    @Override public void render(float delta) { ScreenUtils.clear(0f, 0f, 0f, 1f); stage.act(delta); stage.draw(); }
+    @Override public void resize(int width, int height) { stage.getViewport().update(width, height, true); }
+    @Override public void hide() { GameStateManager.getInstance().setStateListener(null); }
+    @Override public void dispose() { stage.dispose(); if (boardActor != null) boardActor.dispose(); }
 }

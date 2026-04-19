@@ -17,10 +17,15 @@ import java.util.TimerTask;
 public class DesktopRestLobbyDataSource implements LobbyDataSource {
 
     private final String baseUrl = "https://battleshipsex-8968a-default-rtdb.europe-west1.firebasedatabase.app/rooms";
+    private final String idToken;
     private Timer pollTimer;
 
+    public DesktopRestLobbyDataSource(String idToken) {
+        this.idToken = idToken;
+    }
+
     private String buildUrl(String roomCode) {
-        return baseUrl + "/" + roomCode + ".json";
+        return baseUrl + "/" + roomCode + ".json?auth=" + idToken;
     }
 
     @Override
@@ -83,8 +88,6 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
 
     @Override
     public void leaveLobby(String roomCode, String playerId, DataCallback<Void> callback) {
-        // Simple implementation: just delete the room if host leaves, or clear guest
-        // For brevity in stub, we can just no-op or do a DELETE
     }
 
     @Override

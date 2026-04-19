@@ -23,18 +23,14 @@ public class StandardRulesEngine implements RulesEngine {
             return PlacementResult.failure(PlacementResult.Reason.OUT_OF_BOUNDS);
         }
 
-        // ---- Boundary check (fast, no cell reads) -----------------------
         int length = ship.getLength();
         int endRow = orientation == Orientation.VERTICAL   ? start.getRow() + length - 1 : start.getRow();
         int endCol = orientation == Orientation.HORIZONTAL ? start.getCol() + length - 1 : start.getCol();
 
-        Coordinate end = new Coordinate(endRow, endCol);
-
-        if (!board.isWithinBounds(start) || !board.isWithinBounds(end)) {
+        if (!board.isWithinBounds(start) || !board.isWithinBounds(endRow, endCol)) {
             return PlacementResult.failure(PlacementResult.Reason.OUT_OF_BOUNDS);
         }
 
-        // ---- Overlap check via Board#canPlaceShip -----------------------
         if (!board.canPlaceShip(ship, start, orientation)) {
             return PlacementResult.failure(PlacementResult.Reason.OVERLAPS_SHIP);
         }
@@ -42,14 +38,8 @@ public class StandardRulesEngine implements RulesEngine {
         return PlacementResult.success();
     }
 
-    public PlacementResult validatePlacement(Board board, int size, int startX, int startY, boolean horizontal) {
-        return null;
-    }
-
     @Override
     public ShotResult resolveShot(Board board, Coordinate target) {
-        // This is the standard shot resolution. Action cards might use shootTile instead.
-        // We can refactor this to use common logic if needed.
         return shootTileInternal(null, board, target);
     }
 
@@ -63,42 +53,28 @@ public class StandardRulesEngine implements RulesEngine {
 
     private ShotResult shootTileInternal(Player opponent, Board board, Coordinate coord) {
         if (!board.isWithinBounds(coord)) {
-            return ShotResult.miss(coord); // Or handle error
+            return ShotResult.miss(coord);
         }
 
-        // Check shield
         if (opponent != null && opponent.hasShield()) {
             opponent.consumeShield();
             return ShotResult.blocked(coord);
         }
 
-        // Check already hit
         if (board.getCell(coord).isHit()) {
             return ShotResult.alreadyShot(coord);
         }
 
-        // Check mine
+        // --- Mine Logic ---
         if (board.hasMine(coord)) {
             board.removeMine(coord);
-            board.attack(coord); // Mark as hit
-            // Trigger detonation: 2 random shots at the attacker
-            // Wait, who is the attacker? We need the user player.
-            // In this architecture, 'opponent' is the one being shot.
-            // The detonation hits the 'user' (the one who triggered the mine).
-            // But shootTile only takes 'opponent'.
-            // The plan says: "effects.triggerRandomShots(opponent, 2)" in RulesEngine.shootTile logic.
-            // But wait, if Player A shoots Player B's mine, Player A should be hit.
-            // triggerRandomShots(opponent, 2) would hit Player B again? That's wrong.
-            // "Execute 2 random shots at attacker's board"
-            // We might need to pass the attacker to shootTile or handle detonation differently.
+            board.attack(coord); // Mark tile as hit
             
-            // For now, let's assume triggerRandomShots targets the current player if called from here,
-            // or we need to rethink the interface.
-            // Actually, the ActionCardEffect is used by cards.
-            // If a card shoots a mine, the card user gets hit.
-            
-            // Let's implement triggerRandomShots first.
-            return ShotResult.mineHit(coord, null); // Detonation results handled by caller or GameController
+            // Note: The counter-shots (triggerRandomShots) must be triggered by the caller (GameController)
+            // because the RulesEngine here doesn't have access to the attacker's board directly 
+            // to return a recursive ShotResult easily without more architecture changes.
+            // We'll return MINE_HIT and let GameController handle the 2 random shots back at the attacker.
+            return ShotResult.mineHit(coord, null);
         }
 
         AttackResult result = board.attack(coord);
@@ -106,20 +82,16 @@ public class StandardRulesEngine implements RulesEngine {
         switch (result) {
             case MISS:
                 return ShotResult.miss(coord);
-
             case HIT: {
                 Ship hitShip = board.getCell(coord).getShip();
                 return ShotResult.hit(coord, hitShip);
             }
-
             case SUNK: {
                 Ship sunkShip = board.getCell(coord).getShip();
                 return ShotResult.sunk(coord, sunkShip);
             }
-
             case ALREADY_HIT:
                 return ShotResult.alreadyShot(coord);
-
             default:
                 return ShotResult.miss(coord);
         }
@@ -140,6 +112,7 @@ public class StandardRulesEngine implements RulesEngine {
     public TileInfo revealTileInfo(Player opponent, Coordinate coord) {
         Board board = opponent.getBoard();
         board.markScanned(coord);
+        
         if (board.hasMine(coord)) return TileInfo.MINE;
         if (board.getCell(coord).hasShip()) return TileInfo.SHIP;
         return TileInfo.EMPTY;
@@ -176,7 +149,6 @@ public class StandardRulesEngine implements RulesEngine {
             case UNOCCUPIED:
                 return opponent.getBoard().getUnoccupiedTiles();
             case EMPTY:
-                // EMPTY in the plan means: no ship, no mine, no shot
                 List<Coordinate> empty = new ArrayList<>();
                 Board board = opponent.getBoard();
                 for (Coordinate coord : board.getUnhitTiles()) {

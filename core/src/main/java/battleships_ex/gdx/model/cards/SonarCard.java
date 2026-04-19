@@ -18,9 +18,14 @@ public class SonarCard extends BaseActionCard {
         if (target == null) throw new IllegalArgumentException("Target required for Sonar");
         if (!canUse(user, opponent)) return ActionCardResult.noEffect(cardName);
 
+        // Rule: Only pick already hit tiles
+        if (!opponent.getBoard().getCell(target).isHit()) {
+            return ActionCardResult.noEffect(cardName);
+        }
+
         ActionCardEffect effects = ActionCardEffectProvider.getInstance().getEffects();
         
-        // Mark as scanned and get info
+        // Mark as scanned and get info (RulesEngine handles the 3x3 counting and storage)
         effects.revealTileInfo(opponent, target);
         int adjCount = opponent.getBoard().countAdjacentOccupancy(target);
 

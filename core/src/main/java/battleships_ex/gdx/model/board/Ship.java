@@ -3,99 +3,74 @@ package battleships_ex.gdx.model.board;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.HashSet;
 
 import battleships_ex.gdx.config.board.Orientation;
 import battleships_ex.gdx.config.board.ShipType;
 
 public class Ship {
     private final ShipType type;
-    private Orientation orientation;
+    private final Orientation orientation;
+    private boolean placed;
     private Set<Coordinate> occupiedCoordinates;
-    private final Set<Coordinate> hitCoordinates;
+    private final Set<Coordinate> hits;
 
     public Ship(ShipType type, Orientation orientation) {
-        if (type == null) {
-            throw new IllegalArgumentException("Ship type must not be null.");
-        }
-        if (orientation == null) {
-            throw new IllegalArgumentException("Orientation must not be null.");
-        }
         this.type = type;
         this.orientation = orientation;
+        this.placed = false;
         this.occupiedCoordinates = new LinkedHashSet<>();
-        this.hitCoordinates = new LinkedHashSet<>();
+        this.hits = new HashSet<>();
     }
+
     public ShipType getType() {
         return type;
-    }
-
-    public String getName() {
-        return type.getDisplayName();
-    }
-
-    public int getLength() {
-        return type.getLength();
     }
 
     public Orientation getOrientation() {
         return orientation;
     }
 
-    public void setOrientation(Orientation orientation) {
-        if (orientation == null) {
-            throw new IllegalArgumentException("Orientation must not be null.");
-        }
-        this.orientation = orientation;
+    public int getLength() {
+        return type.getLength();
     }
 
     public boolean isPlaced() {
-        return !occupiedCoordinates.isEmpty();
+        return placed;
     }
 
-    public void place(Set<Coordinate> coordinates) {
-        if (coordinates == null) {
-            throw new IllegalArgumentException("Coordinates must not be null.");
-        }
-        if (isPlaced()) {
-            throw new IllegalStateException("Ship has already been placed.");
-        }
-        if (coordinates.size() != getLength()) {
-            throw new IllegalArgumentException(
-                "Ship of type " + getName() + " must occupy exactly " + getLength() + " coordinates."
-            );
-        }
-        if (coordinates.contains(null)) {
-            throw new IllegalArgumentException("Coordinates must not contain null.");
-        }
-
-        this.occupiedCoordinates = new LinkedHashSet<>(coordinates);
-    }
-
-    public void unplace() {
-        this.occupiedCoordinates.clear();
-        this.hitCoordinates.clear();
+    public void setPlaced(boolean placed) {
+        this.placed = placed;
     }
 
     public Set<Coordinate> getOccupiedCoordinates() {
         return Collections.unmodifiableSet(occupiedCoordinates);
     }
 
-    public boolean occupies(Coordinate coordinate) {
-        return occupiedCoordinates.contains(coordinate);
+    public void setOccupiedCoordinates(Set<Coordinate> occupiedCoordinates) {
+        this.occupiedCoordinates = new LinkedHashSet<>(occupiedCoordinates);
+    }
+
+    public void place(Set<Coordinate> coordinates) {
+        this.occupiedCoordinates = new LinkedHashSet<>(coordinates);
+        this.placed = true;
     }
 
     public void registerHit(Coordinate coordinate) {
-        if (coordinate == null) {
-            throw new IllegalArgumentException("Coordinate must not be null.");
+        if (!occupiedCoordinates.contains(coordinate)) {
+            throw new IllegalArgumentException("Coordinate " + coordinate + " is not occupied by this ship.");
         }
-        if (!occupies(coordinate)) {
-            throw new IllegalArgumentException("Ship does not occupy coordinate " + coordinate);
-        }
-
-        hitCoordinates.add(coordinate);
+        hits.add(coordinate);
     }
 
     public boolean isSunk() {
-        return isPlaced() && hitCoordinates.size() == occupiedCoordinates.size();
+        if (!placed || occupiedCoordinates.isEmpty()) {
+            return false;
+        }
+        return hits.size() >= occupiedCoordinates.size();
+    }
+
+    public Set<Coordinate> getHits() {
+        return Collections.unmodifiableSet(hits);
     }
 }

@@ -56,6 +56,7 @@ public class AirstrikeCard extends BaseActionCard {
 
         boolean anySunk = results.stream().anyMatch(ShotResult::isSunk);
         boolean anyHit = results.stream().anyMatch(ShotResult::isShipHit);
+        boolean anyMine = results.stream().anyMatch(ShotResult::isMineHit);
 
         List<Coordinate> affected = new ArrayList<>();
         for (ShotResult sr : results) {
@@ -64,7 +65,10 @@ public class AirstrikeCard extends BaseActionCard {
 
         if (anySunk) return ActionCardResult.sunk(cardName, affected);
         if (anyHit) return ActionCardResult.hit(cardName, affected);
-        return ActionCardResult.revealed(cardName, affected);
+        
+        ActionCardResult res = ActionCardResult.revealed(cardName, affected);
+        if (anyMine) res.setMetadata("mineHit", true);
+        return res;
     }
 
     @Override
