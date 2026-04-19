@@ -72,10 +72,11 @@ public class Board {
             return false;
         }
 
-        return coordinate.getRow() >= 0
-            && coordinate.getRow() < height
-            && coordinate.getCol() >= 0
-            && coordinate.getCol() < width;
+        return isWithinBounds(coordinate.getRow(), coordinate.getCol());
+    }
+
+    public boolean isWithinBounds(int row, int col) {
+        return row >= 0 && row < height && col >= 0 && col < width;
     }
 
     public List<Ship> getShips() {
@@ -268,9 +269,8 @@ public class Board {
         for (int r = center.getRow() - 1; r <= center.getRow() + 1; r++) {
             for (int c = center.getCol() - 1; c <= center.getCol() + 1; c++) {
                 if (r == center.getRow() && c == center.getCol()) continue;
-                Coordinate adj = new Coordinate(r, c);
-                if (isWithinBounds(adj)) {
-                    adjacent.add(adj);
+                if (isWithinBounds(r, c)) {
+                    adjacent.add(new Coordinate(r, c));
                 }
             }
         }
