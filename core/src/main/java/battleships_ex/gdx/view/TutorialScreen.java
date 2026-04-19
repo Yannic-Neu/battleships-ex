@@ -29,6 +29,7 @@ public class TutorialScreen extends ScreenAdapter {
 
     private Image currentImage;
     private Label paginationLabel;
+    private GameButton nextBtn;
 
     public TutorialScreen(MyGame game, Screen previousScreen) {
         this.game = game;
@@ -73,8 +74,8 @@ public class TutorialScreen extends ScreenAdapter {
         footer.setBackground(Theme.darkBluePanel);
         footer.pad(10);
 
-        GameButton prevBtn = new GameButton("<", ButtonConfig.secondary(60, 60), this::previousPage);
-        GameButton nextBtn = new GameButton(">", ButtonConfig.secondary(60, 60), this::nextPage);
+        GameButton prevBtn = new GameButton("<", ButtonConfig.secondary(80, 60), this::previousPage);
+        nextBtn = new GameButton(">", ButtonConfig.secondary(80, 60), this::nextPage);
 
         paginationLabel = new Label("", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
         updatePaginationLabel();
@@ -113,8 +114,14 @@ public class TutorialScreen extends ScreenAdapter {
     private void updatePaginationLabel() {
         if (screenshots.size > 0) {
             paginationLabel.setText((currentIndex + 1) + " / " + screenshots.size);
+            if (currentIndex == screenshots.size - 1) {
+                nextBtn.setText("BACK");
+            } else {
+                nextBtn.setText(">");
+            }
         } else {
             paginationLabel.setText("0 / 0");
+            nextBtn.setText("BACK");
         }
     }
 
@@ -123,6 +130,8 @@ public class TutorialScreen extends ScreenAdapter {
             currentIndex++;
             updateScreenshot();
             updatePaginationLabel();
+        } else {
+            game.setScreen(previousScreen);
         }
     }
 
