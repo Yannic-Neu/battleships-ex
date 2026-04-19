@@ -65,7 +65,7 @@ public class MenuScreen extends ScreenAdapter {
         });
 
         GameButton tutorialButton = new GameButton("TUTORIAL", secondaryButton, () ->
-            System.out.println("Tutorial clicked"));
+            game.setScreen(new TutorialScreen(game, this)));
 
         GameButton settingsButton = new GameButton("SETTINGS", navButton, () ->
             game.setScreen(new SettingsScreen(game, this)));
