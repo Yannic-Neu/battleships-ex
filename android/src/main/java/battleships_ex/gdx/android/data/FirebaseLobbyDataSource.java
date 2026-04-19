@@ -215,6 +215,14 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
                 Boolean exModeObj = snapshot.child(FIELD_EX_MODE).getValue(Boolean.class);
                 boolean exModeEnabled = exModeObj == null || exModeObj;
 
+                java.util.List<String> selectedCardNames = new java.util.ArrayList<>();
+                DataSnapshot cardsSnapshot = snapshot.child("selectedCardNames");
+                if (cardsSnapshot.exists()) {
+                    for (DataSnapshot child : cardsSnapshot.getChildren()) {
+                        selectedCardNames.add(child.getValue(String.class));
+                    }
+                }
+
                 // Null-safe fallback for name fields — handles entries written
                 // before names were added to the DB schema.
                 if (hostName  == null) hostName  = "";
@@ -226,7 +234,8 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
                     guestId,  guestName,
                     status,
                     guestReady,
-                    exModeEnabled
+                    exModeEnabled,
+                    selectedCardNames
                 ));
             }
 
@@ -265,7 +274,15 @@ public class FirebaseLobbyDataSource implements LobbyDataSource {
     @Override
     public void setExMode(String roomCode, boolean enabled, DataCallback<Void> callback) {
         roomsRef.child(roomCode).child(FIELD_EX_MODE).setValue(enabled)
-            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    @Override
+    public void setSelectedCards(String roomCode, java.util.List<String> cardNames, DataCallback<Void> callback) {
+        roomsRef.child(roomCode).child("selectedCardNames").setValue(cardNames)
+            .addOnSuccessListener(aVoid -> callback.onSuccess(null))
             .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 }
+

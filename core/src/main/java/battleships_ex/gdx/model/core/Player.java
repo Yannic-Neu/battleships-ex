@@ -51,6 +51,10 @@ public class Player {
         cards.add(card);
     }
 
+    public void clearCards() {
+        cards.clear();
+    }
+
     public void removeCard(ActionCard card) {
         cards.remove(card);
     }

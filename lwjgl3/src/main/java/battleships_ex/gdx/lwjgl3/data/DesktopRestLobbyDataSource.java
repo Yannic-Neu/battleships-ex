@@ -164,6 +164,14 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                     return;
                 }
 
+                JsonValue selectedCardsJson = snapshot.get("selectedCardNames");
+                java.util.List<String> selectedCards = new java.util.ArrayList<>();
+                if (selectedCardsJson != null && selectedCardsJson.isArray()) {
+                    for (JsonValue card : selectedCardsJson) {
+                        selectedCards.add(card.asString());
+                    }
+                }
+
                 LobbySnapshot data = new LobbySnapshot(
                     roomCode,
                     snapshot.getString("hostPlayerId", ""),
@@ -172,7 +180,8 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                     snapshot.getString("guestPlayerName", null),
                     snapshot.getString("status", "waiting"),
                     snapshot.getBoolean("guestReady", false),
-                    snapshot.getBoolean("exModeEnabled", true)
+                    snapshot.getBoolean("exModeEnabled", true),
+                    selectedCards
                 );
 
                 Gdx.app.postRunnable(() -> callback.onSuccess(data));
@@ -269,6 +278,41 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                     Gdx.app.postRunnable(() -> callback.onSuccess(null));
                 } else {
                     Gdx.app.postRunnable(() -> callback.onFailure("Failed to set EX mode."));
+                }
+            } catch (Exception e) {
+                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
+            }
+        }).start();
+    }
+
+    @Override
+    public void setSelectedCards(String roomCode, java.util.List<String> cardNames, DataCallback<Void> callback) {
+        new Thread(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                StringBuilder cardsJson = new StringBuilder("[");
+                for (int i = 0; i < cardNames.size(); i++) {
+                    cardsJson.append("\"").append(cardNames.get(i)).append("\"");
+                    if (i < cardNames.size() - 1) cardsJson.append(",");
+                }
+                cardsJson.append("]");
+
+                String payload = String.format(Locale.ROOT, "{\"selectedCardNames\":%s}", cardsJson.toString());
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(payload.getBytes(StandardCharsets.UTF_8));
+                }
+
+                if (conn.getResponseCode() == 200) {
+                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
+                } else {
+                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to set selected cards."));
                 }
             } catch (Exception e) {
                 Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));

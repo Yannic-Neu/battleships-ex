@@ -17,6 +17,7 @@ public class Lobby {
     private final long id;
     private final String roomCode;
     private final List<Player> players;
+    private final List<String> selectedCardNames = new ArrayList<>();
 
     public Lobby(long id, String roomCode) {
         this.id = id;
@@ -30,6 +31,17 @@ public class Lobby {
 
     public String getRoomCode() {
         return roomCode;
+    }
+
+    public void setSelectedCards(List<String> cards) {
+        this.selectedCardNames.clear();
+        if (cards != null) {
+            this.selectedCardNames.addAll(cards);
+        }
+    }
+
+    public List<String> getSelectedCards() {
+        return Collections.unmodifiableList(selectedCardNames);
     }
 
     public List<Player> getPlayers() {

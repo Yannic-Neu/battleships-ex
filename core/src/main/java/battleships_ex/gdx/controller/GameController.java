@@ -61,17 +61,36 @@ public class GameController {
      * @param remote   the remote player
      * @param roomCode the active room code for Firebase sync
      */
-    public void initSession(Player local, Player remote, String roomCode, boolean localIsPlayer1) {
+    public void initSession(Player local, Player remote, String roomCode, boolean localIsPlayer1, java.util.List<String> selectedCardNames) {
         System.out.println("[GameController] LOG: Initializing session. localIsPlayer1: " + localIsPlayer1);
         this.localPlayer  = local;
         this.remotePlayer = remote;
         this.roomCode     = roomCode;
 
         if (localIsPlayer1) {
-            this.session = new GameSession(local, remote);
+            this.session = new battleships_ex.gdx.model.core.GameSession(local, remote);
         } else {
-            this.session = new GameSession(remote, local);
+            this.session = new battleships_ex.gdx.model.core.GameSession(remote, local);
         }
+
+        // Initialize action cards if provided
+        if (selectedCardNames != null && !selectedCardNames.isEmpty()) {
+            local.clearCards(); // Clear any default cards
+            for (String cardName : selectedCardNames) {
+                try {
+                    local.addCard(battleships_ex.gdx.model.cards.ActionCardRegistry.createCard(cardName));
+                } catch (UnsupportedOperationException e) {
+                    System.err.println("[GameController] Card not yet implemented: " + cardName);
+                }
+            }
+        }
+    }
+
+    /**
+     * Legacy/Backward-compatible overload
+     */
+    public void initSession(Player local, Player remote, String roomCode, boolean localIsPlayer1) {
+        initSession(local, remote, roomCode, localIsPlayer1, java.util.Collections.emptyList());
     }
 
     /**
