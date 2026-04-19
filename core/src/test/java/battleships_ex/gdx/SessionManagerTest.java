@@ -133,6 +133,31 @@ class SessionManagerTest {
         }
 
         @Override
+        public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
+            callback.onSuccess(null);
+        }
+
+        @Override
+        public void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
+            // No-op
+        }
+
+        @Override
+        public void updateBoardLayout(String roomCode, String playerId, java.util.List<battleships_ex.gdx.data.ShipPlacement> ships, DataCallback<Void> callback) {
+            callback.onSuccess(null);
+        }
+
+        @Override
+        public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<java.util.List<battleships_ex.gdx.data.ShipPlacement>> callback) {
+            // No-op
+        }
+
+        @Override
+        public void removeBoardLayoutListener(String roomCode) {
+            // No-op for recording stub
+        }
+
+        @Override
         public void pushGameOver(String roomCode, String winnerName, DataCallback<Void> callback) {
             callback.onSuccess(null);
         }

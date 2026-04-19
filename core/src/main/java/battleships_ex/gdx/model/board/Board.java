@@ -15,6 +15,8 @@ public class Board {
     private final int height;
     private final Cell[][] grid;
     private final List<Ship> ships;
+    private final Set<Coordinate> mines = new java.util.HashSet<>();
+    private final Set<Coordinate> scannedTiles = new java.util.HashSet<>();
 
     /**
      * Default board size
@@ -204,6 +206,86 @@ public class Board {
     public boolean allShipsSunk() {
         if (ships.isEmpty()) return false;
         return ships.stream().allMatch(Ship::isSunk);
+    }
+
+    public void placeMine(Coordinate coord) {
+        validateCoordinate(coord);
+        mines.add(coord);
+    }
+
+    public boolean hasMine(Coordinate coord) {
+        return mines.contains(coord);
+    }
+
+    public void removeMine(Coordinate coord) {
+        mines.remove(coord);
+    }
+
+    public java.util.Set<Coordinate> getMines() {
+        return java.util.Collections.unmodifiableSet(mines);
+    }
+
+    public void markScanned(Coordinate coord) {
+        validateCoordinate(coord);
+        scannedTiles.add(coord);
+    }
+
+    public boolean hasBeenScanned(Coordinate coord) {
+        return scannedTiles.contains(coord);
+    }
+
+    public void clearScannedTiles() {
+        scannedTiles.clear();
+    }
+
+    public List<Coordinate> getUnhitTiles() {
+        List<Coordinate> unhit = new ArrayList<>();
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                if (!grid[row][col].isHit()) {
+                    unhit.add(grid[row][col].getCoordinate());
+                }
+            }
+        }
+        return unhit;
+    }
+
+    public List<Coordinate> getUnoccupiedTiles() {
+        List<Coordinate> unoccupied = new ArrayList<>();
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                Cell cell = grid[row][col];
+                if (!cell.hasShip() && !hasMine(cell.getCoordinate())) {
+                    unoccupied.add(cell.getCoordinate());
+                }
+            }
+        }
+        return unoccupied;
+    }
+
+    public List<Coordinate> getAdjacentTiles(Coordinate center) {
+        List<Coordinate> adjacent = new ArrayList<>();
+        for (int r = center.getRow() - 1; r <= center.getRow() + 1; r++) {
+            for (int c = center.getCol() - 1; c <= center.getCol() + 1; c++) {
+                if (r == center.getRow() && c == center.getCol()) continue;
+                Coordinate adj = new Coordinate(r, c);
+                if (isWithinBounds(adj)) {
+                    adjacent.add(adj);
+                }
+            }
+        }
+        return adjacent;
+    }
+
+    public int countAdjacentOccupancy(Coordinate center) {
+        int count = 0;
+        for (Coordinate adj : getAdjacentTiles(center)) {
+            Cell cell = getCell(adj);
+            if (cell.hasShip() || hasMine(adj)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private List<Coordinate> getPlacementCoordinates(Ship ship, Coordinate start, Orientation orientation) {

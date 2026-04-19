@@ -29,11 +29,11 @@ import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.ui.ActionCard;
 import battleships_ex.gdx.ui.cards.ActionCardPresentation;
-import battleships_ex.gdx.ui.cards.DoubleShotCardPresentation;
-import battleships_ex.gdx.ui.cards.EraseCardPresentation;
-import battleships_ex.gdx.ui.cards.ScanCardPresentation;
-import battleships_ex.gdx.ui.cards.ShieldCardPresentation;
-import battleships_ex.gdx.ui.cards.ParryCardPresentation;
+// import battleships_ex.gdx.ui.cards.DoubleShotCardPresentation;
+// import battleships_ex.gdx.ui.cards.EraseCardPresentation;
+// import battleships_ex.gdx.ui.cards.ScanCardPresentation;
+// import battleships_ex.gdx.ui.cards.ShieldCardPresentation;
+// import battleships_ex.gdx.ui.cards.ParryCardPresentation;
 import battleships_ex.gdx.config.ButtonConfig;
 import battleships_ex.gdx.config.GameConfig;
 import battleships_ex.gdx.data.Assets;
@@ -44,11 +44,11 @@ import battleships_ex.gdx.ui.ConfirmationDialog;
 import battleships_ex.gdx.ui.GameButton;
 import battleships_ex.gdx.ui.Theme;
 import battleships_ex.gdx.ui.EnergyBar;
-import battleships_ex.gdx.model.cards.ShieldCard;
-import battleships_ex.gdx.model.cards.ScanCard;
-import battleships_ex.gdx.model.cards.ParryCard;
-import battleships_ex.gdx.model.cards.EraseCard;
-import battleships_ex.gdx.model.cards.DoubleShotCard;
+// import battleships_ex.gdx.model.cards.ShieldCard;
+// import battleships_ex.gdx.model.cards.ScanCard;
+// import battleships_ex.gdx.model.cards.ParryCard;
+// import battleships_ex.gdx.model.cards.EraseCard;
+// import battleships_ex.gdx.model.cards.DoubleShotCard;
 
 
 public class BattleScreen extends ScreenAdapter implements GameStateListener {
@@ -292,6 +292,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             Label actionCardsLabel = new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
             actionCardTray = new CardTray();
+            /*
             TextureRegion iconA = Assets.ships.shipPatrol2h;
             TextureRegion iconB = Assets.ships.shipPatrol2h;
             TextureRegion iconC = Assets.ships.shipPatrol2h;
@@ -315,6 +316,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             actionCardTray.addCard(bindCard("PARRY",         m3, new ParryCard()));
             actionCardTray.addCard(bindCard("ERASE",         m4, new EraseCard()));
             actionCardTray.addCard(bindCard("SCAN",          m5, new ScanCard()));
+            */
 
             actionsPanel.add(energyBar).left().padBottom(6f).row();
             actionsPanel.add(actionCardsLabel).left().padBottom(12f).row();

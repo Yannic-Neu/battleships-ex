@@ -58,6 +58,9 @@ public class GameSession {
      */
     public Move processMove(Coordinate coordinate, ShotResult result) {
         requireStarted();
+        // requireNotOver(); // Removed because the move itself might make the game over, 
+                            // and board.attack() is called before this.
+                            // GameController should ensure no moves are sent after game is over.
 
         boolean hit = result.getOutcome() == ShotResult.Outcome.HIT || result.getOutcome() == ShotResult.Outcome.SUNK;
         Move move   = new Move(coordinate, hit);
