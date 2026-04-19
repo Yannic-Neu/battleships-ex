@@ -42,15 +42,23 @@ public class ActionCardRegistry {
 
     /**
      * Factory method to create a card instance by its name.
-     * Note: Card classes will be implemented in Chunk 3.
      * 
      * @param name the card name
      * @return a new instance of the requested card
      * @throws IllegalArgumentException if the name is unknown
      */
     public static ActionCard createCard(String name) {
-        // Implementation will be completed as cards are created in Chunk 3.
-        // For now, we return null or throw depending on how we want to handle the transition.
-        throw new UnsupportedOperationException("Card " + name + " not yet implemented.");
+        switch (name) {
+            case "Sonar":
+                return new SonarCard();
+            case "Bomb":
+                return new BombCard();
+            case "Mine":
+                return new MineCard();
+            case "Airstrike":
+                return new AirstrikeCard();
+            default:
+                throw new IllegalArgumentException("Unknown card: " + name);
+        }
     }
 }

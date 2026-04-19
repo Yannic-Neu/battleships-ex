@@ -91,6 +91,12 @@ public interface GameListener {
      */
     void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result);
 
+    /**
+     * A targeted action card was activated and requires the user to pick a target.
+     * @param card the card being played
+     */
+    default void onCardTargetRequested(battleships_ex.gdx.model.cards.ActionCard card) {}
+
     // ── Real-time session events (Issue #27) ────────────────────────
 
     /**

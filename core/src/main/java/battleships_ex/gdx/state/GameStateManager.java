@@ -265,11 +265,19 @@ public class GameStateManager {
                     stateListener.onOpponentPlacementReady(ready);
                 }
             }
+@Override
+public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
+    if (stateListener != null) {
+        stateListener.onActionCardPlayed(result);
+    }
+}
 
-            @Override
-            public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
-                if (stateListener != null) stateListener.onActionCardPlayed(result);
-            }
+@Override
+public void onCardTargetRequested(battleships_ex.gdx.model.cards.ActionCard card) {
+    if (stateListener != null) {
+        stateListener.onCardTargetRequested(card);
+    }
+}
 
             @Override
             public void onTurnChanged(String currentPlayerId) {

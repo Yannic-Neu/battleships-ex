@@ -374,15 +374,33 @@ public class GameController {
     }
 
     public void playActionCard(battleships_ex.gdx.model.cards.ActionCard card) {
+        playActionCard(card, null);
+    }
+
+    public void playActionCard(battleships_ex.gdx.model.cards.ActionCard card, Coordinate target) {
         if (!isSessionActive())   return;
         if (!isLocalPlayerTurn()) return;
 
-        battleships_ex.gdx.model.cards.ActionCardResult result = session.playActionCard(card);
+        // If card requires targeting but no target provided, ask UI
+        if (target == null && (card instanceof battleships_ex.gdx.model.cards.SonarCard || 
+                               card instanceof battleships_ex.gdx.model.cards.BombCard ||
+                               card instanceof battleships_ex.gdx.model.cards.MineCard ||
+                               card instanceof battleships_ex.gdx.model.cards.AirstrikeCard)) {
+            if (listener != null) listener.onCardTargetRequested(card);
+            return;
+        }
+
+        battleships_ex.gdx.model.cards.ActionCardResult result = session.playActionCard(card, target);
 
         if (listener != null) listener.onActionCardPlayed(result);
 
         // Reset inactivity timer on action
         sessionManager.resetInactivityTimer();
+
+        // Sync with backend if needed
+        // For now, moves from cards are not automatically synced as moves, 
+        // but the board state changes should be reflected.
+        // TODO: Implement card effect synchronization
 
         // Check win condition - some cards (e.g. Airstrike) can sink ships
         if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK

@@ -29,6 +29,7 @@ import battleships_ex.gdx.MyGame;
 import battleships_ex.gdx.config.board.BoardConfig;
 import battleships_ex.gdx.ui.ActionCard;
 import battleships_ex.gdx.ui.cards.ActionCardPresentation;
+import battleships_ex.gdx.ui.cards.ActionCardPresentationBase;
 // import battleships_ex.gdx.ui.cards.DoubleShotCardPresentation;
 // import battleships_ex.gdx.ui.cards.EraseCardPresentation;
 // import battleships_ex.gdx.ui.cards.ScanCardPresentation;
@@ -69,6 +70,9 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private CardTray actionCardTray;
     private GameButton fireButton;
     private Coordinate targetCoord;
+    
+    private battleships_ex.gdx.model.cards.ActionCard pendingCard;
+    private boolean targetingMode = false;
 
     public BattleScreen(MyGame game) {
         this.game = game;
@@ -138,10 +142,27 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     @Override public void onShipPlaced(Ship ship) {}
     @Override public void onShipRemoved(Ship ship) {}
     @Override public void onPlacementRejected(PlacementResult.Reason reason) {}
-    @Override public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
+    @Override
+    public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {
         updateEnergyFromGame();
         rebuildUI();
     }
+
+    @Override
+    public void onCardTargetRequested(battleships_ex.gdx.model.cards.ActionCard card) {
+        this.pendingCard = card;
+        this.targetingMode = true;
+
+        // Mine card requires targeting own board
+        if (card instanceof battleships_ex.gdx.model.cards.MineCard) {
+            this.currentMode = ViewMode.OWN_FLEET;
+        } else {
+            this.currentMode = ViewMode.ENEMY_WATERS;
+        }
+
+        rebuildUI();
+    }
+
 
     private void updateEnergyFromGame() {
         if (energyBar == null) return;
@@ -292,31 +313,42 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             Label actionCardsLabel = new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
             actionCardTray = new CardTray();
-            /*
-            TextureRegion iconA = Assets.ships.shipPatrol2h;
-            TextureRegion iconB = Assets.ships.shipPatrol2h;
-            TextureRegion iconC = Assets.ships.shipPatrol2h;
-            TextureRegion iconD = Assets.ships.shipPatrol2h;
-            TextureRegion iconE = Assets.ships.shipPatrol2h;
+            
+            for (battleships_ex.gdx.model.cards.ActionCard modelCard : gameController.getLocalPlayer().getCards()) {
+                String name = "";
+                String shortDesc = "";
+                String longDesc = "";
+                TextureRegion icon = Assets.ships.shipPatrol2h; // Default
 
-            ActionCardPresentation m1 = new DoubleShotCardPresentation(iconA);
-            ActionCardPresentation m2 = new ShieldCardPresentation(iconB);
-            ActionCardPresentation m3 = new ParryCardPresentation(iconC);
-            ActionCardPresentation m4 = new EraseCardPresentation(iconD);
-            ActionCardPresentation m5 = new ScanCardPresentation(iconE);
+                if (modelCard instanceof battleships_ex.gdx.model.cards.SonarCard) {
+                    name = "SONAR";
+                    shortDesc = "Reveal adjacency";
+                    longDesc = "Reveal number of ships/mines in adjacent tiles. Costs 2 energy. 2 uses.";
+                    icon = Assets.shipWithSight;
+                } else if (modelCard instanceof battleships_ex.gdx.model.cards.BombCard) {
+                    name = "BOMB";
+                    shortDesc = "2x2 Blast";
+                    longDesc = "Shoot a 2x2 area on the opponent's board. Costs 3 energy. 2 uses.";
+                    icon = Assets.logoWithShip;
+                } else if (modelCard instanceof battleships_ex.gdx.model.cards.MineCard) {
+                    name = "MINE";
+                    shortDesc = "Defensive Trap";
+                    longDesc = "Place a mine on your own board. Triggers random shots if hit. Costs 1 energy. 3 uses.";
+                    icon = Assets.ships.shipSubmarine3h;
+                } else if (modelCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
+                    name = "AIRSTRIKE";
+                    shortDesc = "Row/Col Clear";
+                    longDesc = "Shoot an entire row or column. Costs 4 energy. 1 use.";
+                    icon = Assets.ships.shipCarrier5h;
+                }
 
-            GameConfig.ActionCardConfig cfg1 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "DOUBLE SHOT");
-            GameConfig.ActionCardConfig cfg2 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SHIELD");
-            GameConfig.ActionCardConfig cfg3 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "PARRY");
-            GameConfig.ActionCardConfig cfg4 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "ERASE");
-            GameConfig.ActionCardConfig cfg5 = new GameConfig.ActionCardConfig(95f, 82f, true, Theme.BLUE, "SCAN");
-
-            actionCardTray.addCard(bindCard("DOUBLE SHOT",   m1, new DoubleShotCard()));
-            actionCardTray.addCard(bindCard("SHIELD",        m2, new ShieldCard()));
-            actionCardTray.addCard(bindCard("PARRY",         m3, new ParryCard()));
-            actionCardTray.addCard(bindCard("ERASE",         m4, new EraseCard()));
-            actionCardTray.addCard(bindCard("SCAN",          m5, new ScanCard()));
-            */
+                ActionCardPresentation presentation = new ActionCardPresentationBase(
+                    name, shortDesc, longDesc, icon, 
+                    ((battleships_ex.gdx.model.cards.BaseActionCard)modelCard).getRemainingUses()
+                );
+                
+                actionCardTray.addCard(bindCard(name, presentation, modelCard));
+            }
 
             actionsPanel.add(energyBar).left().padBottom(6f).row();
             actionsPanel.add(actionCardsLabel).left().padBottom(12f).row();
@@ -372,6 +404,14 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
     private void setTarget(Coordinate coord) {
         if (!battleships_ex.gdx.state.GameStateManager.getInstance().isMyTurn()) return;
+
+        if (targetingMode && pendingCard != null) {
+            gameController.playActionCard(pendingCard, coord);
+            targetingMode = false;
+            pendingCard = null;
+            return;
+        }
+
         this.targetCoord = coord;
         boardActor.setPreviewCell(coord);
         gameController.updatePreview(coord);

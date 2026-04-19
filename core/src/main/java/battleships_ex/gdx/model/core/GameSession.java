@@ -5,6 +5,7 @@ import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.cards.ActionCard;
 import battleships_ex.gdx.model.cards.ActionCardResult;
+import battleships_ex.gdx.model.cards.BaseActionCard;
 import battleships_ex.gdx.model.rules.ShotResult;
 
 import java.util.ArrayList;
@@ -99,7 +100,7 @@ public class GameSession {
      * @throws IllegalArgumentException if the card is null or not in hand
      * @throws IllegalStateException    if canUse() returns false
      */
-    public ActionCardResult playActionCard(ActionCard card) {
+    public ActionCardResult playActionCard(ActionCard card, Coordinate target) {
         requireStarted();
         requireNotOver();
 
@@ -120,8 +121,12 @@ public class GameSession {
                 "Card cannot be used right now: " + card.getClass().getSimpleName());
         }
 
-        ActionCardResult result = card.execute(user, opponent);
-        user.removeCard(card);   // one-time use — remove after execution
+        ActionCardResult result = card.execute(user, opponent, target);
+        
+        if (card instanceof BaseActionCard && ((BaseActionCard)card).getRemainingUses() <= 0) {
+            user.removeCard(card);
+        }
+        
         return result;
     }
 

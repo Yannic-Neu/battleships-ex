@@ -44,4 +44,6 @@ public interface GameStateListener {
     void onGameOver(String winnerName);
 
     void onTurnChanged(String currentPlayerId);
+
+    default void onCardTargetRequested(battleships_ex.gdx.model.cards.ActionCard card) {}
 }

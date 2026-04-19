@@ -2,15 +2,15 @@ package battleships_ex.gdx.ui.cards;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-public abstract class ActionCardPresentationBase implements ActionCardPresentation {
+public class ActionCardPresentationBase implements ActionCardPresentation {
 
     protected final String name, shortText, longText;
-    protected final TextureRegion icon;
+    protected final com.badlogic.gdx.graphics.g2d.TextureRegion icon;
     protected final int maxUses;
     protected int used = 0;
 
-    protected ActionCardPresentationBase(String name, String shortText, String longText,
-                             TextureRegion icon, int maxUses) {
+    public ActionCardPresentationBase(String name, String shortText, String longText,
+                             com.badlogic.gdx.graphics.g2d.TextureRegion icon, int maxUses) {
         this.name = name; this.shortText = shortText; this.longText = longText;
         this.icon = icon; this.maxUses = maxUses;
     }
