@@ -120,6 +120,21 @@ class SessionManagerTest {
         @Override public void removeMoveListener(String roomCode) {}
 
         @Override
+        public void submitActionCardPlay(String roomCode, String playerId, String cardName, Coordinate target, String metadata, DataCallback<Void> callback) {
+
+        }
+
+        @Override
+        public void addActionCardListener(String roomCode, DataCallback<ActionCardSnapshot> callback) {
+
+        }
+
+        @Override
+        public void removeActionCardListener(String roomCode) {
+
+        }
+
+        @Override
         public void syncTurn(String roomCode, String currentPlayerId, DataCallback<Void> callback) {
             callback.onSuccess(null);
         }
@@ -130,6 +145,31 @@ class SessionManagerTest {
         @Override
         public void updateGameStatus(String roomCode, String status, DataCallback<Void> callback) {
             callback.onSuccess(null);
+        }
+
+        @Override
+        public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
+            callback.onSuccess(null);
+        }
+
+        @Override
+        public void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
+            // No-op
+        }
+
+        @Override
+        public void updateBoardLayout(String roomCode, String playerId, java.util.List<battleships_ex.gdx.data.ShipPlacement> ships, DataCallback<Void> callback) {
+            callback.onSuccess(null);
+        }
+
+        @Override
+        public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<java.util.List<battleships_ex.gdx.data.ShipPlacement>> callback) {
+            // No-op
+        }
+
+        @Override
+        public void removeBoardLayoutListener(String roomCode) {
+            // No-op for recording stub
         }
 
         @Override

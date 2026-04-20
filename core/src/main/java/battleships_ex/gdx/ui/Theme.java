@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.scenes.scene2d.ui.Window.WindowStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 
@@ -18,6 +19,9 @@ public class Theme {
     public static final Color WHITE = new Color(1f, 1f, 1f, 1f);
     public static final Color GRAY = new Color(0.6f, 0.6f, 0.6f, 1f);
     public static final Color BLACK = new Color(0f, 0f, 0f, 1f);
+    public static final Color YELLOW = new Color(1f, 0.9f, 0f, 1f);
+    public static final Color NAVY_BLUE = new Color(0.05f, 0.05f, 0.2f, 1f);
+    public static final Color DARK_NAVY = new Color(0.02f, 0.02f, 0.1f, 1f);
 
     public static final Color BLUE = new Color(0f, 0f, 0.3f, 1f);
     public static final Color DARK_BLUE = new Color(0f, 0f, 0.2f, 0.6f);
@@ -34,6 +38,8 @@ public class Theme {
     public static Drawable bluePanel;
     public static Drawable darkBluePanel;
     public static Drawable blackPanel;
+
+    public static WindowStyle dialogStyle;
 
     private Theme() {
     }
@@ -67,6 +73,11 @@ public class Theme {
         fontLarge = generator.generateFont(parameter);
 
         generator.dispose();
+
+        dialogStyle = new WindowStyle();
+        dialogStyle.titleFont = fontMedium;
+        dialogStyle.titleFontColor = YELLOW;
+        dialogStyle.background = tintedPanel(NAVY_BLUE);
     }
 
     public static TextureRegionDrawable whiteDrawable() {
@@ -114,5 +125,6 @@ public class Theme {
         bluePanel = null;
         darkBluePanel = null;
         blackPanel = null;
+        dialogStyle = null;
     }
 }

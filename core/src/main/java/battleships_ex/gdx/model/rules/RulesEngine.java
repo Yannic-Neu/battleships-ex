@@ -5,7 +5,7 @@ import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
 
-public interface RulesEngine {
+public interface RulesEngine extends battleships_ex.gdx.model.cards.ActionCardEffect {
 
     PlacementResult validatePlacement(Board board,
                                       Ship ship,

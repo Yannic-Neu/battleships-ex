@@ -20,6 +20,9 @@ public class OpponentTurnState extends BaseGameState {
     public void onEnter(GameStateManager manager) {
         manager.notifyStateChanged(getName());
 
+        // Grant energy to opponent in our local model
+        manager.getRemotePlayer().addEnergy(1);
+
         // If in single-player, trigger the bot logic after a short delay to simulate thinking
         if (manager.getGameController().isSinglePlayer()) {
             scheduleBotMove(manager);

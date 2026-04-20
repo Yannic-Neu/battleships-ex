@@ -63,6 +63,16 @@ public class LobbyController {
                 lobby.addPlayer(local);
                 activeLobby = lobby;
 
+                // Auto-select all 4 cards from the registry
+                java.util.List<String> allCards = new java.util.ArrayList<>();
+                for (battleships_ex.gdx.model.cards.ActionCardRegistry.CardMetadata meta :
+                     battleships_ex.gdx.model.cards.ActionCardRegistry.getAllCardMetadata()) {
+                    allCards.add(meta.name);
+                }
+                if (allCards.size() == 4) {
+                    selectCards(allCards);
+                }
+
                 attachLobbyListener(roomCode);
                 notify_lobbyCreated(lobby, roomCode);
             }
@@ -141,8 +151,25 @@ public class LobbyController {
         });
     }
 
+    public void selectCards(java.util.List<String> cardNames) {
+        if (activeLobby == null || !isLocalPlayerHost()) return;
+        if (cardNames.size() != 4) {
+            throw new IllegalArgumentException("Must select exactly 4 cards.");
+        }
+
+        dataSource.setSelectedCards(activeLobby.getRoomCode(), cardNames, new DataCallback<Void>() {
+            @Override public void onSuccess(Void result) {}
+            @Override public void onFailure(String error) {
+                System.err.println("[LobbyController] Failed to select cards: " + error);
+            }
+        });
+    }
+
     public void onSnapshotUpdated(LobbySnapshot snapshot) {
         if (activeLobby == null || snapshot == null) return;
+
+        // Sync selected cards
+        activeLobby.setSelectedCards(snapshot.selectedCardNames);
 
         // Ready / playing transition
         if ("ready".equals(snapshot.status) || "playing".equals(snapshot.status)) {
@@ -246,7 +273,7 @@ public class LobbyController {
         // ---- 4. Re-entry check ------------------------------------------
         // String equality — Player#getId() returns String
         boolean returningHost  = local.getId().equals(hostId);
-        boolean returningGuest = guestId != null && local.getId().equals(guestId);
+        boolean returningGuest = local.getId().equals(guestId);
 
         if (returningHost || returningGuest) {
             restoreFromSnapshot(local, code, snapshot, returningHost);

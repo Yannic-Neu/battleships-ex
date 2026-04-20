@@ -68,4 +68,10 @@ public class StubLobbyDataSource implements LobbyDataSource {
         System.out.println("[Stub] setExMode: " + roomCode + " enabled=" + enabled);
         callback.onSuccess(null);
     }
+
+    @Override
+    public void setSelectedCards(String roomCode, java.util.List<String> cardNames, DataCallback<Void> callback) {
+        System.out.println("[Stub] setSelectedCards: " + roomCode + " cards=" + cardNames);
+        callback.onSuccess(null);
+    }
 }

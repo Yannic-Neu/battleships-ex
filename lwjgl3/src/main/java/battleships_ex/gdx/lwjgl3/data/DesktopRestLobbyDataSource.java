@@ -3,37 +3,29 @@ package battleships_ex.gdx.lwjgl3.data;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
-import com.badlogic.gdx.utils.JsonWriter;
+import battleships_ex.gdx.data.DataCallback;
+import battleships_ex.gdx.data.LobbyDataSource;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import battleships_ex.gdx.data.DataCallback;
-import battleships_ex.gdx.data.LobbyDataSource;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class DesktopRestLobbyDataSource implements LobbyDataSource {
 
-    private static final String DB_URL = "https://battleships-ex-default-rtdb.europe-west1.firebasedatabase.app";
+    private final String baseUrl = "https://battleshipsex-8968a-default-rtdb.europe-west1.firebasedatabase.app/rooms";
     private final String idToken;
-
-    private ScheduledExecutorService poller;
-    private boolean isListening = false;
+    private Timer pollTimer;
 
     public DesktopRestLobbyDataSource(String idToken) {
         this.idToken = idToken;
     }
 
     private String buildUrl(String roomCode) {
-        return DB_URL + "/rooms/" + roomCode + ".json?auth=" + idToken;
+        return baseUrl + "/" + roomCode + ".json?auth=" + idToken;
     }
 
     @Override
@@ -43,13 +35,12 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                 URL url = new URL(buildUrl(roomCode));
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("PUT");
-                conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
 
+                long ts = System.currentTimeMillis();
                 String payload = String.format(Locale.ROOT,
                     "{\"hostPlayerId\":\"%s\",\"hostPlayerName\":\"%s\",\"guestReady\":false,\"exModeEnabled\":true,\"status\":\"waiting\",\"createdAt\":%d}",
-                    hostPlayerId, hostPlayerName, System.currentTimeMillis()
-                );
+                    hostPlayerId, hostPlayerName, ts);
 
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(payload.getBytes(StandardCharsets.UTF_8));
@@ -58,13 +49,7 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                 if (conn.getResponseCode() == 200) {
                     Gdx.app.postRunnable(() -> callback.onSuccess(null));
                 } else {
-                    Gdx.app.postRunnable(() -> {
-                        try {
-                            callback.onFailure("HTTP " + conn.getResponseCode());
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    });
+                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to create lobby."));
                 }
             } catch (Exception e) {
                 Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
@@ -76,53 +61,25 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
     public void joinLobby(String roomCode, String playerId, String playerName, DataCallback<Void> callback) {
         new Thread(() -> {
             try {
-                // 1. Check if room is available
                 URL url = new URL(buildUrl(roomCode));
-                HttpURLConnection checkConn = (HttpURLConnection) url.openConnection();
-                JsonValue roomData = new JsonReader().parse(new InputStreamReader(checkConn.getInputStream()));
-
-                if (roomData == null || !roomData.getString("status", "").equals("waiting") || roomData.has("guestPlayerId")) {
-                    Gdx.app.postRunnable(() -> callback.onFailure("Room not available"));
-                    return;
-                }
-
-                // 2. Patch the room to join
-                HttpURLConnection patchConn = (HttpURLConnection) url.openConnection();
-                patchConn.setRequestMethod("POST"); // Standard HTTP method for partial updates
-                patchConn.setRequestProperty("X-HTTP-Method-Override", "PATCH"); // Fallback for strict firewalls
-                patchConn.setRequestProperty("Content-Type", "application/json");
-                patchConn.setDoOutput(true);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+                conn.setDoOutput(true);
 
                 String payload = String.format(Locale.ROOT,
-                    "{\"guestPlayerId\":\"%s\",\"guestPlayerName\":\"%s\",\"guestReady\":false,\"status\":\"joined\"}",
-                    playerId, playerName
-                );
+                    "{\"guestPlayerId\":\"%s\",\"guestPlayerName\":\"%s\",\"status\":\"joined\"}",
+                    playerId, playerName);
 
-                try (OutputStream os = patchConn.getOutputStream()) {
+                try (OutputStream os = conn.getOutputStream()) {
                     os.write(payload.getBytes(StandardCharsets.UTF_8));
                 }
 
-                if (patchConn.getResponseCode() == 200) {
+                if (conn.getResponseCode() == 200) {
                     Gdx.app.postRunnable(() -> callback.onSuccess(null));
                 } else {
-                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to join."));
+                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to join lobby."));
                 }
-            } catch (Exception e) {
-                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
-            }
-        }).start();
-    }
-
-    @Override
-    public void lobbyExists(String roomCode, DataCallback<Boolean> callback) {
-        new Thread(() -> {
-            try {
-                URL url = new URL(buildUrl(roomCode));
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                JsonValue roomData = new JsonReader().parse(new InputStreamReader(conn.getInputStream()));
-
-                boolean exists = roomData != null && "waiting".equals(roomData.getString("status", ""));
-                Gdx.app.postRunnable(() -> callback.onSuccess(exists));
             } catch (Exception e) {
                 Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
             }
@@ -131,14 +88,21 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
 
     @Override
     public void leaveLobby(String roomCode, String playerId, DataCallback<Void> callback) {
-        // Simple implementation: for desktop testing, we will just delete the room if leaving
+    }
+
+    @Override
+    public void lobbyExists(String roomCode, DataCallback<Boolean> callback) {
         new Thread(() -> {
             try {
                 URL url = new URL(buildUrl(roomCode));
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("DELETE");
-                conn.getResponseCode();
-                Gdx.app.postRunnable(() -> callback.onSuccess(null));
+                conn.setRequestMethod("GET");
+                if (conn.getResponseCode() == 200) {
+                    JsonValue root = new JsonReader().parse(conn.getInputStream());
+                    Gdx.app.postRunnable(() -> callback.onSuccess(root != null && !root.isNull()));
+                } else {
+                    Gdx.app.postRunnable(() -> callback.onSuccess(false));
+                }
             } catch (Exception e) {
                 Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
             }
@@ -147,48 +111,51 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
 
     @Override
     public void addLobbyListener(String roomCode, DataCallback<LobbySnapshot> callback) {
-        removeLobbyListener(roomCode);
-        isListening = true;
-        poller = Executors.newSingleThreadScheduledExecutor();
+        if (pollTimer != null) pollTimer.cancel();
+        pollTimer = new Timer(true);
+        pollTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    URL url = new URL(buildUrl(roomCode));
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setRequestMethod("GET");
+                    if (conn.getResponseCode() == 200) {
+                        JsonValue snapshot = new JsonReader().parse(conn.getInputStream());
+                        if (snapshot == null || snapshot.isNull()) return;
 
-        // Poll Firebase every 1.5 seconds for updates
-        poller.scheduleAtFixedRate(() -> {
-            if (!isListening) return;
-            try {
-                URL url = new URL(buildUrl(roomCode));
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                JsonValue snapshot = new JsonReader().parse(new InputStreamReader(conn.getInputStream()));
+                        JsonValue selectedCardsJson = snapshot.get("selectedCardNames");
+                        java.util.ArrayList<String> selectedCards = new java.util.ArrayList<>();
+                        if (selectedCardsJson != null && selectedCardsJson.isArray()) {
+                            for (JsonValue card : selectedCardsJson) {
+                                selectedCards.add(card.asString());
+                            }
+                        }
 
-                if (snapshot == null || snapshot.isNull()) {
-                    Gdx.app.postRunnable(() -> callback.onFailure("Room deleted"));
-                    return;
-                }
+                        LobbySnapshot data = new LobbySnapshot(
+                            roomCode,
+                            snapshot.getString("hostPlayerId", ""),
+                            snapshot.getString("hostPlayerName", ""),
+                            snapshot.getString("guestPlayerId", null),
+                            snapshot.getString("guestPlayerName", null),
+                            snapshot.getString("status", "waiting"),
+                            snapshot.getBoolean("guestReady", false),
+                            snapshot.getBoolean("exModeEnabled", true),
+                            selectedCards
+                        );
 
-                LobbySnapshot data = new LobbySnapshot(
-                    roomCode,
-                    snapshot.getString("hostPlayerId", ""),
-                    snapshot.getString("hostPlayerName", ""),
-                    snapshot.getString("guestPlayerId", null),
-                    snapshot.getString("guestPlayerName", null),
-                    snapshot.getString("status", "waiting"),
-                    snapshot.getBoolean("guestReady", false),
-                    snapshot.getBoolean("exModeEnabled", true)
-                );
-
-                Gdx.app.postRunnable(() -> callback.onSuccess(data));
-
-            } catch (Exception e) {
-                // Ignore temporary network drops during polling
+                        Gdx.app.postRunnable(() -> callback.onSuccess(data));
+                    }
+                } catch (Exception ignored) {}
             }
-        }, 0, 1500, TimeUnit.MILLISECONDS);
+        }, 0, 2000);
     }
 
     @Override
     public void removeLobbyListener(String roomCode) {
-        isListening = false;
-        if (poller != null) {
-            poller.shutdownNow();
-            poller = null;
+        if (pollTimer != null) {
+            pollTimer.cancel();
+            pollTimer = null;
         }
     }
 
@@ -200,23 +167,13 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
-                conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
-
                 String payload = String.format(Locale.ROOT, "{\"guestReady\":%b}", ready);
-
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(payload.getBytes(StandardCharsets.UTF_8));
                 }
-
-                if (conn.getResponseCode() == 200) {
-                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
-                } else {
-                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to set ready state."));
-                }
-            } catch (Exception e) {
-                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
-            }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
         }).start();
     }
 
@@ -228,23 +185,13 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
-                conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
-
                 String payload = String.format(Locale.ROOT, "{\"status\":\"%s\"}", status);
-
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(payload.getBytes(StandardCharsets.UTF_8));
                 }
-
-                if (conn.getResponseCode() == 200) {
-                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
-                } else {
-                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to set lobby status."));
-                }
-            } catch (Exception e) {
-                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
-            }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
         }).start();
     }
 
@@ -256,23 +203,39 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
-                conn.setRequestProperty("Content-Type", "application/json");
                 conn.setDoOutput(true);
-
                 String payload = String.format(Locale.ROOT, "{\"exModeEnabled\":%b}", enabled);
-
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(payload.getBytes(StandardCharsets.UTF_8));
                 }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
+        }).start();
+    }
 
-                if (conn.getResponseCode() == 200) {
-                    Gdx.app.postRunnable(() -> callback.onSuccess(null));
-                } else {
-                    Gdx.app.postRunnable(() -> callback.onFailure("Failed to set EX mode."));
+    @Override
+    public void setSelectedCards(String roomCode, java.util.List<String> cardNames, DataCallback<Void> callback) {
+        new Thread(() -> {
+            try {
+                URL url = new URL(buildUrl(roomCode));
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
+                conn.setDoOutput(true);
+
+                StringBuilder sb = new StringBuilder("[");
+                for (int i = 0; i < cardNames.size(); i++) {
+                    sb.append("\"").append(cardNames.get(i)).append("\"");
+                    if (i < cardNames.size() - 1) sb.append(",");
                 }
-            } catch (Exception e) {
-                Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage()));
-            }
+                sb.append("]");
+
+                String payload = String.format(Locale.ROOT, "{\"selectedCardNames\":%s}", sb);
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(payload.getBytes(StandardCharsets.UTF_8));
+                }
+                if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
+            } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
         }).start();
     }
 }

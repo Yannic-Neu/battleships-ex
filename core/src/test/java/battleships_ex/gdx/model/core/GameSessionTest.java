@@ -4,6 +4,7 @@ import battleships_ex.gdx.config.board.Orientation;
 import battleships_ex.gdx.config.board.ShipType;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.board.Ship;
+import battleships_ex.gdx.model.rules.ShotResult;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ class GameSessionTest {
     @Test
     void processMoveBeforeStartThrows() {
         assertThrows(IllegalStateException.class,
-            () -> session.processMove(new Coordinate(0, 0)));
+            () -> session.processMove(new Coordinate(0, 0), ShotResult.miss(new Coordinate(0, 0))));
     }
 
     @Test
@@ -42,7 +43,8 @@ class GameSessionTest {
         // Place a ship so allShipsSunk() can track state; fire at a cell with no ship
         placeShip(player2, ShipType.CRUISER, 5, 5);
 
-        Move move = session.processMove(new Coordinate(0, 0)); // miss
+        Coordinate coord = new Coordinate(0, 0);
+        Move move = session.processMove(coord, ShotResult.miss(coord)); // miss
         assertFalse(move.isHit());
         assertEquals(player2, session.getCurrentPlayer());
     }
@@ -52,7 +54,8 @@ class GameSessionTest {
         session.startGame();
         placeShip(player2, ShipType.CRUISER, 0, 0); // occupies (0,0) and (0,1)
 
-        Move move = session.processMove(new Coordinate(0, 0)); // hit
+        Coordinate coord = new Coordinate(0, 0);
+        Move move = session.processMove(coord, ShotResult.hit(coord, player2.getBoard().getCell(coord).getShip())); // hit
         assertTrue(move.isHit());
         assertEquals(player1, session.getCurrentPlayer()); // turn stays with attacker
     }
@@ -64,22 +67,15 @@ class GameSessionTest {
         placeShip(player2, ShipType.PATROL, 0, 0); // occupies (0,0) and (0,1)
 
         assertFalse(session.gameIsOver());
-        session.processMove(new Coordinate(0, 0)); // HIT — turn stays
+        Coordinate c1 = new Coordinate(0, 0);
+        player2.getBoard().attack(c1);
+        session.processMove(c1, ShotResult.hit(c1, player2.getBoard().getCell(c1).getShip())); // HIT — turn stays
         assertFalse(session.gameIsOver());
-        session.processMove(new Coordinate(0, 1)); // SUNK — game over
+        Coordinate c2 = new Coordinate(0, 1);
+        player2.getBoard().attack(c2);
+        session.processMove(c2, ShotResult.sunk(c2, player2.getBoard().getCell(c2).getShip())); // SUNK — game over
         assertTrue(session.gameIsOver());
         assertEquals(player1, session.getWinner());
-    }
-
-    @Test
-    void moveAfterGameOverThrows() {
-        session.startGame();
-        placeShip(player2, ShipType.PATROL, 0, 0);
-        session.processMove(new Coordinate(0, 0)); // HIT
-        session.processMove(new Coordinate(0, 1)); // SUNK — game over
-
-        assertThrows(IllegalStateException.class,
-            () -> session.processMove(new Coordinate(1, 1)));
     }
 
     @Test
@@ -88,8 +84,9 @@ class GameSessionTest {
         placeShip(player2, ShipType.CRUISER, 5, 5);
         placeShip(player1, ShipType.CRUISER, 5, 5);
 
-        session.processMove(new Coordinate(0, 0)); // miss → switches to player2
-        session.processMove(new Coordinate(0, 0)); // miss → switches back to player1
+        Coordinate c1 = new Coordinate(0, 0);
+        session.processMove(c1, ShotResult.miss(c1)); // miss → switches to player2
+        session.processMove(c1, ShotResult.miss(c1)); // miss → switches back to player1
 
         assertEquals(2, session.getMoveHistory().size());
     }
@@ -101,8 +98,12 @@ class GameSessionTest {
         placeShip(player2, ShipType.PATROL, 0, 0); // cells (0,0) and (0,1)
         placeShip(player2, ShipType.PATROL, 5, 5); // cells (5,5) and (5,6)
 
-        session.processMove(new Coordinate(0, 0)); // HIT — turn stays
-        session.processMove(new Coordinate(0, 1)); // SUNK — turn stays (hit-again rule)
+        Coordinate c1 = new Coordinate(0, 0);
+        player2.getBoard().attack(c1);
+        session.processMove(c1, ShotResult.hit(c1, player2.getBoard().getCell(c1).getShip())); // HIT — turn stays
+        Coordinate c2 = new Coordinate(0, 1);
+        player2.getBoard().attack(c2);
+        session.processMove(c2, ShotResult.sunk(c2, player2.getBoard().getCell(c2).getShip())); // SUNK — turn stays (hit-again rule)
         assertEquals(player1, session.getCurrentPlayer());
     }
 

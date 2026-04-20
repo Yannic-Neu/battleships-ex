@@ -31,6 +31,26 @@ public class StubGameDataSource implements GameDataSource {
     }
 
     @Override
+    public void submitActionCardPlay(String roomCode, String playerId, String cardName, Coordinate target, String metadata, DataCallback<Void> callback) {
+        System.out.println("[Stub] submitActionCardPlay: room=" + roomCode
+            + " player=" + playerId
+            + " card=" + cardName
+            + " target=" + (target != null ? "(" + target.getRow() + "," + target.getCol() + ")" : "null")
+            + " metadata=" + metadata);
+        callback.onSuccess(null);
+    }
+
+    @Override
+    public void addActionCardListener(String roomCode, DataCallback<ActionCardSnapshot> callback) {
+        System.out.println("[Stub] addActionCardListener: " + roomCode);
+    }
+
+    @Override
+    public void removeActionCardListener(String roomCode) {
+        System.out.println("[Stub] removeActionCardListener: " + roomCode);
+    }
+
+    @Override
     public void syncTurn(String roomCode, String currentPlayerId, DataCallback<Void> callback) {
         System.out.println("[Stub] syncTurn: room=" + roomCode + " turn=" + currentPlayerId);
         callback.onSuccess(null);

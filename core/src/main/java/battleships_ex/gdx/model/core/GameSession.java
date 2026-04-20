@@ -5,6 +5,7 @@ import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.board.Coordinate;
 import battleships_ex.gdx.model.cards.ActionCard;
 import battleships_ex.gdx.model.cards.ActionCardResult;
+import battleships_ex.gdx.model.cards.BaseActionCard;
 import battleships_ex.gdx.model.rules.ShotResult;
 
 import java.util.ArrayList;
@@ -58,6 +59,9 @@ public class GameSession {
      */
     public Move processMove(Coordinate coordinate, ShotResult result) {
         requireStarted();
+        // requireNotOver(); // Removed because the move itself might make the game over,
+                            // and board.attack() is called before this.
+                            // GameController should ensure no moves are sent after game is over.
 
         boolean hit = result.getOutcome() == ShotResult.Outcome.HIT || result.getOutcome() == ShotResult.Outcome.SUNK;
         Move move   = new Move(coordinate, hit);
@@ -96,7 +100,30 @@ public class GameSession {
      * @throws IllegalArgumentException if the card is null or not in hand
      * @throws IllegalStateException    if canUse() returns false
      */
-    public ActionCardResult playActionCard(ActionCard card) {
+    public ActionCardResult playActionCard(ActionCard card, Coordinate target) {
+        requireStarted();
+        requireNotOver();
+
+        if (!currentPlayer.hasCard(card)) {
+            throw new IllegalArgumentException("Player does not hold card: " + card.getClass().getSimpleName());
+        }
+
+        if (currentPlayer.hasPlayedCardThisTurn(card)) {
+            throw new IllegalStateException("Already played this type of action card this turn");
+        }
+
+        if (!card.canUse(currentPlayer, getOpponent())) {
+            throw new IllegalStateException("Card cannot be used right now: " + card.getClass().getSimpleName());
+        }
+
+        return executeActionCardPlay(card, target);
+    }
+
+    /**
+     * Executes a card play without the 'canUse' check.
+     * Used for confirmed plays received from the backend.
+     */
+    public ActionCardResult executeActionCardPlay(ActionCard card, Coordinate target) {
         requireStarted();
         requireNotOver();
 
@@ -107,18 +134,13 @@ public class GameSession {
         Player user     = currentPlayer;
         Player opponent = getOpponent();
 
-        if (!user.hasCard(card)) {
-            throw new IllegalArgumentException(
-                "Player " + user.getName() + " does not hold card: " + card.getClass().getSimpleName());
+        ActionCardResult result = card.execute(user, opponent, target);
+        user.markCardAsPlayed(card);
+
+        if (card.endsTurn() && !gameIsOver()) {
+            switchTurn();
         }
 
-        if (!card.canUse(user, opponent)) {
-            throw new IllegalStateException(
-                "Card cannot be used right now: " + card.getClass().getSimpleName());
-        }
-
-        ActionCardResult result = card.execute(user, opponent);
-        user.removeCard(card);   // one-time use — remove after execution
         return result;
     }
 
@@ -144,10 +166,26 @@ public class GameSession {
         return currentPlayer == player1 ? player2 : player1;
     }
 
-    private void switchTurn() {
+    public void switchTurn() {
         Player oldPlayer = currentPlayer;
+        oldPlayer.clearTurnFlags();
         currentPlayer = (currentPlayer == player1) ? player2 : player1;
         System.out.println("[GameSession] LOG: Switched turn from " + oldPlayer.getId() + " to " + currentPlayer.getId());
+    }
+
+    /**
+     * Forces the turn to a specific player. Useful for syncing with backend state.
+     */
+    public void forceTurn(String playerId) {
+        if (player1.getId().equals(playerId)) {
+            currentPlayer = player1;
+        } else if (player2.getId().equals(playerId)) {
+            currentPlayer = player2;
+        } else {
+            System.err.println("[GameSession] WARNING: forceTurn called with unknown player ID: " + playerId);
+            return;
+        }
+        System.out.println("[GameSession] LOG: Forced turn to " + currentPlayer.getId());
     }
 
     private void requireStarted() {

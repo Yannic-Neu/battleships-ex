@@ -19,24 +19,12 @@ import battleships_ex.gdx.model.board.Coordinate;
 /**
  * Firebase Realtime Database implementation of {@link GameDataSource}.
  * Handles real-time game state synchronization: moves, turns, heartbeat.
- *
- * DB structure:
- * <pre>
- * rooms/{roomCode}/
- *   game/
- *     currentTurn:   String (playerId)
- *     status:        "placing" | "playing" | "finished"
- *     winner:        String (winnerName) | null
- *     moves/
- *       {pushId}:    { playerId, row, col, hit, timestamp }
- *     heartbeat/
- *       {playerId}:  { lastSeen: long }
- * </pre>
  */
 public class FirebaseGameDataSource implements GameDataSource {
 
     private static final String NODE_GAME        = "game";
     private static final String NODE_MOVES       = "moves";
+    private static final String NODE_CARDS       = "cards";
     private static final String NODE_HEARTBEAT   = "heartbeat";
     private static final String FIELD_CURRENT_TURN = "currentTurn";
     private static final String FIELD_STATUS     = "status";
@@ -48,7 +36,6 @@ public class FirebaseGameDataSource implements GameDataSource {
     private static final String FIELD_TIMESTAMP  = "timestamp";
     private static final String FIELD_LAST_SEEN  = "lastSeen";
 
-    /** Opponent is considered disconnected after 15 seconds without heartbeat. */
     private static final long HEARTBEAT_STALE_MS = 15_000L;
 
     private final DatabaseReference roomsRef;
@@ -62,18 +49,15 @@ public class FirebaseGameDataSource implements GameDataSource {
     private final Map<String, ValueEventListener> previewListeners   = new HashMap<>();
     private final Map<String, ValueEventListener> placementStatusListeners = new HashMap<>();
     private final Map<String, ValueEventListener> boardLayoutListeners = new HashMap<>();
+    private final Map<String, ValueEventListener> actionCardListeners = new HashMap<>();
 
     public FirebaseGameDataSource() {
         this.roomsRef = FirebaseDatabase.getInstance().getReference("rooms");
     }
 
-    // ── Game reference helper ───────────────────────────────────────
-
     private DatabaseReference gameRef(String roomCode) {
         return roomsRef.child(roomCode).child(NODE_GAME);
     }
-
-    // ── Move synchronization ────────────────────────────────────────
 
     @Override
     public void submitMove(String roomCode, String playerId, Coordinate target,
@@ -95,48 +79,25 @@ public class FirebaseGameDataSource implements GameDataSource {
     @Override
     public void addMoveListener(String roomCode, DataCallback<MoveSnapshot> callback) {
         removeMoveListener(roomCode);
-
         DatabaseReference movesRef = gameRef(roomCode).child(NODE_MOVES);
-
-        // Only listen for new children added after registration
         ValueEventListener listener = new ValueEventListener() {
             private boolean initialLoadDone = false;
-
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!initialLoadDone) {
-                    // Skip the initial load of existing moves
-                    initialLoadDone = true;
-                    return;
-                }
-
-                // Process latest move
+                if (!initialLoadDone) { initialLoadDone = true; return; }
                 DataSnapshot lastChild = null;
-                for (DataSnapshot child : snapshot.getChildren()) {
-                    lastChild = child;
-                }
+                for (DataSnapshot child : snapshot.getChildren()) lastChild = child;
                 if (lastChild == null) return;
-
                 String pid = lastChild.child(FIELD_PLAYER_ID).getValue(String.class);
                 Long row   = lastChild.child(FIELD_ROW).getValue(Long.class);
                 Long col   = lastChild.child(FIELD_COL).getValue(Long.class);
                 Boolean h  = lastChild.child(FIELD_HIT).getValue(Boolean.class);
                 Long ts    = lastChild.child(FIELD_TIMESTAMP).getValue(Long.class);
-
                 if (pid == null || row == null || col == null || h == null) return;
-
-                callback.onSuccess(new MoveSnapshot(
-                    pid, row.intValue(), col.intValue(), h,
-                    ts != null ? ts : System.currentTimeMillis()
-                ));
+                callback.onSuccess(new MoveSnapshot(pid, row.intValue(), col.intValue(), h, ts != null ? ts : System.currentTimeMillis()));
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                callback.onFailure(error.getMessage());
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
         };
-
         moveListeners.put(roomCode, listener);
         movesRef.addValueEventListener(listener);
     }
@@ -144,12 +105,59 @@ public class FirebaseGameDataSource implements GameDataSource {
     @Override
     public void removeMoveListener(String roomCode) {
         ValueEventListener listener = moveListeners.remove(roomCode);
-        if (listener != null) {
-            gameRef(roomCode).child(NODE_MOVES).removeEventListener(listener);
-        }
+        if (listener != null) gameRef(roomCode).child(NODE_MOVES).removeEventListener(listener);
     }
 
-    // ── Turn synchronization ────────────────────────────────────────
+    @Override
+    public void submitActionCardPlay(String roomCode, String playerId, String cardName, Coordinate target, String metadata, DataCallback<Void> callback) {
+        DatabaseReference cardsRef = gameRef(roomCode).child(NODE_CARDS).push();
+        Map<String, Object> cardData = new HashMap<>();
+        cardData.put(FIELD_PLAYER_ID, playerId);
+        cardData.put("cardName",      cardName);
+        if (target != null) {
+            cardData.put(FIELD_ROW,   target.getRow());
+            cardData.put(FIELD_COL,   target.getCol());
+        }
+        if (metadata != null) cardData.put("metadata",  metadata);
+        cardData.put(FIELD_TIMESTAMP, ServerValue.TIMESTAMP);
+        cardsRef.setValue(cardData)
+            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    }
+
+    @Override
+    public void addActionCardListener(String roomCode, DataCallback<ActionCardSnapshot> callback) {
+        removeActionCardListener(roomCode);
+        DatabaseReference cardsRef = gameRef(roomCode).child(NODE_CARDS);
+        ValueEventListener listener = new ValueEventListener() {
+            private boolean initialLoadDone = false;
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!initialLoadDone) { initialLoadDone = true; return; }
+                DataSnapshot lastChild = null;
+                for (DataSnapshot child : snapshot.getChildren()) lastChild = child;
+                if (lastChild == null) return;
+                String pid = lastChild.child(FIELD_PLAYER_ID).getValue(String.class);
+                String name = lastChild.child("cardName").getValue(String.class);
+                Long row   = lastChild.child(FIELD_ROW).getValue(Long.class);
+                Long col   = lastChild.child(FIELD_COL).getValue(Long.class);
+                String meta = lastChild.child("metadata").getValue(String.class);
+                Long ts    = lastChild.child(FIELD_TIMESTAMP).getValue(Long.class);
+                if (pid == null || name == null) return;
+                Coordinate target = (row != null && col != null) ? new Coordinate(row.intValue(), col.intValue()) : null;
+                callback.onSuccess(new ActionCardSnapshot(pid, name, target, meta, ts != null ? ts : System.currentTimeMillis()));
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
+        };
+        actionCardListeners.put(roomCode, listener);
+        cardsRef.addValueEventListener(listener);
+    }
+
+    @Override
+    public void removeActionCardListener(String roomCode) {
+        ValueEventListener listener = actionCardListeners.remove(roomCode);
+        if (listener != null) gameRef(roomCode).child(NODE_CARDS).removeEventListener(listener);
+    }
 
     @Override
     public void syncTurn(String roomCode, String currentPlayerId, DataCallback<Void> callback) {
@@ -161,22 +169,14 @@ public class FirebaseGameDataSource implements GameDataSource {
     @Override
     public void addTurnListener(String roomCode, DataCallback<String> callback) {
         removeTurnListener(roomCode);
-
         ValueEventListener listener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String turnPlayerId = snapshot.getValue(String.class);
-                if (turnPlayerId != null) {
-                    callback.onSuccess(turnPlayerId);
-                }
+                if (turnPlayerId != null) callback.onSuccess(turnPlayerId);
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                callback.onFailure(error.getMessage());
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
         };
-
         turnListeners.put(roomCode, listener);
         gameRef(roomCode).child(FIELD_CURRENT_TURN).addValueEventListener(listener);
     }
@@ -184,12 +184,8 @@ public class FirebaseGameDataSource implements GameDataSource {
     @Override
     public void removeTurnListener(String roomCode) {
         ValueEventListener listener = turnListeners.remove(roomCode);
-        if (listener != null) {
-            gameRef(roomCode).child(FIELD_CURRENT_TURN).removeEventListener(listener);
-        }
+        if (listener != null) gameRef(roomCode).child(FIELD_CURRENT_TURN).removeEventListener(listener);
     }
-
-    // ── Game status ─────────────────────────────────────────────────
 
     @Override
     public void updateGameStatus(String roomCode, String status, DataCallback<Void> callback) {
@@ -203,263 +199,150 @@ public class FirebaseGameDataSource implements GameDataSource {
         Map<String, Object> updates = new HashMap<>();
         updates.put(FIELD_STATUS, "finished");
         updates.put(FIELD_WINNER, winnerName);
-
         gameRef(roomCode).updateChildren(updates)
             .addOnSuccessListener(unused -> callback.onSuccess(null))
             .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    // ── Heartbeat / session health ──────────────────────────────────
-
-    @Override
-    public void sendHeartbeat(String roomCode, String playerId) {
+    @Override public void sendHeartbeat(String roomCode, String playerId) {
         Map<String, Object> heartbeat = new HashMap<>();
         heartbeat.put(FIELD_LAST_SEEN, ServerValue.TIMESTAMP);
-
-        gameRef(roomCode).child(NODE_HEARTBEAT).child(playerId)
-            .updateChildren(heartbeat);
-
-        // Set onDisconnect to mark the player as stale immediately
-        gameRef(roomCode).child(NODE_HEARTBEAT).child(playerId)
-            .child(FIELD_LAST_SEEN)
-            .onDisconnect()
-            .setValue(ServerValue.TIMESTAMP);
+        gameRef(roomCode).child(NODE_HEARTBEAT).child(playerId).updateChildren(heartbeat);
+        gameRef(roomCode).child(NODE_HEARTBEAT).child(playerId).child(FIELD_LAST_SEEN).onDisconnect().setValue(ServerValue.TIMESTAMP);
     }
 
-    @Override
-    public void addHeartbeatListener(String roomCode, String opponentId,
-                                     DataCallback<Boolean> callback) {
+    @Override public void addHeartbeatListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
         removeHeartbeatListener(roomCode);
-
         ValueEventListener listener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Long lastSeen = snapshot.child(FIELD_LAST_SEEN).getValue(Long.class);
-
-                if (lastSeen == null) {
-                    // No heartbeat yet — opponent hasn't connected
-                    callback.onSuccess(true);
-                    return;
-                }
-
+                if (lastSeen == null) { callback.onSuccess(true); return; }
                 long elapsed = System.currentTimeMillis() - lastSeen;
                 callback.onSuccess(elapsed > HEARTBEAT_STALE_MS);
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                callback.onFailure(error.getMessage());
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
         };
-
         heartbeatListeners.put(roomCode, listener);
-        gameRef(roomCode).child(NODE_HEARTBEAT).child(opponentId)
-            .addValueEventListener(listener);
+        gameRef(roomCode).child(NODE_HEARTBEAT).child(opponentId).addValueEventListener(listener);
     }
 
-    @Override
-    public void removeHeartbeatListener(String roomCode) {
+    @Override public void removeHeartbeatListener(String roomCode) {
         ValueEventListener listener = heartbeatListeners.remove(roomCode);
-        if (listener != null) {
-            // Remove from all potential heartbeat paths
-            gameRef(roomCode).child(NODE_HEARTBEAT).removeEventListener(listener);
-        }
+        if (listener != null) gameRef(roomCode).child(NODE_HEARTBEAT).removeEventListener(listener);
     }
 
-    // ── Target preview (Issue #28) ────────────────────────────────
-
-    @Override
-    public void sendPreview(String roomCode, String playerId, Coordinate target) {
+    @Override public void sendPreview(String roomCode, String playerId, Coordinate target) {
         Map<String, Object> previewData = new HashMap<>();
         previewData.put(FIELD_ROW, target.getRow());
         previewData.put(FIELD_COL, target.getCol());
         previewData.put(FIELD_TIMESTAMP, ServerValue.TIMESTAMP);
-
-        gameRef(roomCode).child(NODE_PREVIEW).child(playerId)
-            .updateChildren(previewData);
+        gameRef(roomCode).child(NODE_PREVIEW).child(playerId).updateChildren(previewData);
     }
 
-    @Override
-    public void clearPreview(String roomCode, String playerId) {
+    @Override public void clearPreview(String roomCode, String playerId) {
         gameRef(roomCode).child(NODE_PREVIEW).child(playerId).removeValue();
     }
 
-    @Override
-    public void addPreviewListener(String roomCode, String opponentId,
-                                   DataCallback<Coordinate> callback) {
+    @Override public void addPreviewListener(String roomCode, String opponentId, DataCallback<Coordinate> callback) {
         removePreviewListener(roomCode);
-
         ValueEventListener listener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!snapshot.exists()) {
-                    callback.onSuccess(null); // preview cleared
-                    return;
-                }
-
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) { callback.onSuccess(null); return; }
                 Long row = snapshot.child(FIELD_ROW).getValue(Long.class);
                 Long col = snapshot.child(FIELD_COL).getValue(Long.class);
-
-                if (row != null && col != null) {
-                    callback.onSuccess(new Coordinate(row.intValue(), col.intValue()));
-                } else {
-                    callback.onSuccess(null);
-                }
+                if (row != null && col != null) callback.onSuccess(new Coordinate(row.intValue(), col.intValue()));
+                else callback.onSuccess(null);
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                callback.onFailure(error.getMessage());
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
         };
-
         previewListeners.put(roomCode, listener);
-        gameRef(roomCode).child(NODE_PREVIEW).child(opponentId)
-            .addValueEventListener(listener);
+        gameRef(roomCode).child(NODE_PREVIEW).child(opponentId).addValueEventListener(listener);
     }
 
-    @Override
-    public void removePreviewListener(String roomCode) {
+    @Override public void removePreviewListener(String roomCode) {
         ValueEventListener listener = previewListeners.remove(roomCode);
-        if (listener != null) {
-            gameRef(roomCode).child(NODE_PREVIEW).removeEventListener(listener);
-        }
+        if (listener != null) gameRef(roomCode).child(NODE_PREVIEW).removeEventListener(listener);
     }
 
-    @Override
-    public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
-        gameRef(roomCode).child(NODE_PLACEMENT_READY).child(playerId).setValue(isReady)
-            .addOnSuccessListener(unused -> callback.onSuccess(null))
-            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    @Override public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
+        gameRef(roomCode).child(NODE_PLACEMENT_READY).child(playerId).setValue(isReady).addOnSuccessListener(unused -> callback.onSuccess(null)).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    @Override
-    public void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
+    @Override public void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback) {
         removePlacementStatusListener(roomCode);
-
         ValueEventListener listener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Boolean ready = snapshot.getValue(Boolean.class);
                 callback.onSuccess(ready != null && ready);
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                callback.onFailure(error.getMessage());
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
         };
-
         placementStatusListeners.put(roomCode, listener);
         gameRef(roomCode).child(NODE_PLACEMENT_READY).child(opponentId).addValueEventListener(listener);
     }
 
     private void removePlacementStatusListener(String roomCode) {
         ValueEventListener listener = placementStatusListeners.remove(roomCode);
-        if (listener != null) {
-            gameRef(roomCode).child(NODE_PLACEMENT_READY).removeEventListener(listener);
-        }
+        if (listener != null) gameRef(roomCode).child(NODE_PLACEMENT_READY).removeEventListener(listener);
     }
 
-    @Override
-    public void updateBoardLayout(String roomCode, String playerId, java.util.List<battleships_ex.gdx.data.ShipPlacement> ships, DataCallback<Void> callback) {
-        gameRef(roomCode).child(NODE_BOARDS).child(playerId).setValue(ships)
-            .addOnSuccessListener(unused -> callback.onSuccess(null))
-            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    @Override public void updateBoardLayout(String roomCode, String playerId, java.util.List<battleships_ex.gdx.data.ShipPlacement> ships, DataCallback<Void> callback) {
+        gameRef(roomCode).child(NODE_BOARDS).child(playerId).setValue(ships).addOnSuccessListener(unused -> callback.onSuccess(null)).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    @Override
-    public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<java.util.List<battleships_ex.gdx.data.ShipPlacement>> callback) {
+    @Override public void addBoardLayoutListener(String roomCode, String opponentId, DataCallback<java.util.List<battleships_ex.gdx.data.ShipPlacement>> callback) {
         removeBoardLayoutListener(roomCode);
         ValueEventListener listener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!snapshot.exists()) return;
                 java.util.List<battleships_ex.gdx.data.ShipPlacement> placements = new java.util.ArrayList<>();
                 for (DataSnapshot shipSnapshot : snapshot.getChildren()) {
                     battleships_ex.gdx.data.ShipPlacement placement = shipSnapshot.getValue(battleships_ex.gdx.data.ShipPlacement.class);
-                    if (placement != null) {
-                        placements.add(placement);
-                    }
+                    if (placement != null) placements.add(placement);
                 }
                 callback.onSuccess(placements);
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                callback.onFailure(error.getMessage());
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
         };
         boardLayoutListeners.put(roomCode, listener);
         gameRef(roomCode).child(NODE_BOARDS).child(opponentId).addValueEventListener(listener);
     }
 
-    @Override
-    public void removeBoardLayoutListener(String roomCode) {
+    @Override public void removeBoardLayoutListener(String roomCode) {
         ValueEventListener listener = boardLayoutListeners.remove(roomCode);
-        if (listener != null) {
-            gameRef(roomCode).child(NODE_BOARDS).removeEventListener(listener);
-        }
+        if (listener != null) gameRef(roomCode).child(NODE_BOARDS).removeEventListener(listener);
     }
 
-    // ── Session re-join & cleanup (Issue #29) ─────────────────────
-
-    @Override
-    public void roomIsActive(String roomCode, DataCallback<Boolean> callback) {
+    @Override public void roomIsActive(String roomCode, DataCallback<Boolean> callback) {
         gameRef(roomCode).child(FIELD_STATUS).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!snapshot.exists()) {
-                    callback.onSuccess(false);
-                    return;
-                }
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) { callback.onSuccess(false); return; }
                 String status = snapshot.getValue(String.class);
-                boolean active = "placing".equals(status) || "playing".equals(status);
-                callback.onSuccess(active);
+                callback.onSuccess("placing".equals(status) || "playing".equals(status));
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                callback.onFailure(error.getMessage());
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
         });
     }
 
-    @Override
-    public void loadGameState(String roomCode, DataCallback<GameSnapshot> callback) {
+    @Override public void loadGameState(String roomCode, DataCallback<GameSnapshot> callback) {
         gameRef(roomCode).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!snapshot.exists()) {
-                    callback.onFailure("Game state not found");
-                    return;
-                }
-
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) { callback.onFailure("Game state not found"); return; }
                 String currentTurn = snapshot.child(FIELD_CURRENT_TURN).getValue(String.class);
                 String status      = snapshot.child(FIELD_STATUS).getValue(String.class);
-
                 callback.onSuccess(new GameSnapshot(currentTurn, status != null ? status : "finished"));
             }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                callback.onFailure(error.getMessage());
-            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
         });
     }
 
-    @Override
-    public void cleanupSession(String roomCode, DataCallback<Void> callback) {
-        gameRef(roomCode).child(FIELD_STATUS).setValue("abandoned")
-            .addOnSuccessListener(unused -> callback.onSuccess(null))
-            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+    @Override public void cleanupSession(String roomCode, DataCallback<Void> callback) {
+        gameRef(roomCode).child(FIELD_STATUS).setValue("abandoned").addOnSuccessListener(unused -> callback.onSuccess(null)).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
-    // ── Cleanup ─────────────────────────────────────────────────────
-
-    @Override
-    public void removeAllListeners(String roomCode) {
+    @Override public void removeAllListeners(String roomCode) {
         removeMoveListener(roomCode);
+        removeActionCardListener(roomCode);
         removeTurnListener(roomCode);
         removeHeartbeatListener(roomCode);
         removePreviewListener(roomCode);

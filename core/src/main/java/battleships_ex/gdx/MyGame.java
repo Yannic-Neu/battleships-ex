@@ -70,6 +70,7 @@ public class MyGame extends Game {
     public GameController getGameController() {
         if (gameController == null) {
             StandardRulesEngine rulesEngine = new StandardRulesEngine();
+            battleships_ex.gdx.model.cards.ActionCardEffectProvider.getInstance().setEffects(rulesEngine);
             gameController = new GameController(rulesEngine, this.gameDataSource, this.getSessionManager());
         }
         return gameController;

@@ -33,6 +33,8 @@ public interface LobbyDataSource {
 
     void setExMode(String roomCode, boolean enabled, DataCallback<Void> callback);
 
+    void setSelectedCards(String roomCode, java.util.List<String> cardNames, DataCallback<Void> callback);
+
     class LobbySnapshot {
         public final String roomCode;
         public final String hostPlayerId;
@@ -42,12 +44,14 @@ public interface LobbyDataSource {
         public final String status;           // "waiting", "joined", "ready", "playing"
         public final boolean guestReady;
         public final boolean exModeEnabled;
+        public final java.util.List<String> selectedCardNames;
 
         public LobbySnapshot(String roomCode,
                              String hostPlayerId,  String hostPlayerName,
                              String guestPlayerId, String guestPlayerName,
                              String status, boolean guestReady,
-                             boolean exModeEnabled) {
+                             boolean exModeEnabled,
+                             java.util.List<String> selectedCardNames) {
             this.roomCode        = roomCode;
             this.hostPlayerId    = hostPlayerId;
             this.hostPlayerName  = hostPlayerName;
@@ -56,6 +60,9 @@ public interface LobbyDataSource {
             this.status          = status;
             this.guestReady      = guestReady;
             this.exModeEnabled   = exModeEnabled;
+            this.selectedCardNames = selectedCardNames != null ? 
+                java.util.Collections.unmodifiableList(selectedCardNames) : 
+                java.util.Collections.emptyList();
         }
 
         public LobbySnapshot(String roomCode,
@@ -63,7 +70,7 @@ public interface LobbyDataSource {
                              String guestPlayerId, String guestPlayerName,
                              String status, boolean guestReady) {
             this(roomCode, hostPlayerId, hostPlayerName, guestPlayerId,
-                 guestPlayerName, status, guestReady, true);
+                 guestPlayerName, status, guestReady, true, java.util.Collections.emptyList());
         }
 
         /** @return true if the guest slot is filled */

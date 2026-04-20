@@ -17,18 +17,18 @@ public class Player {
     private final Board  board;
     private final List<ActionCard> cards;
     private int energy;
-    private boolean shieldActive = false;
+    private final java.util.Set<String> cardsPlayedThisTurn = new java.util.HashSet<>();
 
-    public void activateShield() {
-        shieldActive = true;
+    public void markCardAsPlayed(ActionCard card) {
+        cardsPlayedThisTurn.add(card.getClass().getSimpleName());
     }
 
-    public boolean hasShield() {
-        return shieldActive;
+    public boolean hasPlayedCardThisTurn(ActionCard card) {
+        return cardsPlayedThisTurn.contains(card.getClass().getSimpleName());
     }
 
-    public void consumeShield() {
-        shieldActive = false;
+    public void clearTurnFlags() {
+        cardsPlayedThisTurn.clear();
     }
 
     public Player(String id, String name) {
@@ -36,6 +36,7 @@ public class Player {
         this.name  = name;
         this.board = new Board(10, 10);
         this.cards = new ArrayList<>();
+        this.energy = 0;
     }
 
     public String getId()    { return id; }
@@ -51,9 +52,10 @@ public class Player {
         cards.add(card);
     }
 
-    public void removeCard(ActionCard card) {
-        cards.remove(card);
+    public void clearCards() {
+        cards.clear();
     }
+
 
     /** @return true if the player currently holds the given card */
     public boolean hasCard(ActionCard card) {
@@ -69,6 +71,9 @@ public class Player {
             throw new IllegalArgumentException("Energy amount must be non-negative");
         }
         energy += amount;
+        if (energy > 10) {
+            energy = 10;
+        }
     }
 
     public boolean canSpendEnergy(int cost) {
@@ -83,11 +88,5 @@ public class Player {
             throw new IllegalStateException("Not enough energy");
         }
         energy -= cost;
-    }
-    public void gainTurnEnergy() {
-        addEnergy(1);
-    }
-
-    public void setParryActive(boolean b) {
     }
 }
