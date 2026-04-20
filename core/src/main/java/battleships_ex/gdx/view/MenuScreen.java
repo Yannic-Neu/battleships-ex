@@ -124,25 +124,25 @@ public class MenuScreen extends ScreenAdapter {
                         "REJOIN GAME?",
                         "You have an active game session. Would you like to rejoin?",
                         "REJOIN",
-                        "NEW GAME",
+                        "ABANDON",
                         () -> {
-                            // Rejoin: fetch snapshot first to initialize managers
-                            game.getLobbyDataSource().addLobbyListener(sm.getPersistedSession().roomCode, new DataCallback<LobbyDataSource.LobbySnapshot>() {
+                            // YES: Rejoin: fetch snapshot first to initialize managers
+                            final SessionStore.SessionInfo info = sm.getPersistedSession();
+                            if (info == null) return;
+
+                            game.getLobbyDataSource().addLobbyListener(info.roomCode, new DataCallback<LobbyDataSource.LobbySnapshot>() {
                                 @Override
                                 public void onSuccess(LobbyDataSource.LobbySnapshot snapshot) {
                                     com.badlogic.gdx.Gdx.app.postRunnable(() -> {
                                         game.getLobbyDataSource().removeLobbyListener(snapshot.roomCode);
-                                        
-                                        SessionStore.SessionInfo info = sm.getPersistedSession();
-                                        if (info == null) return;
 
                                         boolean isHost = info.playerId.equals(snapshot.hostPlayerId);
                                         Player localPlayer = new Player(info.playerId, isHost ? snapshot.hostPlayerName : snapshot.guestPlayerName);
                                         Player remotePlayer = new Player(info.opponentId, isHost ? snapshot.guestPlayerName : snapshot.hostPlayerName);
-                                        
+
                                         LobbyController lobbyController = new battleships_ex.gdx.controller.LobbyController(game.getLobbyDataSource());
                                         battleships_ex.gdx.model.lobby.Lobby lobby = new battleships_ex.gdx.model.lobby.Lobby(System.currentTimeMillis(), snapshot.roomCode);
-                                        
+
                                         if (isHost) {
                                             lobby.addPlayer(localPlayer);
                                             lobby.addPlayer(remotePlayer);
@@ -156,9 +156,9 @@ public class MenuScreen extends ScreenAdapter {
 
                                         GameStateManager.init(game.getGameController(), lobbyController, localPlayer);
                                         GameStateManager.getInstance().setExModeEnabled(snapshot.exModeEnabled);
-                                        
+
                                         game.getGameController().initSession(localPlayer, remotePlayer, snapshot.roomCode, isHost, snapshot.selectedCardNames);
-                                        
+
                                         game.setScreen(new BattleScreen(game));
                                     });
                                 }
@@ -168,6 +168,13 @@ public class MenuScreen extends ScreenAdapter {
                                     System.out.println("[MenuScreen] Failed to fetch lobby for rejoin: " + error);
                                 }
                             });
+                        },
+                        () -> {
+                            // NO: Abandon game
+                            final SessionStore.SessionInfo info = sm.getPersistedSession();
+                            if (info != null) {
+                                sm.cleanupAbandonedSession(info.roomCode);
+                            }
                         }
                     ).show(stage);
                 });

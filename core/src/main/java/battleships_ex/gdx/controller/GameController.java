@@ -78,14 +78,17 @@ public class GameController {
         // Initialize action cards if provided
         if (selectedCardNames != null && !selectedCardNames.isEmpty()) {
             local.clearCards(); // Clear any default cards
+            remote.clearCards();
             for (String cardName : selectedCardNames) {
                 try {
                     local.addCard(battleships_ex.gdx.model.cards.ActionCardRegistry.createCard(cardName));
+                    remote.addCard(battleships_ex.gdx.model.cards.ActionCardRegistry.createCard(cardName));
                 } catch (UnsupportedOperationException e) {
                     System.err.println("[GameController] Card not yet implemented: " + cardName);
                 }
             }
         }
+        attachStatusListener();
     }
 
     /**
@@ -132,6 +135,24 @@ public class GameController {
                 @Override public void onSuccess(Void result) {}
                 @Override public void onFailure(String error) {
                     System.out.println("[GameController] Failed to sync initial turn: " + error);
+                }
+            });
+
+            // Register status listener
+            gameDataSource.addStatusListener(roomCode, new DataCallback<String>() {
+                @Override
+                public void onSuccess(String status) {
+                    if ("abandoned".equals(status)) {
+                        com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                            if (listener != null) {
+                                // If opponent abandoned, local player wins by forfeit
+                                listener.onGameOver(localPlayer.getName(), "forfeit");
+                            }
+                        });
+                    }
+                }
+                @Override public void onFailure(String error) {
+                    System.out.println("[GameController] Status listener error: " + error);
                 }
             });
 
@@ -802,6 +823,45 @@ public class GameController {
                 }, 1.0f);
             }
         }
+    }
+
+    public void abandonGame() {
+        // Notify UI immediately (local feedback)
+        if (listener != null) {
+            listener.onGameOver(remotePlayer.getName(), "forfeit");
+        }
+        
+        if (roomCode != null) {
+            // Tell backend this room is abandoned
+            sessionManager.cleanupAbandonedSession(roomCode);
+            // Clear internal room code so we don't keep listening
+            this.roomCode = null;
+        }
+        
+        cleanup();
+    }
+
+    private void attachStatusListener() {
+        if (roomCode == null) return;
+        
+        gameDataSource.addStatusListener(roomCode, new DataCallback<String>() {
+            @Override
+            public void onSuccess(String status) {
+                if ("abandoned".equals(status)) {
+                    com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+                        if (listener != null) {
+                            // Opponent abandoned. If we are in battle, show victory screen.
+                            // If in placement, show a special popup.
+                            listener.onOpponentAbandoned();
+                            listener.onGameOver(localPlayer.getName(), "forfeit");
+                        }
+                    });
+                }
+            }
+            @Override public void onFailure(String error) {
+                System.out.println("[GameController] Status listener error: " + error);
+            }
+        });
     }
 
     private void syncActionCardToBackend(battleships_ex.gdx.model.cards.ActionCard card, Coordinate target) {

@@ -42,6 +42,10 @@ public class GameStateManager {
         return instance;
     }
 
+    public static boolean isInitialized() {
+        return instance != null;
+    }
+
     public static void init(GameController  gameController,
                             LobbyController lobbyController,
                             Player          localPlayer) {
@@ -235,8 +239,19 @@ public class GameStateManager {
             }
 
             @Override
-            public void onGameOver(String winnerName) {
+            public void onGameOver(String winnerName, String reason) {
+                if (stateListener != null) stateListener.onGameOver(winnerName, reason);
                 currentState.onGameOver(GameStateManager.this, winnerName);
+            }
+
+            @Override
+            public void onGameOver(String winnerName) {
+                onGameOver(winnerName, null);
+            }
+
+            @Override
+            public void onOpponentAbandoned() {
+                if (stateListener != null) stateListener.onOpponentAbandoned();
             }
 
             @Override

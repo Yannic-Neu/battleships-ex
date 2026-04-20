@@ -50,6 +50,7 @@ public class FirebaseGameDataSource implements GameDataSource {
     private final Map<String, ValueEventListener> placementStatusListeners = new HashMap<>();
     private final Map<String, ValueEventListener> boardLayoutListeners = new HashMap<>();
     private final Map<String, ValueEventListener> actionCardListeners = new HashMap<>();
+    private final Map<String, ValueEventListener> statusListeners = new HashMap<>();
 
     public FirebaseGameDataSource() {
         this.roomsRef = FirebaseDatabase.getInstance().getReference("rooms");
@@ -57,6 +58,25 @@ public class FirebaseGameDataSource implements GameDataSource {
 
     private DatabaseReference gameRef(String roomCode) {
         return roomsRef.child(roomCode).child(NODE_GAME);
+    }
+
+    @Override
+    public void addStatusListener(String roomCode, DataCallback<String> callback) {
+        ValueEventListener listener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String status = snapshot.getValue(String.class);
+                if (status != null) callback.onSuccess(status);
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { callback.onFailure(error.getMessage()); }
+        };
+        statusListeners.put(roomCode, listener);
+        gameRef(roomCode).child(FIELD_STATUS).addValueEventListener(listener);
+    }
+
+    private void removeStatusListener(String roomCode) {
+        ValueEventListener listener = statusListeners.remove(roomCode);
+        if (listener != null) gameRef(roomCode).child(FIELD_STATUS).removeEventListener(listener);
     }
 
     @Override
@@ -337,7 +357,15 @@ public class FirebaseGameDataSource implements GameDataSource {
     }
 
     @Override public void cleanupSession(String roomCode, DataCallback<Void> callback) {
-        gameRef(roomCode).child(FIELD_STATUS).setValue("abandoned").addOnSuccessListener(unused -> callback.onSuccess(null)).addOnFailureListener(e -> callback.onFailure(e.getMessage()));
+        Map<String, Object> updates = new HashMap<>();
+        updates.put(FIELD_STATUS, "abandoned"); // rooms/{code}/game/status
+        
+        gameRef(roomCode).updateChildren(updates);
+        
+        // Also update the root status so Lobby-based listeners see it too
+        roomsRef.child(roomCode).child(FIELD_STATUS).setValue("abandoned")
+            .addOnSuccessListener(unused -> callback.onSuccess(null))
+            .addOnFailureListener(e -> callback.onFailure(e.getMessage()));
     }
 
     @Override public void removeAllListeners(String roomCode) {
@@ -348,5 +376,6 @@ public class FirebaseGameDataSource implements GameDataSource {
         removePreviewListener(roomCode);
         removePlacementStatusListener(roomCode);
         removeBoardLayoutListener(roomCode);
+        removeStatusListener(roomCode);
     }
 }

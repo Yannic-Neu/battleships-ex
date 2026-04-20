@@ -20,6 +20,7 @@ public interface GameDataSource {
     void removeTurnListener(String roomCode);
 
     void updateGameStatus(String roomCode, String status, DataCallback<Void> callback);
+    void addStatusListener(String roomCode, DataCallback<String> callback);
     void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback);
     void addPlacementStatusListener(String roomCode, String opponentId, DataCallback<Boolean> callback);
 

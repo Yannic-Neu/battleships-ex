@@ -8,7 +8,7 @@ import battleships_ex.gdx.config.ButtonConfig;
 
 public class ConfirmationDialog extends Dialog {
 
-    public ConfirmationDialog(String title, String message, String confirmText, String cancelText, Runnable onConfirm) {
+    public ConfirmationDialog(String title, String message, String confirmText, String cancelText, Runnable onConfirm, Runnable onCancel) {
         super(title, new WindowStyle(Theme.fontMedium, Theme.WHITE, Theme.darkBluePanel));
 
         Table content = getContentTable();
@@ -21,7 +21,10 @@ public class ConfirmationDialog extends Dialog {
         buttonTable.pad(20);
 
         if (cancelText != null) {
-            GameButton btnCancel = new GameButton(cancelText, ButtonConfig.secondary(120f, 44f), this::hide);
+            GameButton btnCancel = new GameButton(cancelText, ButtonConfig.secondary(120f, 44f), () -> {
+                hide();
+                if (onCancel != null) onCancel.run();
+            });
             buttonTable.add(btnCancel).padRight(10);
         }
 
@@ -31,6 +34,10 @@ public class ConfirmationDialog extends Dialog {
         });
 
         buttonTable.add(btnConfirm);
+    }
+
+    public ConfirmationDialog(String title, String message, String confirmText, String cancelText, Runnable onConfirm) {
+        this(title, message, confirmText, cancelText, onConfirm, null);
     }
 
     @Override

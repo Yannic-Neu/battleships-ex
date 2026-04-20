@@ -21,8 +21,15 @@ public class GameOverScreen extends ScreenAdapter {
     private final boolean isVictory;
     private Stage stage;
 
+    private final String reason;
+
     public GameOverScreen(MyGame game, String winnerName) {
+        this(game, winnerName, null);
+    }
+
+    public GameOverScreen(MyGame game, String winnerName, String reason) {
         this.game = game;
+        this.reason = reason;
 
         String localPlayerName = game.getGameController().getLocalPlayer().getName();
         this.isVictory = localPlayerName.equals(winnerName);
@@ -38,8 +45,14 @@ public class GameOverScreen extends ScreenAdapter {
         root.setBackground(Theme.blackPanel);
         stage.addActor(root);
 
-        Label resultLabel = new Label(isVictory ? "YOU WON" : "YOU LOST",
+        String title = isVictory ? "YOU WON" : "YOU LOST";
+        if ("forfeit".equals(reason) && isVictory) {
+            title += "\nsince the player forfeited the match";
+        }
+
+        Label resultLabel = new Label(title,
             new Label.LabelStyle(Theme.fontLarge, isVictory ? Theme.WHITE : com.badlogic.gdx.graphics.Color.RED));
+        resultLabel.setAlignment(com.badlogic.gdx.utils.Align.center);
 
         GameButton menuButton = new GameButton("RETURN TO MENU", ButtonConfig.primary(300f, 60f), () -> {
             game.getGameController().cleanup();

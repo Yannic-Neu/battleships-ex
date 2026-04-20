@@ -14,6 +14,8 @@ import battleships_ex.gdx.model.rules.PlacementResult;
  */
 public interface GameStateListener {
 
+    void onOpponentAbandoned();
+
     // Phase transitions
     void onStateChanged(String stateName);
 
@@ -43,6 +45,8 @@ public interface GameStateListener {
 
     // Terminal
     void onGameOver(String winnerName);
+
+    void onGameOver(String winnerName, String reason);
 
     void onTurnChanged(String currentPlayerId);
 
