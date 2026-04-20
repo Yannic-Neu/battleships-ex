@@ -636,6 +636,19 @@ public class GameController {
                         }
                     });
             }
+
+            // Check if this counter-shot ended the game
+            if (sr.isSunk() && engine.hasWon(remotePlayer.getBoard())) {
+                notify_gameOver(localPlayer.getName());
+                if (roomCode != null) {
+                    gameDataSource.pushGameOver(roomCode, localPlayer.getName(), new DataCallback<Void>() {
+                        @Override public void onSuccess(Void r) {}
+                        @Override public void onFailure(String error) {
+                            System.out.println("[GameController] Failed to push game over: " + error);
+                        }
+                    });
+                }
+            }
         }
     }
 
