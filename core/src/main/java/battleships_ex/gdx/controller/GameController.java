@@ -143,13 +143,8 @@ public class GameController {
                     com.badlogic.gdx.Gdx.app.postRunnable(() -> {
                         if (session.getCurrentPlayer().getId().equals(currentPlayerId)) return;
 
-                        if (currentPlayerId.equals(localPlayer.getId())) {
-                            session.setCurrentPlayer(localPlayer);
-                            if (listener != null) listener.onTurnChanged(localPlayer.getId());
-                        } else {
-                            session.setCurrentPlayer(remotePlayer);
-                            if (listener != null) listener.onTurnChanged(remotePlayer.getId());
-                        }
+                        session.forceTurn(currentPlayerId);
+                        if (listener != null) listener.onTurnChanged(currentPlayerId);
                     });
                 }
 
@@ -496,6 +491,7 @@ public class GameController {
                 notify_miss(target);
                 syncMoveToBackend(target, false);
                 syncTurnToBackend();
+                if (listener != null) listener.onTurnChanged(session.getCurrentPlayer().getId());
                 break;
 
             case HIT:
@@ -531,7 +527,9 @@ public class GameController {
                 session.processMove(target, result);
                 // localPlayer hit a remote mine. localPlayer gets hit by 2 random shots.
                 handleMineHit(localPlayer);
-                syncMoveToBackend(target, true);
+                syncMoveToBackend(target, false);
+                syncTurnToBackend();
+                if (listener != null) listener.onTurnChanged(session.getCurrentPlayer().getId());
                 break;
         }
     }
@@ -539,6 +537,11 @@ public class GameController {
     public void onRemoteShotReceived(int row, int col) {
         System.out.println("[GameController] LOG: onRemoteShotReceived at (" + row + ", " + col + ")");
         if (!isSessionActive()) return;
+
+        // Ensure session knows remote player is the attacker for turn-switching logic
+        if (!session.getCurrentPlayer().equals(remotePlayer)) {
+            session.forceTurn(remotePlayer.getId());
+        }
 
         Coordinate target = new Coordinate(row, col);
 
@@ -549,6 +552,7 @@ public class GameController {
             case MISS:
                 session.processMove(target, result);    // switches turn back to local
                 notify_miss(target);
+                if (listener != null) listener.onTurnChanged(session.getCurrentPlayer().getId());
                 break;
 
             case HIT:
@@ -569,6 +573,7 @@ public class GameController {
                 session.processMove(target, result);
                 // Remote player hit a local mine. They get hit by 2 random shots.
                 handleMineHit(remotePlayer);
+                if (listener != null) listener.onTurnChanged(session.getCurrentPlayer().getId());
                 break;
 
             case ALREADY_SHOT:
@@ -577,8 +582,37 @@ public class GameController {
         }
     }
 
+    private void handleRemoteMineDetonation(GameDataSource.ActionCardSnapshot snapshot) {
+        Coordinate target = new Coordinate(snapshot.target.getRow(), snapshot.target.getCol());
+        // Apply the shot locally
+        ShotResult result = engine.resolveShot(localPlayer.getBoard(), target);
+
+        if (result.isHitOrSunk()) {
+            localPlayer.addEnergy(1);
+        }
+
+        if (listener != null) {
+            // Show explosion in UI
+            battleships_ex.gdx.model.cards.ActionCardResult detox =
+                battleships_ex.gdx.model.cards.ActionCardResult.hit("Mine Detonation",
+                java.util.Collections.singletonList(target));
+            listener.onActionCardPlayed(detox);
+        }
+
+        // Check if this detonation ended the game
+        if (result.isSunk() && engine.hasWon(localPlayer.getBoard())) {
+            notify_gameOver(remotePlayer.getName());
+        }
+    }
+
     private void handleMineHit(Player attacker) {
-        // Trigger 2 random shots at the attacker's board
+        // Attacker waits for defender to calculate and sync (multiplayer)
+        if (attacker == localPlayer && !isSinglePlayer) {
+            System.out.println("[GameController] LOG: Local player hit a mine. Waiting for counter-shots from defender.");
+            return;
+        }
+
+        // Calculate counter-shots (either we are defender, or we are in single player)
         List<ShotResult> counterShots = engine.triggerRandomShots(attacker, 2);
         for (ShotResult sr : counterShots) {
             if (sr.isShipHit()) {
@@ -590,12 +624,17 @@ public class GameController {
                     java.util.Collections.singletonList(sr.getCoordinate()));
                 listener.onActionCardPlayed(detox);
             }
-            // If we are local, and we just hit a remote mine, we need to sync our own hits.
-            // If the remote player hit our mine, we (local) are firing shots at them (attacker).
-            // Actually, if we are in onRemoteShotReceived, the remote player (attacker) hit OUR mine.
-            // So we (local) should fire back at them.
-            if (attacker == remotePlayer) {
-                 syncMoveToBackend(sr.getCoordinate(), sr.isShipHit());
+
+            // Sync if we are defender in multiplayer
+            if (attacker == remotePlayer && roomCode != null) {
+                String meta = sr.isShipHit() ? "HIT" : "MISS";
+                gameDataSource.submitActionCardPlay(roomCode, localPlayer.getId(), "MineDetonation",
+                    sr.getCoordinate(), meta, new DataCallback<Void>() {
+                        @Override public void onSuccess(Void r) {}
+                        @Override public void onFailure(String error) {
+                            System.err.println("[GameController] Failed to sync mine detonation: " + error);
+                        }
+                    });
             }
         }
     }
@@ -690,6 +729,12 @@ public class GameController {
 
     private void onActionCardReceived(GameDataSource.ActionCardSnapshot snapshot) {
         System.out.println("[GameController] LOG: Action card received: " + snapshot.cardName + " from " + snapshot.playerId);
+
+        // --- Handle virtual cards (Mine Detonation) first to avoid turn-switch logic ---
+        if ("MineDetonation".equals(snapshot.cardName)) {
+            handleRemoteMineDetonation(snapshot);
+            return;
+        }
 
         // Find card in remote player's hand by name
         battleships_ex.gdx.model.cards.ActionCard cardToPlay = null;

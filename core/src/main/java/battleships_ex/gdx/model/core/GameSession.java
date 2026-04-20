@@ -166,11 +166,26 @@ public class GameSession {
         return currentPlayer == player1 ? player2 : player1;
     }
 
-    private void switchTurn() {
+    public void switchTurn() {
         Player oldPlayer = currentPlayer;
         oldPlayer.clearTurnFlags();
         currentPlayer = (currentPlayer == player1) ? player2 : player1;
         System.out.println("[GameSession] LOG: Switched turn from " + oldPlayer.getId() + " to " + currentPlayer.getId());
+    }
+
+    /**
+     * Forces the turn to a specific player. Useful for syncing with backend state.
+     */
+    public void forceTurn(String playerId) {
+        if (player1.getId().equals(playerId)) {
+            currentPlayer = player1;
+        } else if (player2.getId().equals(playerId)) {
+            currentPlayer = player2;
+        } else {
+            System.err.println("[GameSession] WARNING: forceTurn called with unknown player ID: " + playerId);
+            return;
+        }
+        System.out.println("[GameSession] LOG: Forced turn to " + currentPlayer.getId());
     }
 
     private void requireStarted() {
