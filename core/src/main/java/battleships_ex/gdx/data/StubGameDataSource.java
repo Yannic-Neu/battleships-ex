@@ -73,6 +73,11 @@ public class StubGameDataSource implements GameDataSource {
     }
 
     @Override
+    public void addStatusListener(String roomCode, DataCallback<String> callback) {
+        System.out.println("[Stub] addStatusListener: room=" + roomCode);
+    }
+
+    @Override
     public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
         System.out.println("[Stub] updatePlacementStatus: room=" + roomCode + " player=" + playerId + " ready=" + isReady);
         callback.onSuccess(null);

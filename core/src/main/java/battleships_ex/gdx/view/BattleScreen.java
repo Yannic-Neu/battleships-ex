@@ -78,15 +78,23 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     }
 
     @Override public void onStateChanged(String stateName) { rebuildUI(); }
-    @Override public void onGameOver(String winnerName) {
-        Gdx.app.postRunnable(() -> game.setScreen(new GameOverScreen(game, winnerName)));
+    @Override public void onGameOver(String winnerName, String reason) {
+        Gdx.app.postRunnable(() -> game.setScreen(new GameOverScreen(game, winnerName, reason)));
     }
+
+    @Override public void onGameOver(String winnerName) {
+        onGameOver(winnerName, null);
+    }
+
     @Override public void onTurnChanged(String currentPlayerId) { rebuildUI(); }
     @Override public void onHit(Coordinate coordinate, Ship ship) { updateEnergyFromGame(); rebuildUI(); }
     @Override public void onMiss(Coordinate coordinate) { rebuildUI(); }
     @Override public void onSunk(Coordinate coordinate, Ship ship) { updateEnergyFromGame(); rebuildUI(); }
     @Override public void onAlreadyShot(Coordinate coordinate) { updateFireButtonState(); }
     @Override public void onActionCardPlayed(ActionCardResult result) { updateEnergyFromGame(); rebuildUI(); }
+    @Override public void onOpponentAbandoned() {
+        // GameController will also trigger onGameOver("localPlayerName", "forfeit")
+    }
 
     @Override
     public void onActionCardRejected(battleships_ex.gdx.model.cards.ActionCard card, String reason) {
@@ -137,7 +145,18 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         // Header
         Table topArea = new Table();
         topArea.setBackground(Theme.darkBluePanel);
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> game.setScreen(new MenuScreen(game)));
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> {
+            new ConfirmationDialog(
+                "RETREAT?",
+                "Abandoning the battle will count as a defeat. Retreat anyway?",
+                "RETREAT",
+                "STAY",
+                () -> {
+                    game.getGameController().abandonGame();
+                    game.setScreen(new MenuScreen(game));
+                }
+            ).show(stage);
+        });
         Label titleLabel = new Label("BATTLE STATION", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
         topArea.add(backButton).left().padLeft(20);
         topArea.add(titleLabel).center().expandX().padRight(80);
@@ -274,7 +293,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private void setTarget(Coordinate coord) {
         if (!GameStateManager.getInstance().isMyTurn()) return;
         this.targetCoord = coord;
-        
+
         // Update sonar zoom
         if (boardActor != null) {
             boardActor.setSonarZoom(coord);
@@ -358,6 +377,10 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
     @Override public void render(float delta) { ScreenUtils.clear(0f, 0f, 0f, 1f); stage.act(delta); stage.draw(); }
     @Override public void resize(int width, int height) { stage.getViewport().update(width, height, true); }
-    @Override public void hide() { GameStateManager.getInstance().setStateListener(null); }
+    @Override public void hide() {
+        if (GameStateManager.isInitialized()) {
+            GameStateManager.getInstance().setStateListener(null);
+        }
+    }
     @Override public void dispose() { stage.dispose(); if (boardActor != null) boardActor.dispose(); }
 }

@@ -32,9 +32,11 @@ public class SessionManager {
     private String localPlayerId;
     private String opponentPlayerId;
     private boolean active;
+    private long lastOpponentHeartbeat = 0;
 
     private Timer.Task heartbeatTask;
     private Timer.Task inactivityTask;
+    private Timer.Task monitorTask;
 
     public SessionManager(GameDataSource dataSource) {
         this.dataSource = dataSource;
@@ -74,6 +76,7 @@ public class SessionManager {
         if (isGdxAvailable()) {
             startHeartbeat();
             resetInactivityTimer();
+            startStalenessMonitor();
         }
         startOpponentMonitoring();
     }
@@ -92,6 +95,10 @@ public class SessionManager {
         if (inactivityTask != null) {
             inactivityTask.cancel();
             inactivityTask = null;
+        }
+        if (monitorTask != null) {
+            monitorTask.cancel();
+            monitorTask = null;
         }
         if (roomCode != null) {
             dataSource.removeHeartbeatListener(roomCode);
@@ -239,6 +246,24 @@ public class SessionManager {
         }, 0f, HEARTBEAT_INTERVAL_SEC);
     }
 
+    private void startStalenessMonitor() {
+        // Check every 3 seconds if the opponent's heartbeat is stale
+        monitorTask = Timer.schedule(new Timer.Task() {
+            @Override
+            public void run() {
+                if (!active || listener == null || lastOpponentHeartbeat == 0) return;
+
+                // HEARTBEAT_STALE_MS is 15s in FirebaseGameDataSource, 
+                // we'll use a slightly safer margin here.
+                long elapsed = System.currentTimeMillis() - lastOpponentHeartbeat;
+                if (elapsed > 20000L) { // 20 seconds threshold
+                    System.out.println("[SessionManager] Monitor detected stale heartbeat (" + elapsed + "ms)");
+                    listener.onOpponentDisconnected();
+                }
+            }
+        }, 3f, 3f);
+    }
+
     private void startOpponentMonitoring() {
         if (roomCode == null || opponentPlayerId == null) return;
 
@@ -246,6 +271,9 @@ public class SessionManager {
             @Override
             public void onSuccess(Boolean disconnected) {
                 if (!active) return;
+                
+                lastOpponentHeartbeat = System.currentTimeMillis();
+                
                 if (listener == null) return;
 
                 if (disconnected) {

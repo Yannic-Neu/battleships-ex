@@ -56,8 +56,13 @@ public interface GameListener {
      * View should transition to a game-over screen.
      *
      * @param winnerName the display name of the winning player
+     * @param reason     optional reason for victory (e.g., "forfeit")
      */
-    void onGameOver(String winnerName);
+    void onGameOver(String winnerName, String reason);
+
+    default void onGameOver(String winnerName) {
+        onGameOver(winnerName, null);
+    }
 
     /**
      * The player attempted to fire at a cell they already hit.
@@ -120,6 +125,11 @@ public interface GameListener {
      * View should display a "waiting for opponent" overlay.
      */
     default void onOpponentDisconnected() {}
+
+    /**
+     * The opponent has abandoned the match (e.g., left during setup).
+     */
+    default void onOpponentAbandoned() {}
 
     /**
      * The opponent has reconnected after a disconnect.

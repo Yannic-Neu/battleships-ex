@@ -84,6 +84,7 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
                 "RETREAT",
                 "STAY",
                 () -> {
+                    game.getGameController().abandonGame();
                     game.setScreen(new MenuScreen(game));
                 }
             ).show(stage);
@@ -400,6 +401,23 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
     }
 
     @Override
+    public void onOpponentAbandoned() {
+        com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+            new ConfirmationDialog(
+                "MATCH ABANDONED",
+                "The other player has abandoned the match.",
+                "OK",
+                null,
+                () -> {
+                    game.getGameController().cleanup();
+                    GameStateManager.destroy();
+                    game.setScreen(new MenuScreen(game));
+                }
+            ).show(stage);
+        });
+    }
+
+    @Override
     public void onStateChanged(String stateName) {
         // If the backend transitions to a combat state, jump to the Battle Screen automatically
         if (stateName.equals("MyTurnState") || stateName.equals("OpponentTurnState")) {
@@ -408,8 +426,13 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
     }
 
     // Unused callbacks required by the interface contract
-    @Override public void onGameOver(String winnerName) {}
-
+    @Override
+    public void onGameOver(String winnerName, String reason) {
+        // Transition to game over screen
+        com.badlogic.gdx.Gdx.app.postRunnable(() -> {
+            game.setScreen(new GameOverScreen(game, winnerName, reason));
+        });
+    }
     @Override
     public void onTurnChanged(String currentPlayerId) {
 
@@ -420,6 +443,12 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
     @Override public void onSunk(Coordinate coordinate, Ship ship) {}
     @Override public void onAlreadyShot(Coordinate coordinate) {}
     @Override public void onActionCardPlayed(battleships_ex.gdx.model.cards.ActionCardResult result) {}
+
+    @Override
+    public void onGameOver(String winnerName) {
+
+    }
+
     @Override public void onLobbyCreated(String roomCode) {}
     @Override public void onLobbyJoined() {}
     @Override public void onGuestJoined(String guestName) {}
@@ -453,7 +482,9 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
     @Override
     public void hide() {
         // CRITICAL: Unregister listener to prevent memory leaks when navigating away
-        GameStateManager.getInstance().setStateListener(null);
+        if (GameStateManager.isInitialized()) {
+            GameStateManager.getInstance().setStateListener(null);
+        }
     }
 
     @Override
