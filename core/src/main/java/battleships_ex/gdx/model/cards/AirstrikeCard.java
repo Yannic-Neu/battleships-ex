@@ -20,7 +20,7 @@ public class AirstrikeCard extends BaseActionCard {
     private Orientation orientation = Orientation.ROW; // Default
 
     public AirstrikeCard() {
-        super("Airstrike", 4, 1);
+        super("Airstrike", 4);
     }
 
     public Orientation getOrientation() {
@@ -65,7 +65,7 @@ public class AirstrikeCard extends BaseActionCard {
 
         if (anySunk) return ActionCardResult.sunk(cardName, affected);
         if (anyHit) return ActionCardResult.hit(cardName, affected);
-        
+
         ActionCardResult res = ActionCardResult.revealed(cardName, affected);
         if (anyMine) res.setMetadata("mineHit", true);
         return res;
@@ -73,11 +73,6 @@ public class AirstrikeCard extends BaseActionCard {
 
     @Override
     public boolean endsTurn() {
-        return false;
-    }
-
-    @Override
-    public boolean allowsFireAfterUse() {
         return true;
     }
 }

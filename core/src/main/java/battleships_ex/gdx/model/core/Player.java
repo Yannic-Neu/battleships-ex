@@ -18,6 +18,29 @@ public class Player {
     private final List<ActionCard> cards;
     private int energy;
     private boolean shieldActive = false;
+    private final java.util.Set<String> cardsPlayedThisTurn = new java.util.HashSet<>();
+    private boolean canFireThisTurn = true;
+
+    public void markCardAsPlayed(ActionCard card) {
+        cardsPlayedThisTurn.add(card.getClass().getSimpleName());
+    }
+
+    public boolean hasPlayedCardThisTurn(ActionCard card) {
+        return cardsPlayedThisTurn.contains(card.getClass().getSimpleName());
+    }
+
+    public void clearTurnFlags() {
+        cardsPlayedThisTurn.clear();
+        canFireThisTurn = true;
+    }
+
+    public void setCanFireThisTurn(boolean canFire) {
+        this.canFireThisTurn = canFire;
+    }
+
+    public boolean canFireThisTurn() {
+        return canFireThisTurn;
+    }
 
     public void activateShield() {
         shieldActive = true;
@@ -74,6 +97,9 @@ public class Player {
             throw new IllegalArgumentException("Energy amount must be non-negative");
         }
         energy += amount;
+        if (energy > 10) {
+            energy = 10;
+        }
     }
 
     public boolean canSpendEnergy(int cost) {

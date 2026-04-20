@@ -10,7 +10,7 @@ import battleships_ex.gdx.model.core.Player;
 public class MineCard extends BaseActionCard {
 
     public MineCard() {
-        super("Mine", 1, 3);
+        super("Mine", 1);
     }
 
     @Override
@@ -32,10 +32,5 @@ public class MineCard extends BaseActionCard {
     @Override
     public boolean endsTurn() {
         return false;
-    }
-
-    @Override
-    public boolean allowsFireAfterUse() {
-        return true;
     }
 }

@@ -59,7 +59,7 @@ public class GameSession {
      */
     public Move processMove(Coordinate coordinate, ShotResult result) {
         requireStarted();
-        // requireNotOver(); // Removed because the move itself might make the game over, 
+        // requireNotOver(); // Removed because the move itself might make the game over,
                             // and board.attack() is called before this.
                             // GameController should ensure no moves are sent after game is over.
 
@@ -108,6 +108,10 @@ public class GameSession {
             throw new IllegalArgumentException("Player does not hold card: " + card.getClass().getSimpleName());
         }
 
+        if (currentPlayer.hasPlayedCardThisTurn(card)) {
+            throw new IllegalStateException("Already played this type of action card this turn");
+        }
+
         if (!card.canUse(currentPlayer, getOpponent())) {
             throw new IllegalStateException("Card cannot be used right now: " + card.getClass().getSimpleName());
         }
@@ -131,11 +135,12 @@ public class GameSession {
         Player opponent = getOpponent();
 
         ActionCardResult result = card.execute(user, opponent, target);
-        
-        if (card instanceof BaseActionCard && ((BaseActionCard)card).getRemainingUses() <= 0) {
-            user.removeCard(card);
+        user.markCardAsPlayed(card);
+
+        if (card.endsTurn() && !gameIsOver()) {
+            switchTurn();
         }
-        
+
         return result;
     }
 
@@ -163,6 +168,7 @@ public class GameSession {
 
     private void switchTurn() {
         Player oldPlayer = currentPlayer;
+        oldPlayer.clearTurnFlags();
         currentPlayer = (currentPlayer == player1) ? player2 : player1;
         System.out.println("[GameSession] LOG: Switched turn from " + oldPlayer.getId() + " to " + currentPlayer.getId());
     }

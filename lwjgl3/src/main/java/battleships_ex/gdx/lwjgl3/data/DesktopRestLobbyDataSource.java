@@ -222,15 +222,15 @@ public class DesktopRestLobbyDataSource implements LobbyDataSource {
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("X-HTTP-Method-Override", "PATCH");
                 conn.setDoOutput(true);
-                
+
                 StringBuilder sb = new StringBuilder("[");
                 for (int i = 0; i < cardNames.size(); i++) {
                     sb.append("\"").append(cardNames.get(i)).append("\"");
                     if (i < cardNames.size() - 1) sb.append(",");
                 }
                 sb.append("]");
-                
-                String payload = String.format(Locale.ROOT, "{\"selectedCardNames\":%s}", sb.toString());
+
+                String payload = String.format(Locale.ROOT, "{\"selectedCardNames\":%s}", sb);
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(payload.getBytes(StandardCharsets.UTF_8));
                 }

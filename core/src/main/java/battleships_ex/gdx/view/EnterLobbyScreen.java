@@ -23,7 +23,7 @@ public class EnterLobbyScreen extends ScreenAdapter {
 
     private final MyGame game;
     private Stage stage;
-    private String generatedCode;
+    private final String generatedCode;
     private Label statusLabel;
 
     public EnterLobbyScreen(MyGame game) {

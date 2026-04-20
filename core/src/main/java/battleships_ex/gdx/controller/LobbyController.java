@@ -65,7 +65,7 @@ public class LobbyController {
 
                 // Auto-select all 4 cards from the registry
                 java.util.List<String> allCards = new java.util.ArrayList<>();
-                for (battleships_ex.gdx.model.cards.ActionCardRegistry.CardMetadata meta : 
+                for (battleships_ex.gdx.model.cards.ActionCardRegistry.CardMetadata meta :
                      battleships_ex.gdx.model.cards.ActionCardRegistry.getAllCardMetadata()) {
                     allCards.add(meta.name);
                 }
@@ -273,7 +273,7 @@ public class LobbyController {
         // ---- 4. Re-entry check ------------------------------------------
         // String equality — Player#getId() returns String
         boolean returningHost  = local.getId().equals(hostId);
-        boolean returningGuest = guestId != null && local.getId().equals(guestId);
+        boolean returningGuest = local.getId().equals(guestId);
 
         if (returningHost || returningGuest) {
             restoreFromSnapshot(local, code, snapshot, returningHost);

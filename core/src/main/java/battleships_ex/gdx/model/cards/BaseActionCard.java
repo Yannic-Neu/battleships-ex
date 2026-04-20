@@ -9,14 +9,10 @@ public abstract class BaseActionCard implements ActionCard {
 
     protected final String cardName;
     protected final int energyCost;
-    protected final int maxUses;
-    protected int remainingUses;
 
-    protected BaseActionCard(String cardName, int energyCost, int maxUses) {
+    protected BaseActionCard(String cardName, int energyCost) {
         this.cardName = cardName;
         this.energyCost = energyCost;
-        this.maxUses = maxUses;
-        this.remainingUses = maxUses;
     }
 
     @Override
@@ -26,15 +22,15 @@ public abstract class BaseActionCard implements ActionCard {
 
     @Override
     public boolean canUse(Player user, Player opponent) {
-        return remainingUses > 0 && user.getEnergy() >= energyCost;
-    }
-
-    public int getRemainingUses() {
-        return remainingUses;
+        return user.getEnergy() >= energyCost;
     }
 
     protected void consumeUse(Player user) {
-        remainingUses--;
         user.spendEnergy(energyCost);
+    }
+
+    @Override
+    public boolean endsTurn() {
+        return false;
     }
 }

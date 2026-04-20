@@ -12,7 +12,7 @@ import battleships_ex.gdx.model.rules.ShotResult;
 public class BombCard extends BaseActionCard {
 
     public BombCard() {
-        super("Bomb", 3, 2);
+        super("Bomb", 3);
     }
 
     @Override
@@ -23,7 +23,7 @@ public class BombCard extends BaseActionCard {
         List<Coordinate> area = new ArrayList<>();
         int r = target.getRow();
         int c = target.getCol();
-        
+
         area.add(new Coordinate(r, c));
         area.add(new Coordinate(r + 1, c));
         area.add(new Coordinate(r, c + 1));
@@ -56,11 +56,6 @@ public class BombCard extends BaseActionCard {
 
     @Override
     public boolean endsTurn() {
-        return false;
-    }
-
-    @Override
-    public boolean allowsFireAfterUse() {
         return true;
     }
 }

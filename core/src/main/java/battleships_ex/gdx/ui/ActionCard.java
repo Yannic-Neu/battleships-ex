@@ -63,7 +63,7 @@ public class ActionCard extends Table {
     public void bind(ActionCardPresentation model) {
         this.model = model;
         front.clearChildren();
-        
+
         // Icon
         if (model.getIcon() != null) {
             front.add(new com.badlogic.gdx.scenes.scene2d.ui.Image(model.getIcon())).size(32, 32).padBottom(4).row();
@@ -79,10 +79,6 @@ public class ActionCard extends Table {
         if (modelCard != null) {
             Label costLabel = new Label("E: " + modelCard.getEnergyCost(), new Label.LabelStyle(Theme.fontSmall, Theme.YELLOW));
             front.add(costLabel).padTop(4).center();
-        } else {
-            // Probably in selection screen where modelCard might not be bound yet
-            Label usesLabel = new Label(model.getRemainingUses() + " USES", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
-            front.add(usesLabel).padTop(4).center();
         }
     }
 

@@ -1,6 +1,5 @@
 package battleships_ex.gdx.model.cards;
 
-import battleships_ex.gdx.model.board.Board;
 import battleships_ex.gdx.model.core.Player;
 
 public interface ActionCard {
@@ -11,5 +10,4 @@ public interface ActionCard {
 
     int getEnergyCost();
     boolean endsTurn();
-    boolean allowsFireAfterUse();
 }

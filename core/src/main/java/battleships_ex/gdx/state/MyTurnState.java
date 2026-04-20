@@ -7,8 +7,8 @@ import battleships_ex.gdx.model.core.Player;
 
 public class MyTurnState extends BaseGameState {
 
-    private boolean cardUsedThisTurn = false;
-    private boolean canStillFire = true;
+    private final boolean cardUsedThisTurn = false;
+    private final boolean canStillFire = true;
 
     @Override
     public String getName() {

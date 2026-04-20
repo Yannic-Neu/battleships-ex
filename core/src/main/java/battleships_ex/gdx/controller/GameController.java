@@ -399,11 +399,6 @@ public class GameController {
 
         if (!card.canUse(localPlayer, remotePlayer)) {
             String reason = "INSUFFICIENT ENERGY";
-            if (card instanceof battleships_ex.gdx.model.cards.BaseActionCard) {
-                if (((battleships_ex.gdx.model.cards.BaseActionCard)card).getRemainingUses() <= 0) {
-                    reason = "OUT OF USES";
-                }
-            }
             if (listener != null) listener.onActionCardRejected(card, reason);
             return;
         }
@@ -432,6 +427,20 @@ public class GameController {
         }
 
         if (listener != null) listener.onActionCardPlayed(result);
+
+        if (card.endsTurn()) {
+            if (roomCode != null) {
+                syncTurnToBackend();
+            }
+            if (listener != null) {
+                listener.onTurnChanged(session.getCurrentPlayer().getId());
+            }
+            if (isSinglePlayer && session.getCurrentPlayer() == remotePlayer) {
+                com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
+                    @Override public void run() { playBotTurn(); }
+                }, 1.0f);
+            }
+        }
 
         // Reset inactivity timer on action
         sessionManager.resetInactivityTimer();
@@ -744,6 +753,20 @@ public class GameController {
         }
 
         if (listener != null) listener.onActionCardPlayed(result);
+
+        if (cardToPlay.endsTurn()) {
+            if (roomCode != null) {
+                syncTurnToBackend();
+            }
+            if (listener != null) {
+                listener.onTurnChanged(session.getCurrentPlayer().getId());
+            }
+            if (isSinglePlayer && session.getCurrentPlayer() == remotePlayer) {
+                com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
+                    @Override public void run() { playBotTurn(); }
+                }, 1.0f);
+            }
+        }
     }
 
     private void syncActionCardToBackend(battleships_ex.gdx.model.cards.ActionCard card, Coordinate target) {
@@ -812,7 +835,7 @@ public class GameController {
                     rowString.append("[ ]"); // Empty
                 }
             }
-            System.out.println(rowString.toString());
+            System.out.println(rowString);
         }
         System.out.println("=======================");
     }

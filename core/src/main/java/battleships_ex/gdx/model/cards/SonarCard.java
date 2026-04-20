@@ -10,7 +10,7 @@ import battleships_ex.gdx.model.core.Player;
 public class SonarCard extends BaseActionCard {
 
     public SonarCard() {
-        super("Sonar", 2, 2);
+        super("Sonar", 2);
     }
 
     @Override
@@ -24,7 +24,7 @@ public class SonarCard extends BaseActionCard {
         }
 
         ActionCardEffect effects = ActionCardEffectProvider.getInstance().getEffects();
-        
+
         // Mark as scanned and get info (RulesEngine handles the 3x3 counting and storage)
         effects.revealTileInfo(opponent, target);
         int adjCount = opponent.getBoard().countAdjacentOccupancy(target);
@@ -39,10 +39,5 @@ public class SonarCard extends BaseActionCard {
     @Override
     public boolean endsTurn() {
         return false;
-    }
-
-    @Override
-    public boolean allowsFireAfterUse() {
-        return true;
     }
 }

@@ -25,7 +25,7 @@ public class SettingsScreen extends ScreenAdapter {
     private boolean hints = true;
     private boolean darkMode = false;
 
-    private String[] shipStyles = {"SPRITES", "RECTANGLES", "RETRO"};
+    private final String[] shipStyles = {"SPRITES", "RECTANGLES", "RETRO"};
     private int currentShipStyle = 0;
 
     public SettingsScreen(MyGame game, Screen previousScreen) {

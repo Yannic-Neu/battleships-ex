@@ -14,23 +14,21 @@ public class ActionCardRegistry {
         public final String name;
         public final String description;
         public final int energyCost;
-        public final int maxUses;
 
-        public CardMetadata(String name, String description, int energyCost, int maxUses) {
+        public CardMetadata(String name, String description, int energyCost) {
             this.name = name;
             this.description = description;
             this.energyCost = energyCost;
-            this.maxUses = maxUses;
         }
     }
 
     private static final List<CardMetadata> ALL_CARDS = new ArrayList<>();
 
     static {
-        ALL_CARDS.add(new CardMetadata("Sonar", "Reveal adjacent ship/mine count", 2, 2));
-        ALL_CARDS.add(new CardMetadata("Bomb", "Shoot a 2x2 area", 3, 2));
-        ALL_CARDS.add(new CardMetadata("Mine", "Place a defensive mine on your board", 1, 3));
-        ALL_CARDS.add(new CardMetadata("Airstrike", "Shoot an entire row or column", 4, 1));
+        ALL_CARDS.add(new CardMetadata("Sonar", "Reveal adjacent ship/mine count", 2));
+        ALL_CARDS.add(new CardMetadata("Bomb", "Shoot a 2x2 area", 3));
+        ALL_CARDS.add(new CardMetadata("Mine", "Place a defensive mine on your board", 1));
+        ALL_CARDS.add(new CardMetadata("Airstrike", "Shoot an entire row or column", 4));
     }
 
     /**
@@ -42,7 +40,7 @@ public class ActionCardRegistry {
 
     /**
      * Factory method to create a card instance by its name.
-     * 
+     *
      * @param name the card name
      * @return a new instance of the requested card
      * @throws IllegalArgumentException if the name is unknown

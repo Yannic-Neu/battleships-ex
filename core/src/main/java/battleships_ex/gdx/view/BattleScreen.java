@@ -60,7 +60,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private GameButton fireButton;
     private GameButton rotateCardButton;
     private Coordinate targetCoord;
-    
+
     private battleships_ex.gdx.model.cards.ActionCard pendingCard;
     private boolean targetingMode = false;
 
@@ -160,7 +160,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         BoardConfig boardConfig = new BoardConfig(360f, 10, Theme.DARK_NAVY, Theme.BLUE);
         boardActor = new BoardActor(boardConfig);
         Board targetBoard = (currentMode == ViewMode.OWN_FLEET) ? gameController.getLocalPlayer().getBoard() : gameController.getRemotePlayer().getBoard();
-        
+
         boardActor.setBoardModel(targetBoard); // For dynamic Sonar
         for (int r = 0; r < 10; r++) {
             for (int c = 0; c < 10; c++) {
@@ -171,7 +171,11 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
                 }
             }
         }
-        boardActor.setMines(targetBoard.getMines());
+        if (currentMode == ViewMode.OWN_FLEET) {
+            boardActor.setMines(targetBoard.getMines());
+        } else {
+            boardActor.setMines(null);
+        }
         boardActor.setScannedTiles(targetBoard.getScannedTiles());
 
         boardActor.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
@@ -200,15 +204,15 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             for (battleships_ex.gdx.model.cards.ActionCard modelCard : gameController.getLocalPlayer().getCards()) {
                 String name = ""; String shortDesc = ""; String longDesc = ""; TextureRegion icon = Assets.ships.shipPatrol2h;
                 if (modelCard instanceof battleships_ex.gdx.model.cards.SonarCard) {
-                    name = "SONAR"; shortDesc = "Adjacency"; longDesc = "Scan 3x3 on a HIT tile. Costs 2. 2 uses."; icon = Assets.shipWithSight;
+                    name = "SONAR"; shortDesc = "Adjacency"; longDesc = "Scan 3x3 on a HIT tile. Costs 2."; icon = Assets.shipWithSight;
                 } else if (modelCard instanceof battleships_ex.gdx.model.cards.BombCard) {
-                    name = "BOMB"; shortDesc = "2x2 Blast"; longDesc = "Shoot 2x2 area. Costs 3. 2 uses."; icon = Assets.logoWithShip;
+                    name = "BOMB"; shortDesc = "2x2 Blast"; longDesc = "Shoot 2x2 area. Costs 3."; icon = Assets.logoWithShip;
                 } else if (modelCard instanceof battleships_ex.gdx.model.cards.MineCard) {
-                    name = "MINE"; shortDesc = "Defensive"; longDesc = "Place on own board. Costs 1. 3 uses."; icon = Assets.ships.shipSubmarine3h;
+                    name = "MINE"; shortDesc = "Defensive"; longDesc = "Place on own board. Costs 1."; icon = Assets.ships.shipSubmarine3h;
                 } else if (modelCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
-                    name = "AIRSTRIKE"; shortDesc = "Row/Col"; longDesc = "Clear row or column. Costs 4. 1 use."; icon = Assets.ships.shipCarrier5h;
+                    name = "AIRSTRIKE"; shortDesc = "Row/Col"; longDesc = "Clear row or column. Costs 4."; icon = Assets.ships.shipCarrier5h;
                 }
-                ActionCardPresentation pres = new ActionCardPresentationBase(name, shortDesc, longDesc, icon, ((battleships_ex.gdx.model.cards.BaseActionCard)modelCard).getRemainingUses());
+                ActionCardPresentation pres = new ActionCardPresentationBase(name, shortDesc, longDesc, icon);
                 actionCardTray.addCard(bindCard(name, pres, modelCard));
             }
             actionsPanel.add(energyBar).left().padBottom(6f).row();
@@ -302,6 +306,13 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             Board targetBoard = gameController.getRemotePlayer().getBoard();
             if (!targetBoard.getCell(targetCoord).isHit()) validTarget = false;
         }
+        if (validTarget && targetingMode && pendingCard instanceof battleships_ex.gdx.model.cards.MineCard) {
+            Board ownBoard = gameController.getLocalPlayer().getBoard();
+            Cell cell = ownBoard.getCell(targetCoord);
+            if (cell.isHit() || cell.hasShip() || ownBoard.hasMine(targetCoord)) {
+                validTarget = false;
+            }
+        }
         fireButton.setDisabled(!myTurn || !validTarget);
     }
 
@@ -333,9 +344,8 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         for (ActionCard card : actionCards) {
             battleships_ex.gdx.model.cards.ActionCard modelCard = card.getModelCard();
             if (modelCard == null) continue;
-            boolean usable = myTurn && energy >= modelCard.getEnergyCost();
-            if (modelCard instanceof battleships_ex.gdx.model.cards.BaseActionCard)
-                if (((battleships_ex.gdx.model.cards.BaseActionCard) modelCard).getRemainingUses() <= 0) usable = false;
+            boolean alreadyPlayed = localPlayer.hasPlayedCardThisTurn(modelCard);
+            boolean usable = myTurn && energy >= modelCard.getEnergyCost() && !alreadyPlayed;
             card.setDisabled(!usable);
         }
     }
