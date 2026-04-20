@@ -53,10 +53,6 @@ public final class ShotResult {
         return new ShotResult(Outcome.MINE_HIT, coordinate, null, detonationResults);
     }
 
-    public static ShotResult blocked(Coordinate coordinate) {
-        return new ShotResult(Outcome.BLOCKED, coordinate, null);
-    }
-
     // ---- Accessors ----------------------------------------------------------
 
     public Outcome getOutcome() { return outcome; }

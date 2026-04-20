@@ -56,11 +56,6 @@ public class StandardRulesEngine implements RulesEngine {
             return ShotResult.miss(coord);
         }
 
-        if (opponent != null && opponent.hasShield()) {
-            opponent.consumeShield();
-            return ShotResult.blocked(coord);
-        }
-
         if (board.getCell(coord).isHit()) {
             return ShotResult.alreadyShot(coord);
         }
@@ -69,9 +64,9 @@ public class StandardRulesEngine implements RulesEngine {
         if (board.hasMine(coord)) {
             board.removeMine(coord);
             board.attack(coord); // Mark tile as hit
-            
+
             // Note: The counter-shots (triggerRandomShots) must be triggered by the caller (GameController)
-            // because the RulesEngine here doesn't have access to the attacker's board directly 
+            // because the RulesEngine here doesn't have access to the attacker's board directly
             // to return a recursive ShotResult easily without more architecture changes.
             // We'll return MINE_HIT and let GameController handle the 2 random shots back at the attacker.
             return ShotResult.mineHit(coord, null);
@@ -112,7 +107,7 @@ public class StandardRulesEngine implements RulesEngine {
     public TileInfo revealTileInfo(Player opponent, Coordinate coord) {
         Board board = opponent.getBoard();
         board.markScanned(coord);
-        
+
         if (board.hasMine(coord)) return TileInfo.MINE;
         if (board.getCell(coord).hasShip()) return TileInfo.SHIP;
         return TileInfo.EMPTY;

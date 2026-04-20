@@ -475,21 +475,6 @@ public class GameController {
 
         Coordinate target = new Coordinate(row, col);
 
-        // ---- SHIELD INTERCEPTION (REMOTE PLAYER) ----
-        if (remotePlayer.hasShield()) {
-            remotePlayer.consumeShield();
-
-            // Treat as MISS
-            clearPreview();
-            sessionManager.resetInactivityTimer();
-
-            session.processMove(target, ShotResult.miss(target));
-            notify_miss(target);
-            syncMoveToBackend(target, false);
-            syncTurnToBackend();
-            return;
-        }
-
         ShotResult result  = engine.resolveShot(remotePlayer.getBoard(), target);
 
         // Clear preview now that shot is confirmed (Issue #28)
@@ -556,14 +541,6 @@ public class GameController {
         if (!isSessionActive()) return;
 
         Coordinate target = new Coordinate(row, col);
-
-        // ---- SHIELD INTERCEPTION (LOCAL PLAYER) ----
-        if (localPlayer.hasShield()) {
-            localPlayer.consumeShield();
-            // Manually create a MISS result to process
-            session.processMove(target, ShotResult.miss(target));
-            return;
-        }
 
         ShotResult result  = engine.resolveShot(localPlayer.getBoard(), target);
 

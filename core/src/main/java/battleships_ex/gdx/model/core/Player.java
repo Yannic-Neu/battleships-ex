@@ -17,9 +17,7 @@ public class Player {
     private final Board  board;
     private final List<ActionCard> cards;
     private int energy;
-    private boolean shieldActive = false;
     private final java.util.Set<String> cardsPlayedThisTurn = new java.util.HashSet<>();
-    private boolean canFireThisTurn = true;
 
     public void markCardAsPlayed(ActionCard card) {
         cardsPlayedThisTurn.add(card.getClass().getSimpleName());
@@ -31,27 +29,6 @@ public class Player {
 
     public void clearTurnFlags() {
         cardsPlayedThisTurn.clear();
-        canFireThisTurn = true;
-    }
-
-    public void setCanFireThisTurn(boolean canFire) {
-        this.canFireThisTurn = canFire;
-    }
-
-    public boolean canFireThisTurn() {
-        return canFireThisTurn;
-    }
-
-    public void activateShield() {
-        shieldActive = true;
-    }
-
-    public boolean hasShield() {
-        return shieldActive;
-    }
-
-    public void consumeShield() {
-        shieldActive = false;
     }
 
     public Player(String id, String name) {
@@ -79,9 +56,6 @@ public class Player {
         cards.clear();
     }
 
-    public void removeCard(ActionCard card) {
-        cards.remove(card);
-    }
 
     /** @return true if the player currently holds the given card */
     public boolean hasCard(ActionCard card) {
@@ -114,8 +88,5 @@ public class Player {
             throw new IllegalStateException("Not enough energy");
         }
         energy -= cost;
-    }
-
-    public void setParryActive(boolean b) {
     }
 }
