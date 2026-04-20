@@ -28,6 +28,7 @@ public class BoardActor extends Actor {
 
     private final BoardConfig config;
     private final ShapeRenderer renderer = new ShapeRenderer();
+    private final com.badlogic.gdx.graphics.g2d.GlyphLayout layout = new com.badlogic.gdx.graphics.g2d.GlyphLayout();
 
     private final List<Coordinate> previewCells = new ArrayList<>();
     private float blinkTimer;
@@ -38,6 +39,7 @@ public class BoardActor extends Actor {
     private final List<Coordinate> hits = new ArrayList<>();
     private final Set<Coordinate> mines = new HashSet<>();
     private final Set<Coordinate> scannedTiles = new HashSet<>();
+    private Coordinate sonarZoomCoordinate;
     private Board boardModel;
 
     public void markMiss(Coordinate coord) { misses.add(coord); }
@@ -50,6 +52,7 @@ public class BoardActor extends Actor {
         this.scannedTiles.clear();
         if (scanned != null) this.scannedTiles.addAll(scanned);
     }
+    public void setSonarZoom(Coordinate coord) { this.sonarZoomCoordinate = coord; }
     public void setBoardModel(Board board) { this.boardModel = board; }
 
     public BoardActor(BoardConfig config) {
@@ -178,8 +181,13 @@ public class BoardActor extends Actor {
                 int count = boardModel.countAdjacentOccupancy(scanned);
                 float cx = x + scanned.getCol() * cell + cell / 2f;
                 float cy = y + (config.gridSize - 1 - scanned.getRow()) * cell + cell / 2f;
-                Theme.fontSmall.setColor(Color.YELLOW);
-                Theme.fontSmall.draw(batch, String.valueOf(count), cx - 4, cy + 4);
+                
+                String text = String.valueOf(count);
+                Theme.fontMedium.setColor(Color.YELLOW);
+                
+                // Perfect centering using GlyphLayout
+                layout.setText(Theme.fontMedium, text);
+                Theme.fontMedium.draw(batch, text, cx - layout.width / 2f, cy + layout.height / 2f);
             }
             batch.end();
         }
@@ -192,6 +200,27 @@ public class BoardActor extends Actor {
             renderer.line(x, y + p, x + size, y + p);
         }
         renderer.end();
+
+        // Hologram Zoom for Sonar (Mobile friendly)
+        if (sonarZoomCoordinate != null && scannedTiles.contains(sonarZoomCoordinate) && boardModel != null) {
+            renderer.begin(ShapeRenderer.ShapeType.Filled);
+            // Draw a semi-transparent "hologram" background in the center
+            renderer.setColor(0f, 0.4f, 0.8f, 0.5f);
+            float hSize = size * 0.4f;
+            renderer.rect(x + (size - hSize) / 2f, y + (size - hSize) / 2f, hSize, hSize);
+            renderer.end();
+
+            batch.begin();
+            int count = boardModel.countAdjacentOccupancy(sonarZoomCoordinate);
+            String zoomText = String.valueOf(count);
+            Theme.fontLarge.setColor(Color.WHITE);
+            layout.setText(Theme.fontLarge, zoomText);
+            Theme.fontLarge.draw(batch, zoomText, 
+                x + size / 2f - layout.width / 2f, 
+                y + size / 2f + layout.height / 2f);
+            batch.end();
+        }
+
         batch.begin();
     }
 

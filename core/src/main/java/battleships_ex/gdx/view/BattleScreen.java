@@ -274,6 +274,12 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private void setTarget(Coordinate coord) {
         if (!GameStateManager.getInstance().isMyTurn()) return;
         this.targetCoord = coord;
+        
+        // Update sonar zoom
+        if (boardActor != null) {
+            boardActor.setSonarZoom(coord);
+        }
+
         if (targetingMode && pendingCard != null) {
             List<Coordinate> area = new ArrayList<>();
             if (pendingCard instanceof battleships_ex.gdx.model.cards.BombCard) {
