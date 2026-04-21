@@ -449,16 +449,14 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         uiCard.setModelCard(modelCard); uiCard.bind(presentation);
         uiCard.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override public void clicked(InputEvent event, float x, float y) {
-                if (uiCard.isDisabled()) { if (getTapCount() >= 2) uiCard.showInfoPopup(stage); return; }
-                if (getTapCount() >= 2) uiCard.showInfoPopup(stage);
-                else {
-                    if (targetingMode && pendingCard == modelCard && modelCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
-                        ((battleships_ex.gdx.model.cards.AirstrikeCard) modelCard).toggleOrientation();
-                        if (targetCoord != null) setTarget(targetCoord);
-                    } else {
-                        gameController.playActionCard(modelCard);
-                        updateEnergyFromGame(); updateActionCardAvailability();
-                    }
+                if (uiCard.isDisabled() || uiCard.wasLongPressed()) return;
+
+                if (targetingMode && pendingCard == modelCard && modelCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
+                    ((battleships_ex.gdx.model.cards.AirstrikeCard) modelCard).toggleOrientation();
+                    if (targetCoord != null) setTarget(targetCoord);
+                } else {
+                    gameController.playActionCard(modelCard);
+                    updateEnergyFromGame(); updateActionCardAvailability();
                 }
             }
         });

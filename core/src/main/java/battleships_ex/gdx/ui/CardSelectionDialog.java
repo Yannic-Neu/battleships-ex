@@ -22,7 +22,6 @@ public class CardSelectionDialog extends Dialog {
         void onCardsSelected(List<String> cardNames);
     }
 
-    private final SelectionCallback callback;
     private final List<String> selectedNames = new ArrayList<>();
     private final List<ActionCard> cardActors = new ArrayList<>();
     private final Label counterLabel;
@@ -30,7 +29,6 @@ public class CardSelectionDialog extends Dialog {
 
     public CardSelectionDialog(SelectionCallback callback) {
         super("TACTICAL DECK SELECTION", Theme.dialogStyle);
-        this.callback = callback;
 
         pad(20);
 
@@ -55,9 +53,7 @@ public class CardSelectionDialog extends Dialog {
             actor.addListener(new ClickListener() {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
-                    if (getTapCount() >= 2) {
-                        actor.showInfoPopup(getStage());
-                    } else {
+                    if (!actor.wasLongPressed()) {
                         toggleSelection(meta.name, actor);
                     }
                 }
