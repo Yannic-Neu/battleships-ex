@@ -2,11 +2,9 @@ package battleships_ex.gdx.view;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -56,9 +54,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
     private BoardActor boardActor;
     private Label tacGridLabel;
-    private CardTray actionCardTray;
     private GameButton fireButton;
-    private GameButton rotateCardButton;
     private Coordinate targetCoord;
 
     private battleships_ex.gdx.model.cards.ActionCard pendingCard;
@@ -136,47 +132,74 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private void rebuildUI() {
         stage.clear();
         actionCards.clear();
-        float contentWidth = 360f;
+
+        float sidePad = 16f;
+        float contentWidth = 320f;
+
         Table root = new Table();
         root.setFillParent(true);
+        root.top().pad(sidePad);
         root.setBackground(Theme.blackPanel);
         stage.addActor(root);
 
         // Header
         Table topArea = new Table();
         topArea.setBackground(Theme.darkBluePanel);
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> {
-            new ConfirmationDialog(
-                "RETREAT?",
-                "Abandoning the battle will count as a defeat. Retreat anyway?",
-                "RETREAT",
-                "STAY",
-                () -> {
-                    game.getGameController().abandonGame();
-                    game.setScreen(new MenuScreen(game));
-                }
-            ).show(stage);
-        });
-        Label titleLabel = new Label("BATTLE STATION", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
-        topArea.add(backButton).left().padLeft(20);
-        topArea.add(titleLabel).center().expandX().padRight(80);
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(60f, 44f), () -> new ConfirmationDialog(
+            "RETREAT?",
+            "Abandoning the battle will count as a defeat. Retreat anyway?",
+            "RETREAT",
+            "STAY",
+            () -> {
+                game.getGameController().abandonGame();
+                game.setScreen(new MenuScreen(game));
+            }
+        ).show(stage));
+
+        Label turnLabel = new Label("", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
+        boolean myTurn = GameStateManager.getInstance().isMyTurn();
+        turnLabel.setText(myTurn ? "YOUR TURN" : "OPPONENT'S TURN");
+        turnLabel.setColor(myTurn ? Theme.WHITE : Theme.GRAY);
+
+        topArea.add(backButton).left().padLeft(10);
+        topArea.add(turnLabel).center().expandX();
+        topArea.add().width(60f).padRight(10); // Balances the back button
 
         // Switch Mode
         Table switchInner = new Table();
-        switchInner.setBackground(Theme.bluePanel);
-        GameButton ownFleetBtn = new GameButton("OWN FLEET", ButtonConfig.secondary(170f, 44f), () -> {
-            currentMode = ViewMode.OWN_FLEET; targetCoord = null; targetingMode = false; pendingCard = null; rebuildUI();
-        });
-        GameButton enemyWatersBtn = new GameButton("ENEMY WATERS", ButtonConfig.secondary(170f, 44f), () -> {
-            currentMode = ViewMode.ENEMY_WATERS; targetCoord = null; targetingMode = false; pendingCard = null; rebuildUI();
-        });
-        if (currentMode == ViewMode.OWN_FLEET) ownFleetBtn.setColor(Theme.YELLOW);
-        else enemyWatersBtn.setColor(Theme.YELLOW);
-        switchInner.add(ownFleetBtn).padRight(5);
-        switchInner.add(enemyWatersBtn);
+        switchInner.setBackground(Theme.darkBluePanel);
+        switchInner.pad(6f);
+
+        float btnWidth = (contentWidth - 12f) / 2f;
+        GameButton enemyWatersBtn = new GameButton("ENEMY WATERS",
+            currentMode == ViewMode.ENEMY_WATERS ? ButtonConfig.primary(btnWidth, 44f) : ButtonConfig.secondary(btnWidth, 44f),
+            () -> {
+                if (currentMode != ViewMode.ENEMY_WATERS) {
+                    currentMode = ViewMode.ENEMY_WATERS;
+                    targetCoord = null;
+                    targetingMode = false;
+                    pendingCard = null;
+                    rebuildUI();
+                }
+            });
+
+        GameButton yourFleetBtn = new GameButton("YOUR FLEET",
+            currentMode == ViewMode.OWN_FLEET ? ButtonConfig.primary(btnWidth, 44f) : ButtonConfig.secondary(btnWidth, 44f),
+            () -> {
+                if (currentMode != ViewMode.OWN_FLEET) {
+                    currentMode = ViewMode.OWN_FLEET;
+                    targetCoord = null;
+                    targetingMode = false;
+                    pendingCard = null;
+                    rebuildUI();
+                }
+            });
+
+        switchInner.add(enemyWatersBtn).width(btnWidth).height(44f);
+        switchInner.add(yourFleetBtn).width(btnWidth).height(44f);
 
         // Board
-        BoardConfig boardConfig = new BoardConfig(360f, 10, Theme.DARK_NAVY, Theme.BLUE);
+        BoardConfig boardConfig = new BoardConfig(contentWidth, 10, Theme.DARK_NAVY, Theme.BLUE);
         boardActor = new BoardActor(boardConfig);
         Board targetBoard = (currentMode == ViewMode.OWN_FLEET) ? gameController.getLocalPlayer().getBoard() : gameController.getRemotePlayer().getBoard();
 
@@ -219,7 +242,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         Table actionsPanel = new Table();
         if (GameStateManager.getInstance().isExModeEnabled()) {
             energyBar = new EnergyBar(); updateEnergyFromGame();
-            actionCardTray = new CardTray();
+            final CardTray actionCardTray = new CardTray();
             for (battleships_ex.gdx.model.cards.ActionCard modelCard : gameController.getLocalPlayer().getCards()) {
                 String name = ""; String shortDesc = ""; String longDesc = ""; TextureRegion icon = Assets.ships.shipPatrol2h;
                 if (modelCard instanceof battleships_ex.gdx.model.cards.SonarCard) {
@@ -242,10 +265,19 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         if (targetingMode) {
             boolean isAirstrike = pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard;
             float btnHeight = 60f;
-            float cancelWidth = isAirstrike ? 90f : 125f;
-            float rotateWidth = 90f;
-            float activateWidth = isAirstrike ? 170f : 230f;
             float pad = 5f;
+
+            // Scaled widths to fit in contentWidth
+            float cancelWidth, rotateWidth, activateWidth;
+            if (isAirstrike) {
+                cancelWidth = (contentWidth - 2 * pad) * 0.25f;
+                rotateWidth = (contentWidth - 2 * pad) * 0.25f;
+                activateWidth = (contentWidth - 2 * pad) * 0.50f;
+            } else {
+                cancelWidth = (contentWidth - pad) * 0.35f;
+                activateWidth = (contentWidth - pad) * 0.65f;
+                rotateWidth = 0;
+            }
 
             GameButton cancelCardButton = new GameButton("CANCEL", ButtonConfig.secondary(cancelWidth, btnHeight), () -> {
                 pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); currentMode = ViewMode.ENEMY_WATERS; rebuildUI();
@@ -264,7 +296,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             actionRow.add(fireButton).padRight(isAirstrike ? pad : 0);
 
             if (isAirstrike) {
-                rotateCardButton = new GameButton("ROTATE", ButtonConfig.secondary(rotateWidth, btnHeight), () -> {
+                GameButton rotateCardButton = new GameButton("ROTATE", ButtonConfig.secondary(rotateWidth, btnHeight), () -> {
                     if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
                         ((battleships_ex.gdx.model.cards.AirstrikeCard) pendingCard).toggleOrientation();
                         if (targetCoord != null) setTarget(targetCoord);
@@ -293,11 +325,15 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         }
         tacGridLabel = new Label(gridTitle, new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
 
+        // --- Root Assembly ---
+        root.defaults().growX();
         root.add(topArea).height(48f).row();
         root.add(switchInner).width(contentWidth).height(56f).padTop(12f).center().row();
+
         Table boardContainer = new Table();
         boardContainer.add(tacGridLabel).left().padLeft(5f).padTop(5).padBottom(5).row();
         boardContainer.add(boardActor).size(boardConfig.size).center().row();
+
         root.add(boardContainer).expandY().padTop(10f).row();
         root.add(actionsPanel).padBottom(12f).row();
         if (GameStateManager.getInstance().isExModeEnabled()) updateActionCardAvailability();
@@ -326,8 +362,11 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
                 else
                     for (int i = 0; i < 10; i++) area.add(new Coordinate(i, coord.getCol()));
             } else { area.add(coord); }
+            assert boardActor != null;
             boardActor.setPreviewCells(area);
-        } else { boardActor.setPreviewCell(coord); }
+        } else {
+            assert boardActor != null;
+            boardActor.setPreviewCell(coord); }
         gameController.updatePreview(coord);
         updateFireButtonState();
     }

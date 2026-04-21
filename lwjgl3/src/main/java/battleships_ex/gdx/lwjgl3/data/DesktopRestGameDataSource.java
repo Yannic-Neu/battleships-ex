@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -184,6 +183,11 @@ public class DesktopRestGameDataSource implements GameDataSource {
                 if (conn.getResponseCode() == 200) Gdx.app.postRunnable(() -> callback.onSuccess(null));
             } catch (Exception e) { Gdx.app.postRunnable(() -> callback.onFailure(e.getMessage())); }
         }).start();
+    }
+
+    @Override
+    public void addStatusListener(String roomCode, DataCallback<String> callback) {
+
     }
 
     @Override
