@@ -2,7 +2,6 @@ package battleships_ex.gdx.view;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -77,20 +76,18 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         Table header = new Table();
         header.setBackground(Theme.darkBluePanel);
 
-        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(80f, 44f), () -> {
-            new ConfirmationDialog(
-                "ABANDON MISSION?",
-                "Leaving now will result in an immediate defeat. Are you sure you want to retreat?",
-                "RETREAT",
-                "STAY",
-                () -> {
-                    game.getGameController().abandonGame();
-                    game.setScreen(new MenuScreen(game));
-                }
-            ).show(stage);
-        });
+        GameButton backButton = new GameButton("BACK", ButtonConfig.secondary(80f, 44f), () -> new ConfirmationDialog(
+            "ABANDON MISSION?",
+            "Leaving now will result in an immediate defeat. Are you sure you want to retreat?",
+            "RETREAT",
+            "STAY",
+            () -> {
+                game.getGameController().abandonGame();
+                game.setScreen(new MenuScreen(game));
+            }
+        ).show(stage));
 
-        Label title = new Label("PLACEMENT", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
+        Label title = new Label("PLACE YOUR SHIPS", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
         header.add(backButton).left().padLeft(15);
         header.add(title).left().expandX().padLeft(16);
 
@@ -98,8 +95,8 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         BoardConfig boardConfig = new BoardConfig(
             320f,
             10,
-            new Color(0.05f, 0.10f, 0.20f, 1f),
-            new Color(0.15f, 0.22f, 0.35f, 1f)
+            Theme.BOARD_BACKGROUND,
+            Theme.BOARD_LINES
         );
         boardActor = new BoardActor(boardConfig);
 
@@ -402,19 +399,17 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
 
     @Override
     public void onOpponentAbandoned() {
-        com.badlogic.gdx.Gdx.app.postRunnable(() -> {
-            new ConfirmationDialog(
-                "MATCH ABANDONED",
-                "The other player has abandoned the match.",
-                "OK",
-                null,
-                () -> {
-                    game.getGameController().cleanup();
-                    GameStateManager.destroy();
-                    game.setScreen(new MenuScreen(game));
-                }
-            ).show(stage);
-        });
+        com.badlogic.gdx.Gdx.app.postRunnable(() -> new ConfirmationDialog(
+            "MATCH ABANDONED",
+            "The other player has abandoned the match.",
+            "OK",
+            null,
+            () -> {
+                game.getGameController().cleanup();
+                GameStateManager.destroy();
+                game.setScreen(new MenuScreen(game));
+            }
+        ).show(stage));
     }
 
     @Override
@@ -429,9 +424,7 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
     @Override
     public void onGameOver(String winnerName, String reason) {
         // Transition to game over screen
-        com.badlogic.gdx.Gdx.app.postRunnable(() -> {
-            game.setScreen(new GameOverScreen(game, winnerName, reason));
-        });
+        com.badlogic.gdx.Gdx.app.postRunnable(() -> game.setScreen(new GameOverScreen(game, winnerName, reason)));
     }
     @Override
     public void onTurnChanged(String currentPlayerId) {

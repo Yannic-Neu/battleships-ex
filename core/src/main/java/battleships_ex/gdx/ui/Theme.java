@@ -21,7 +21,8 @@ public class Theme {
     public static final Color BLACK = new Color(0f, 0f, 0f, 1f);
     public static final Color YELLOW = new Color(1f, 0.9f, 0f, 1f);
     public static final Color NAVY_BLUE = new Color(0.05f, 0.05f, 0.2f, 1f);
-    public static final Color DARK_NAVY = new Color(0.02f, 0.02f, 0.1f, 1f);
+    public static final Color BOARD_BACKGROUND = new Color(0.05f, 0.10f, 0.20f, 1f);
+    public static final Color BOARD_LINES = new Color(0.15f, 0.22f, 0.35f, 1f);
 
     public static final Color BLUE = new Color(0f, 0f, 0.3f, 1f);
     public static final Color DARK_BLUE = new Color(0f, 0f, 0.2f, 0.6f);

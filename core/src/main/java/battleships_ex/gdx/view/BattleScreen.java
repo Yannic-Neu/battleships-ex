@@ -2,6 +2,7 @@ package battleships_ex.gdx.view;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -66,7 +67,10 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
     @Override
     public void show() {
-        stage = new Stage(new FitViewport(GameConfig.WORLD_WIDTH, GameConfig.WORLD_HEIGHT));
+        stage = new Stage(new FitViewport(
+            GameConfig.WORLD_WIDTH,
+            GameConfig.WORLD_HEIGHT
+        ));
         Gdx.input.setInputProcessor(stage);
         gameController = game.getGameController();
         GameStateManager.getInstance().setStateListener(this);
@@ -201,7 +205,12 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         switchInner.add(yourFleetBtn).width(btnWidth).height(44f);
 
         // Board
-        BoardConfig boardConfig = new BoardConfig(contentWidth, 10, Theme.DARK_NAVY, Theme.BLUE);
+        BoardConfig boardConfig = new BoardConfig(
+            contentWidth,
+            10,
+            new Color(0.05f, 0.10f, 0.20f, 1f),
+            new Color(0.15f, 0.22f, 0.35f, 1f)
+        );
         boardActor = new BoardActor(boardConfig);
         Board targetBoard = (currentMode == ViewMode.OWN_FLEET) ? gameController.getLocalPlayer().getBoard() : gameController.getRemotePlayer().getBoard();
 
