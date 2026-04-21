@@ -104,7 +104,7 @@ public class PlacementScreen extends ScreenAdapter implements GameStateListener 
         boardActor = new BoardActor(boardConfig);
 
         deployPhaseLabel = new Label("DEPLOYMENT PHASE", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
-        Label gridTitle = new Label("10x10 STRATEGIC GRID", new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
+        Label gridTitle = new Label(String.format("%sx%s STRATEGIC GRID", boardConfig.gridSize, boardConfig.gridSize), new Label.LabelStyle(Theme.fontMedium, Theme.WHITE));
 
         Table boardSection = new Table();
         opponentStatusLabel = new Label("Opponent is placing ships...", new Label.LabelStyle(Theme.fontSmall, com.badlogic.gdx.graphics.Color.GRAY));
