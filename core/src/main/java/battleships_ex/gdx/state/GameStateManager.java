@@ -12,16 +12,13 @@ import battleships_ex.gdx.model.rules.PlacementResult;
 
 /**
  * GameStateManager
- *
  * Singleton that owns the active {@link GameState} and drives all phase
  * transitions. Single entry point for all View actions.
- *
  * Architectural contracts (agents.md §2):
  *   - Singleton: one consistent game state shared across all application layers.
  *   - State Pattern: the active state decides whether each action is valid.
  *   - One-way: View → GameStateManager → active state → controller.
  *     Results flow back via {@link GameStateListener}.
- *
  * Threading: all public methods must be called on the libGDX GL thread.
  * Firebase callbacks must be marshalled via Gdx.app.postRunnable() first.
  */
@@ -305,7 +302,6 @@ public void onCardTargetRequested(battleships_ex.gdx.model.cards.ActionCard card
             @Override
             public void onTurnChanged(String currentPlayerId) {
                 System.out.println("[GameStateManager] LOG: onTurnChanged received. currentPlayerId: " + currentPlayerId + ", localPlayerId: " + localPlayer.getId());
-                if (stateListener != null) stateListener.onTurnChanged(currentPlayerId);
 
                 if (currentPlayerId.equals(localPlayer.getId())) {
                     if (!(currentState instanceof MyTurnState)) {
@@ -316,6 +312,8 @@ public void onCardTargetRequested(battleships_ex.gdx.model.cards.ActionCard card
                         transitionTo(new OpponentTurnState());
                     }
                 }
+
+                if (stateListener != null) stateListener.onTurnChanged(currentPlayerId);
             }
         };
     }

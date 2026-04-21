@@ -148,6 +148,11 @@ class SessionManagerTest {
         }
 
         @Override
+        public void addStatusListener(String roomCode, DataCallback<String> callback) {
+            // No-op
+        }
+
+        @Override
         public void updatePlacementStatus(String roomCode, String playerId, boolean isReady, DataCallback<Void> callback) {
             callback.onSuccess(null);
         }

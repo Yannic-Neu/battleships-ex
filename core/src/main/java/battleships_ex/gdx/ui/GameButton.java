@@ -30,6 +30,10 @@ public class GameButton extends TextButton {
         });
     }
 
+    public void updateStyle(ButtonConfig config) {
+        setStyle(createStyle(config));
+    }
+
     private static TextButtonStyle createStyle(ButtonConfig config) {
         TextButtonStyle style = new TextButtonStyle();
 

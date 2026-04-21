@@ -7,8 +7,6 @@ import com.badlogic.gdx.graphics.Color;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -54,6 +52,14 @@ public class BoardActor extends Actor {
     }
     public void setSonarZoom(Coordinate coord) { this.sonarZoomCoordinate = coord; }
     public void setBoardModel(Board board) { this.boardModel = board; }
+
+    public void clearVisuals() {
+        hits.clear();
+        misses.clear();
+        placedShips.clear();
+        mines.clear();
+        scannedTiles.clear();
+    }
 
     public BoardActor(BoardConfig config) {
         this.config = config;
@@ -181,10 +187,10 @@ public class BoardActor extends Actor {
                 int count = boardModel.countAdjacentOccupancy(scanned);
                 float cx = x + scanned.getCol() * cell + cell / 2f;
                 float cy = y + (config.gridSize - 1 - scanned.getRow()) * cell + cell / 2f;
-                
+
                 String text = String.valueOf(count);
                 Theme.fontMedium.setColor(Color.YELLOW);
-                
+
                 // Perfect centering using GlyphLayout
                 layout.setText(Theme.fontMedium, text);
                 Theme.fontMedium.draw(batch, text, cx - layout.width / 2f, cy + layout.height / 2f);
@@ -215,8 +221,8 @@ public class BoardActor extends Actor {
             String zoomText = String.valueOf(count);
             Theme.fontLarge.setColor(Color.WHITE);
             layout.setText(Theme.fontLarge, zoomText);
-            Theme.fontLarge.draw(batch, zoomText, 
-                x + size / 2f - layout.width / 2f, 
+            Theme.fontLarge.draw(batch, zoomText,
+                x + size / 2f - layout.width / 2f,
                 y + size / 2f + layout.height / 2f);
             batch.end();
         }

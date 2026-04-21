@@ -461,11 +461,6 @@ public class GameController {
         // Reset inactivity timer on action
         sessionManager.resetInactivityTimer();
 
-        // Sync with backend if needed
-        // For now, moves from cards are not automatically synced as moves,
-        // but the board state changes should be reflected.
-        // TODO: Implement card effect synchronization
-
         // Check win condition - some cards (e.g. Airstrike) can sink ships
         if (result.getOutcome() == battleships_ex.gdx.model.cards.ActionCardResult.Outcome.SUNK
             && engine.hasWon(remotePlayer.getBoard())) {
@@ -764,6 +759,11 @@ public class GameController {
     private void onActionCardReceived(GameDataSource.ActionCardSnapshot snapshot) {
         System.out.println("[GameController] LOG: Action card received: " + snapshot.cardName + " from " + snapshot.playerId);
 
+        // Ensure session knows remote player is the attacker for turn-switching logic
+        if (!session.getCurrentPlayer().equals(remotePlayer)) {
+            session.forceTurn(remotePlayer.getId());
+        }
+
         // --- Handle virtual cards (Mine Detonation) first to avoid turn-switch logic ---
         if ("MineDetonation".equals(snapshot.cardName)) {
             handleRemoteMineDetonation(snapshot);
@@ -830,20 +830,20 @@ public class GameController {
         if (listener != null) {
             listener.onGameOver(remotePlayer.getName(), "forfeit");
         }
-        
+
         if (roomCode != null) {
             // Tell backend this room is abandoned
             sessionManager.cleanupAbandonedSession(roomCode);
             // Clear internal room code so we don't keep listening
             this.roomCode = null;
         }
-        
+
         cleanup();
     }
 
     private void attachStatusListener() {
         if (roomCode == null) return;
-        
+
         gameDataSource.addStatusListener(roomCode, new DataCallback<String>() {
             @Override
             public void onSuccess(String status) {

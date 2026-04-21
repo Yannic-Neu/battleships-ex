@@ -58,6 +58,11 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
     private GameButton fireButton;
     private Coordinate targetCoord;
 
+    private Label turnLabel;
+    private GameButton enemyWatersBtn;
+    private GameButton yourFleetBtn;
+    private Table actionsPanel;
+
     private battleships_ex.gdx.model.cards.ActionCard pendingCard;
     private boolean targetingMode = false;
 
@@ -74,10 +79,11 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         Gdx.input.setInputProcessor(stage);
         gameController = game.getGameController();
         GameStateManager.getInstance().setStateListener(this);
-        rebuildUI();
+        buildUI();
+        updateAll();
     }
 
-    @Override public void onStateChanged(String stateName) { rebuildUI(); }
+    @Override public void onStateChanged(String stateName) { updateAll(); }
     @Override public void onGameOver(String winnerName, String reason) {
         Gdx.app.postRunnable(() -> game.setScreen(new GameOverScreen(game, winnerName, reason)));
     }
@@ -86,12 +92,30 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         onGameOver(winnerName, null);
     }
 
-    @Override public void onTurnChanged(String currentPlayerId) { rebuildUI(); }
-    @Override public void onHit(Coordinate coordinate, Ship ship) { updateEnergyFromGame(); rebuildUI(); }
-    @Override public void onMiss(Coordinate coordinate) { rebuildUI(); }
-    @Override public void onSunk(Coordinate coordinate, Ship ship) { updateEnergyFromGame(); rebuildUI(); }
+    @Override public void onTurnChanged(String currentPlayerId) {
+        boolean myTurn = currentPlayerId.equals(gameController.getLocalPlayer().getId());
+        updateAll();
+        
+        final ViewMode targetMode = myTurn ? ViewMode.ENEMY_WATERS : ViewMode.OWN_FLEET;
+        
+        com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
+            @Override public void run() {
+                if (currentMode != targetMode) {
+                    currentMode = targetMode;
+                    targetCoord = null;
+                    targetingMode = false;
+                    pendingCard = null;
+                    if (boardActor != null) boardActor.clearPreviewCell();
+                    updateAll();
+                }
+            }
+        }, 1.0f);
+    }
+    @Override public void onHit(Coordinate coordinate, Ship ship) { updateEnergyFromGame(); updateBoard(); updateActionPanel(); }
+    @Override public void onMiss(Coordinate coordinate) { updateBoard(); updateActionPanel(); }
+    @Override public void onSunk(Coordinate coordinate, Ship ship) { updateEnergyFromGame(); updateBoard(); updateActionPanel(); }
     @Override public void onAlreadyShot(Coordinate coordinate) { updateFireButtonState(); }
-    @Override public void onActionCardPlayed(ActionCardResult result) { updateEnergyFromGame(); rebuildUI(); }
+    @Override public void onActionCardPlayed(ActionCardResult result) { updateEnergyFromGame(); updateBoard(); updateActionPanel(); }
     @Override public void onOpponentAbandoned() {
         // GameController will also trigger onGameOver("localPlayerName", "forfeit")
     }
@@ -116,13 +140,13 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         this.targetingMode = true;
         if (card instanceof battleships_ex.gdx.model.cards.MineCard) this.currentMode = ViewMode.OWN_FLEET;
         else this.currentMode = ViewMode.ENEMY_WATERS;
-        rebuildUI();
+        updateBoard(); updateActionPanel(); updateModeSwitch();
     }
 
-    @Override public void onShipPlaced(Ship ship) { rebuildUI(); }
-    @Override public void onShipRemoved(Ship ship) { rebuildUI(); }
-    @Override public void onPlacementRejected(PlacementResult.Reason reason) { rebuildUI(); }
-    @Override public void onOpponentPlacementReady(boolean ready) { rebuildUI(); }
+    @Override public void onShipPlaced(Ship ship) { updateBoard(); }
+    @Override public void onShipRemoved(Ship ship) { updateBoard(); }
+    @Override public void onPlacementRejected(PlacementResult.Reason reason) { updateBoard(); }
+    @Override public void onOpponentPlacementReady(boolean ready) { updateBoard(); }
     @Override public void onJoinRejected(LobbyController.JoinRejectionReason reason) {}
     @Override public void onLobbyCreated(String roomCode) {}
     @Override public void onLobbyJoined() {}
@@ -133,10 +157,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         energyBar.updateEnergy(gameController.getLocalPlayer().getEnergy());
     }
 
-    private void rebuildUI() {
-        stage.clear();
-        actionCards.clear();
-
+    private void buildUI() {
         float sidePad = 16f;
         float contentWidth = 320f;
 
@@ -163,43 +184,33 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         GameButton tutorialButton = new GameButton("?", ButtonConfig.secondary(44f,44f), () ->
             game.setScreen(new TutorialScreen(game, this)));
 
-        Label turnLabel = new Label("", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
-        boolean myTurn = GameStateManager.getInstance().isMyTurn();
-        turnLabel.setText(myTurn ? "YOUR TURN" : "OPPONENT'S TURN");
-        turnLabel.setColor(myTurn ? Theme.WHITE : Theme.GRAY);
+        turnLabel = new Label("", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
 
         topArea.add(backButton).left().padLeft(10);
         topArea.add(turnLabel).center().expandX();
         topArea.add(tutorialButton).right().padRight(10);
+
         // Switch Mode
         Table switchInner = new Table();
         switchInner.setBackground(Theme.darkBluePanel);
         switchInner.pad(6f);
 
         float btnWidth = (contentWidth - 12f) / 2f;
-        GameButton enemyWatersBtn = new GameButton("ENEMY WATERS",
-            currentMode == ViewMode.ENEMY_WATERS ? ButtonConfig.primary(btnWidth, 44f) : ButtonConfig.secondary(btnWidth, 44f),
-            () -> {
-                if (currentMode != ViewMode.ENEMY_WATERS) {
-                    currentMode = ViewMode.ENEMY_WATERS;
-                    targetCoord = null;
-                    targetingMode = false;
-                    pendingCard = null;
-                    rebuildUI();
-                }
-            });
+        enemyWatersBtn = new GameButton("ENEMY WATERS", ButtonConfig.primary(btnWidth, 44f), () -> {
+            if (currentMode != ViewMode.ENEMY_WATERS) {
+                currentMode = ViewMode.ENEMY_WATERS;
+                targetCoord = null; targetingMode = false; pendingCard = null;
+                updateAll();
+            }
+        });
 
-        GameButton yourFleetBtn = new GameButton("YOUR FLEET",
-            currentMode == ViewMode.OWN_FLEET ? ButtonConfig.primary(btnWidth, 44f) : ButtonConfig.secondary(btnWidth, 44f),
-            () -> {
-                if (currentMode != ViewMode.OWN_FLEET) {
-                    currentMode = ViewMode.OWN_FLEET;
-                    targetCoord = null;
-                    targetingMode = false;
-                    pendingCard = null;
-                    rebuildUI();
-                }
-            });
+        yourFleetBtn = new GameButton("YOUR FLEET", ButtonConfig.secondary(btnWidth, 44f), () -> {
+            if (currentMode != ViewMode.OWN_FLEET) {
+                currentMode = ViewMode.OWN_FLEET;
+                targetCoord = null; targetingMode = false; pendingCard = null;
+                updateAll();
+            }
+        });
 
         switchInner.add(enemyWatersBtn).width(btnWidth).height(44f);
         switchInner.add(yourFleetBtn).width(btnWidth).height(44f);
@@ -212,9 +223,56 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             new Color(0.15f, 0.22f, 0.35f, 1f)
         );
         boardActor = new BoardActor(boardConfig);
+        boardActor.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
+            @Override public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+                setTarget(boardActor.pointToCoordinate(x, y)); return true;
+            }
+            @Override public void touchDragged(InputEvent event, float x, float y, int pointer) {
+                setTarget(boardActor.pointToCoordinate(x, y));
+            }
+        });
+
+        tacGridLabel = new Label("", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
+        Table boardTable = new Table();
+        boardTable.add(tacGridLabel).left().padLeft(5f).padTop(5).padBottom(5).row();
+        boardTable.add(boardActor).size(boardConfig.size).center().row();
+
+        // Actions
+        actionsPanel = new Table();
+
+        // --- Root Assembly ---
+        root.defaults().growX();
+        root.add(topArea).height(48f).row();
+        root.add(switchInner).width(contentWidth).height(56f).padTop(12f).center().row();
+        root.add(boardTable).expandY().padTop(10f).row();
+        root.add(actionsPanel).padBottom(12f).row();
+    }
+
+    private void updateAll() {
+        updateHeader();
+        updateModeSwitch();
+        updateBoard();
+        updateActionPanel();
+    }
+
+    private void updateHeader() {
+        boolean myTurn = GameStateManager.getInstance().isMyTurn();
+        turnLabel.setText(myTurn ? "YOUR TURN" : "OPPONENT'S TURN");
+        turnLabel.setColor(myTurn ? Theme.WHITE : Theme.GRAY);
+    }
+
+    private void updateModeSwitch() {
+        float contentWidth = 320f;
+        float btnWidth = (contentWidth - 12f) / 2f;
+        enemyWatersBtn.updateStyle(currentMode == ViewMode.ENEMY_WATERS ? ButtonConfig.primary(btnWidth, 44f) : ButtonConfig.secondary(btnWidth, 44f));
+        yourFleetBtn.updateStyle(currentMode == ViewMode.OWN_FLEET ? ButtonConfig.primary(btnWidth, 44f) : ButtonConfig.secondary(btnWidth, 44f));
+    }
+
+    private void updateBoard() {
+        boardActor.clearVisuals();
         Board targetBoard = (currentMode == ViewMode.OWN_FLEET) ? gameController.getLocalPlayer().getBoard() : gameController.getRemotePlayer().getBoard();
 
-        boardActor.setBoardModel(targetBoard); // For dynamic Sonar
+        boardActor.setBoardModel(targetBoard);
         for (int r = 0; r < 10; r++) {
             for (int c = 0; c < 10; c++) {
                 Cell cell = targetBoard.getCell(new Coordinate(r, c));
@@ -231,29 +289,32 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         }
         boardActor.setScannedTiles(targetBoard.getScannedTiles());
 
-        boardActor.addListener(new com.badlogic.gdx.scenes.scene2d.InputListener() {
-            @Override public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                setTarget(boardActor.pointToCoordinate(x, y)); return true;
-            }
-            @Override public void touchDragged(InputEvent event, float x, float y, int pointer) {
-                setTarget(boardActor.pointToCoordinate(x, y));
-            }
-        });
-
         for (Ship ship : targetBoard.getShips()) {
             if (currentMode == ViewMode.OWN_FLEET || ship.isSunk()) {
                 boardActor.addPlacedShip(ship.getType(), ship.getOccupiedCoordinates().iterator().next(), ship.getOrientation());
             }
         }
 
-        // Restore preview cells
         if (targetCoord != null) setTarget(targetCoord);
 
-        // Actions
-        Table actionsPanel = new Table();
+        String gridTitle = (currentMode == ViewMode.OWN_FLEET) ? "DEFENSIVE GRID" : "TACTICAL GRID";
+        if (targetingMode) {
+            if (pendingCard instanceof battleships_ex.gdx.model.cards.SonarCard) gridTitle = "SELECT TILE TO SCAN (MUST BE HIT)";
+            else if (pendingCard instanceof battleships_ex.gdx.model.cards.BombCard) gridTitle = "SELECT 2x2 AREA (TOP-LEFT)";
+            else if (pendingCard instanceof battleships_ex.gdx.model.cards.MineCard) gridTitle = "PLACE MINE ON OWN WATERS";
+            else if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) gridTitle = "SELECT ROW/COLUMN";
+        }
+        tacGridLabel.setText(gridTitle);
+    }
+
+    private void updateActionPanel() {
+        actionsPanel.clear();
+        float contentWidth = 320f;
+
         if (GameStateManager.getInstance().isExModeEnabled()) {
             energyBar = new EnergyBar(); updateEnergyFromGame();
             final CardTray actionCardTray = new CardTray();
+            actionCards.clear();
             for (battleships_ex.gdx.model.cards.ActionCard modelCard : gameController.getLocalPlayer().getCards()) {
                 String name = ""; String shortDesc = ""; String longDesc = ""; TextureRegion icon = Assets.ships.shipPatrol2h;
                 if (modelCard instanceof battleships_ex.gdx.model.cards.SonarCard) {
@@ -271,6 +332,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             actionsPanel.add(energyBar).left().padLeft(5f).padBottom(6f).row();
             actionsPanel.add(new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY))).left().padLeft(5f).padBottom(12f).row();
             actionsPanel.add(actionCardTray).growX().height(95f).padBottom(12f).row();
+            updateActionCardAvailability();
         }
 
         if (targetingMode) {
@@ -278,7 +340,6 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             float btnHeight = 60f;
             float pad = 5f;
 
-            // Scaled widths to fit in contentWidth
             float cancelWidth, rotateWidth, activateWidth;
             if (isAirstrike) {
                 cancelWidth = (contentWidth - 2 * pad) * 0.25f;
@@ -291,14 +352,14 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             }
 
             GameButton cancelCardButton = new GameButton("CANCEL", ButtonConfig.secondary(cancelWidth, btnHeight), () -> {
-                pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); currentMode = ViewMode.ENEMY_WATERS; rebuildUI();
+                pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); currentMode = ViewMode.ENEMY_WATERS; updateAll();
             });
 
             fireButton = new GameButton("ACTIVATE", ButtonConfig.primary(activateWidth, btnHeight), () -> {
                 if (fireButton.isDisabled()) return;
                 if (pendingCard != null && targetCoord != null) {
                     gameController.playActionCard(pendingCard, targetCoord);
-                    pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); rebuildUI();
+                    pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); updateAll();
                 }
             });
 
@@ -326,28 +387,6 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             });
             actionsPanel.add(fireButton).center().row();
         }
-
-        String gridTitle = (currentMode == ViewMode.OWN_FLEET) ? "DEFENSIVE GRID" : "TACTICAL GRID";
-        if (targetingMode) {
-            if (pendingCard instanceof battleships_ex.gdx.model.cards.SonarCard) gridTitle = "SELECT TILE TO SCAN (MUST BE HIT)";
-            else if (pendingCard instanceof battleships_ex.gdx.model.cards.BombCard) gridTitle = "SELECT 2x2 AREA (TOP-LEFT)";
-            else if (pendingCard instanceof battleships_ex.gdx.model.cards.MineCard) gridTitle = "PLACE MINE ON OWN WATERS";
-            else if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) gridTitle = "SELECT ROW/COLUMN";
-        }
-        tacGridLabel = new Label(gridTitle, new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
-
-        // --- Root Assembly ---
-        root.defaults().growX();
-        root.add(topArea).height(48f).row();
-        root.add(switchInner).width(contentWidth).height(56f).padTop(12f).center().row();
-
-        Table boardContainer = new Table();
-        boardContainer.add(tacGridLabel).left().padLeft(5f).padTop(5).padBottom(5).row();
-        boardContainer.add(boardActor).size(boardConfig.size).center().row();
-
-        root.add(boardContainer).expandY().padTop(10f).row();
-        root.add(actionsPanel).padBottom(12f).row();
-        if (GameStateManager.getInstance().isExModeEnabled()) updateActionCardAvailability();
         updateFireButtonState();
     }
 
