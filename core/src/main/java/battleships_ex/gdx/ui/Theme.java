@@ -60,16 +60,16 @@ public class Theme {
         darkBluePanel = base.tint(new Color(DARK_BLUE));
         blackPanel = base.tint(new Color(BLACK));
 
-        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/PressStart2P-Regular/PressStart2P-Regular.ttf"));
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/Roboto-Regular/Roboto-Regular.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
 
-        parameter.size = 10;
+        parameter.size = 14;
         fontSmall = generator.generateFont(parameter);
 
-        parameter.size = 14;
+        parameter.size = 20;
         fontMedium = generator.generateFont(parameter);
 
-        parameter.size = 22;
+        parameter.size = 28;
         fontLarge = generator.generateFont(parameter);
 
         generator.dispose();

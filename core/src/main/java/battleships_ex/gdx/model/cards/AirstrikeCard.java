@@ -16,7 +16,6 @@ public class AirstrikeCard extends BaseActionCard {
     public enum Orientation {
         ROW, COLUMN
     }
-
     private Orientation orientation = Orientation.ROW; // Default
 
     public AirstrikeCard() {
@@ -34,6 +33,7 @@ public class AirstrikeCard extends BaseActionCard {
     @Override
     public ActionCardResult execute(Player user, Player opponent, Coordinate target) {
         if (target == null) throw new IllegalArgumentException("Target required for Airstrike");
+        long startTime = System.nanoTime();
         if (!canUse(user, opponent)) return ActionCardResult.noEffect(cardName);
 
         List<Coordinate> targets = new ArrayList<>();
@@ -68,6 +68,9 @@ public class AirstrikeCard extends BaseActionCard {
 
         ActionCardResult res = ActionCardResult.revealed(cardName, affected);
         if (anyMine) res.setMetadata("mineHit", true);
+
+        long endTime = System.nanoTime();
+        System.out.println("Airstrike execution took: " + (endTime - startTime) / 1_000_000.0 + " ms");
         return res;
     }
 

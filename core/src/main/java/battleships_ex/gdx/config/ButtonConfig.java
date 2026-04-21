@@ -50,4 +50,15 @@ public final class ButtonConfig {
             Theme.fontMedium
         );
     }
+
+    public static ButtonConfig secondarySmall(float width, float height) {
+        return new ButtonConfig(
+            width,
+            height,
+            16f,
+            Theme.SECONDARY_BUTTON,
+            Theme.WHITE,
+            Theme.fontSmall
+        );
+    }
 }

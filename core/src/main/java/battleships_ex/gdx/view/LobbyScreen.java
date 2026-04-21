@@ -69,7 +69,7 @@ public class LobbyScreen extends ScreenAdapter {
                     Gdx.app.postRunnable(() -> statusLabel.setText("Select 4 cards first!"));
                     return;
                 }
-                
+
                 game.getLobbyDataSource().setLobbyStatus(roomCode, "ready", new DataCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
@@ -108,7 +108,7 @@ public class LobbyScreen extends ScreenAdapter {
             exModeLabel.setText(exModeEnabled ? "MODE: EX" : "MODE: CLASSIC");
             selectCardsButton.setVisible(isHost && exModeEnabled);
             selectedCardsLabel.setVisible(exModeEnabled);
-            
+
             game.getLobbyDataSource().setExMode(roomCode, exModeEnabled, new DataCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {}
@@ -131,7 +131,7 @@ public class LobbyScreen extends ScreenAdapter {
             }).show(stage);
         });
         selectCardsButton.setVisible(isHost && exModeEnabled);
-        
+
         selectedCardsLabel = new Label("CARDS: NONE", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY));
         selectedCardsLabel.setVisible(exModeEnabled);
 
@@ -177,10 +177,10 @@ public class LobbyScreen extends ScreenAdapter {
         Table controlsRow = new Table();
         controlsRow.add(exModeButton).padRight(10);
         controlsRow.add(selectCardsButton);
-        
+
         bottomPanel.add(isHost ? controlsRow : exModeLabel).center().padBottom(10).row();
         bottomPanel.add(isHost ? startMatchButton : readyButton).center().row();
-        
+
         root.defaults().expand().fillX();
         root.add(topArea).height(Value.percentHeight(0.1f, root)).row();
         root.add(middlePanel).height(Value.percentHeight(0.6f, root)).row();
@@ -200,7 +200,7 @@ public class LobbyScreen extends ScreenAdapter {
                     if (!isHost) {
                         exModeLabel.setText(exModeEnabled ? "MODE: EX" : "MODE: CLASSIC");
                     }
-                    
+
                     if (currentSelectedCards.isEmpty()) {
                         selectedCardsLabel.setText("CARDS: NONE");
                     } else {
@@ -218,7 +218,7 @@ public class LobbyScreen extends ScreenAdapter {
                         battleships_ex.gdx.model.lobby.Lobby lobby = new battleships_ex.gdx.model.lobby.Lobby(System.currentTimeMillis(), roomCode);
                         Player hostPlayer = new Player(snapshot.hostPlayerId, snapshot.hostPlayerName);
                         Player guestPlayer = new Player(snapshot.guestPlayerId, snapshot.guestPlayerName);
-                        
+
                         if (isHost) {
                             lobby.addPlayer(localPlayer);
                             lobby.addPlayer(guestPlayer);
@@ -227,7 +227,7 @@ public class LobbyScreen extends ScreenAdapter {
                             lobby.addPlayer(localPlayer);
                         }
                         lobby.setSelectedCards(currentSelectedCards);
-                        
+
                         lobbyController.setActiveLobby(lobby);
                         lobbyController.setLocalPlayer(localPlayer);
                         GameStateManager.getInstance().forceMultiplayerPlacement(isHost ? guestPlayer : hostPlayer);
@@ -252,6 +252,8 @@ public class LobbyScreen extends ScreenAdapter {
                             startMatchButton.setDisabled(true);
                         } else {
                             statusLabel.setText("Guest is READY!");
+                            statusLabel.getStyle().fontColor = com.badlogic.gdx.graphics.Color.GREEN;
+
                             startMatchButton.setDisabled(false);
                         }
                     } else {

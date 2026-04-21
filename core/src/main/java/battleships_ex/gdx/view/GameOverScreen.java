@@ -47,7 +47,7 @@ public class GameOverScreen extends ScreenAdapter {
 
         String title = isVictory ? "YOU WON" : "YOU LOST";
         if ("forfeit".equals(reason) && isVictory) {
-            title += "\nsince the player forfeited the match";
+            title += "\nopponent forfeited the match";
         }
 
         Label resultLabel = new Label(title,

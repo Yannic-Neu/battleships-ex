@@ -234,39 +234,53 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
                 ActionCardPresentation pres = new ActionCardPresentationBase(name, shortDesc, longDesc, icon);
                 actionCardTray.addCard(bindCard(name, pres, modelCard));
             }
-            actionsPanel.add(energyBar).left().padBottom(6f).row();
-            actionsPanel.add(new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY))).left().padBottom(12f).row();
+            actionsPanel.add(energyBar).left().padLeft(5f).padBottom(6f).row();
+            actionsPanel.add(new Label("ACTION CARDS", new Label.LabelStyle(Theme.fontSmall, Theme.GRAY))).left().padLeft(5f).padBottom(12f).row();
             actionsPanel.add(actionCardTray).growX().height(95f).padBottom(12f).row();
         }
 
-        String fireText = targetingMode ? "ACTIVATE" : "FIRE";
-        fireButton = new GameButton(fireText, ButtonConfig.primary(contentWidth, 60f), () -> {
-            if (fireButton.isDisabled()) return;
-            if (targetingMode && pendingCard != null && targetCoord != null) {
-                gameController.playActionCard(pendingCard, targetCoord);
-                pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); rebuildUI();
-            } else if (targetCoord != null) {
-                GameStateManager.getInstance().fireShot(targetCoord.getRow(), targetCoord.getCol());
-                targetCoord = null; boardActor.clearPreviewCell(); updateFireButtonState();
-            }
-        });
-
-        rotateCardButton = new GameButton("ROTATE", ButtonConfig.secondary(contentWidth, 50f), () -> {
-            if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
-                ((battleships_ex.gdx.model.cards.AirstrikeCard) pendingCard).toggleOrientation();
-                if (targetCoord != null) setTarget(targetCoord);
-            }
-        });
-
-        GameButton cancelCardButton = new GameButton("CANCEL", ButtonConfig.secondary(contentWidth, 50f), () -> {
-            pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); currentMode = ViewMode.ENEMY_WATERS; rebuildUI();
-        });
-
         if (targetingMode) {
-            if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) actionsPanel.add(rotateCardButton).center().padBottom(10).row();
-            actionsPanel.add(fireButton).center().padBottom(10).row();
-            actionsPanel.add(cancelCardButton).center().row();
+            boolean isAirstrike = pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard;
+            float btnHeight = 60f;
+            float cancelWidth = isAirstrike ? 90f : 125f;
+            float rotateWidth = 90f;
+            float activateWidth = isAirstrike ? 170f : 230f;
+            float pad = 5f;
+
+            GameButton cancelCardButton = new GameButton("CANCEL", ButtonConfig.secondary(cancelWidth, btnHeight), () -> {
+                pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); currentMode = ViewMode.ENEMY_WATERS; rebuildUI();
+            });
+
+            fireButton = new GameButton("ACTIVATE", ButtonConfig.primary(activateWidth, btnHeight), () -> {
+                if (fireButton.isDisabled()) return;
+                if (pendingCard != null && targetCoord != null) {
+                    gameController.playActionCard(pendingCard, targetCoord);
+                    pendingCard = null; targetingMode = false; boardActor.clearPreviewCell(); rebuildUI();
+                }
+            });
+
+            Table actionRow = new Table();
+            actionRow.add(cancelCardButton).padRight(pad);
+            actionRow.add(fireButton).padRight(isAirstrike ? pad : 0);
+
+            if (isAirstrike) {
+                rotateCardButton = new GameButton("ROTATE", ButtonConfig.secondary(rotateWidth, btnHeight), () -> {
+                    if (pendingCard instanceof battleships_ex.gdx.model.cards.AirstrikeCard) {
+                        ((battleships_ex.gdx.model.cards.AirstrikeCard) pendingCard).toggleOrientation();
+                        if (targetCoord != null) setTarget(targetCoord);
+                    }
+                });
+                actionRow.add(rotateCardButton);
+            }
+            actionsPanel.add(actionRow).center().padBottom(10).row();
         } else {
+            fireButton = new GameButton("FIRE", ButtonConfig.primary(contentWidth, 60f), () -> {
+                if (fireButton.isDisabled()) return;
+                if (targetCoord != null) {
+                    GameStateManager.getInstance().fireShot(targetCoord.getRow(), targetCoord.getCol());
+                    targetCoord = null; boardActor.clearPreviewCell(); updateFireButtonState();
+                }
+            });
             actionsPanel.add(fireButton).center().row();
         }
 
@@ -282,7 +296,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
         root.add(topArea).height(48f).row();
         root.add(switchInner).width(contentWidth).height(56f).padTop(12f).center().row();
         Table boardContainer = new Table();
-        boardContainer.add(tacGridLabel).left().padTop(5).padBottom(5).row();
+        boardContainer.add(tacGridLabel).left().padLeft(5f).padTop(5).padBottom(5).row();
         boardContainer.add(boardActor).size(boardConfig.size).center().row();
         root.add(boardContainer).expandY().padTop(10f).row();
         root.add(actionsPanel).padBottom(12f).row();
