@@ -89,6 +89,7 @@ public class Board {
         validateCoordinate(coordinate);
         Cell cell = getCell(coordinate);
         if (cell.isHit()) return AttackResult.ALREADY_HIT;
+        
         cell.setHit(true);
         if (cell.hasShip()) {
             Ship ship = cell.getShip();

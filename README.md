@@ -24,7 +24,7 @@ The project follows a Model–View–Controller (MVC) architecture with explicit
 ### Run on Android
 1. Open the project in Android Studio
 2. Ensure the Android SDK is installed
-3. Add `google-services.json` (given in the zip file) to the Android module
+3. Add `google-services.json` file to the Android module and firebase API Key to the local.properties file. (everything provided in the zip file)
 4. Sync Gradle
 5. Run the app on an emulator or physical device
 
