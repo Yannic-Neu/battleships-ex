@@ -156,6 +156,9 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
             }
         ).show(stage));
 
+        GameButton tutorialButton = new GameButton("?", ButtonConfig.secondary(44f,44f), () ->
+            game.setScreen(new TutorialScreen(game, this)));
+
         Label turnLabel = new Label("", new Label.LabelStyle(Theme.fontLarge, Theme.WHITE));
         boolean myTurn = GameStateManager.getInstance().isMyTurn();
         turnLabel.setText(myTurn ? "YOUR TURN" : "OPPONENT'S TURN");
@@ -163,8 +166,7 @@ public class BattleScreen extends ScreenAdapter implements GameStateListener {
 
         topArea.add(backButton).left().padLeft(10);
         topArea.add(turnLabel).center().expandX();
-        topArea.add().width(60f).padRight(10); // Balances the back button
-
+        topArea.add(tutorialButton).right().padRight(10);
         // Switch Mode
         Table switchInner = new Table();
         switchInner.setBackground(Theme.darkBluePanel);
