@@ -454,7 +454,7 @@ public class GameController {
             if (isSinglePlayer && session.getCurrentPlayer() == remotePlayer) {
                 com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
                     @Override public void run() { playBotTurn(); }
-                }, 1.0f);
+                }, 2.0f);
             }
         }
 
@@ -820,7 +820,7 @@ public class GameController {
             if (isSinglePlayer && session.getCurrentPlayer() == remotePlayer) {
                 com.badlogic.gdx.utils.Timer.schedule(new com.badlogic.gdx.utils.Timer.Task() {
                     @Override public void run() { playBotTurn(); }
-                }, 1.0f);
+                }, 2.0f);
             }
         }
     }

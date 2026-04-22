@@ -43,7 +43,7 @@ public class OpponentTurnState extends BaseGameState {
                     scheduleBotMove(manager);
                 }
             }
-        }, 1.0f); // 1-second delay for UI readability
+        }, 2.0f); // 2-second delay for UI readability
     }
 
     @Override
